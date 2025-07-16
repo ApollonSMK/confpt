@@ -58,7 +58,9 @@ export async function getDiscoveries(): Promise<Discovery[]> {
             *,
             confrarias (
                 id,
-                name
+                name,
+                seal_url,
+                seal_hint
             )
         `);
 
@@ -77,12 +79,12 @@ export async function getDiscoveries(): Promise<Discovery[]> {
             website: d.website,
             phone: d.phone
         },
-        confraria: d.confrarias
+        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined
     })) as unknown as Discovery[];
 }
 
 
-export async function getConfrarias(): Promise<Confraria[]> {
+export async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })[]> {
     const { data, error } = await supabase
         .from('confrarias')
         .select(`
@@ -102,7 +104,7 @@ export async function getConfrarias(): Promise<Confraria[]> {
         sealUrl: c.seal_url,
         sealHint: c.seal_hint,
         discoveryCount: c.discoveries.length
-    })) as unknown as (Confraria & { discoveryCount: number })[];
+    })) as (Confraria & { discoveryCount: number })[];
 }
 
 export async function getSubmissions(): Promise<Submission[]> {

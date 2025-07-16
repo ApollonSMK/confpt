@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { type Discovery, confrarias } from '@/lib/data';
+import { type Discovery } from '@/lib/data';
 import { ArrowRight, MapPin, Tag, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -11,7 +11,7 @@ interface DiscoveryCardProps {
 }
 
 export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
-  const confraria = confrarias.find(c => c.id === discovery.confrariaId);
+  const confraria = discovery.confrarias;
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-shadow duration-300 hover:shadow-xl border-2 border-transparent hover:border-primary/50">
@@ -47,7 +47,7 @@ export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
       <CardFooter className="flex justify-between items-center">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {confraria && <Shield className="h-4 w-4 text-primary" />}
-            <span>{confraria?.name || 'Confraria Desconhecida'}</span>
+            <span>{confraria?.name || 'Comunitário'}</span>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/discoveries/${discovery.slug}`}>

@@ -1,11 +1,8 @@
 import { ConfrariaCard } from "@/components/confraria-card";
-import { confrarias, discoveries } from "@/lib/data";
+import { getConfrarias } from "@/lib/data";
 
-export default function ConfrariasPage() {
-    const confrariasWithCounts = confrarias.map(confraria => {
-        const count = discoveries.filter(d => d.confrariaId === confraria.id).length;
-        return { ...confraria, discoveryCount: count };
-    });
+export default async function ConfrariasPage() {
+    const confrarias = await getConfrarias();
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -17,7 +14,7 @@ export default function ConfrariasPage() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {confrariasWithCounts.map((confraria) => (
+        {confrarias.map((confraria) => (
           <ConfrariaCard key={confraria.id} confraria={confraria} />
         ))}
       </div>

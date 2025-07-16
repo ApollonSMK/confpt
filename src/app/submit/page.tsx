@@ -2,11 +2,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubmissionForm } from '@/components/submission-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { userSubmissions } from '@/lib/data';
+import { getSubmissions, getConfrarias } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-export default function SubmitPage() {
+export default async function SubmitPage() {
+  const userSubmissions = await getSubmissions();
+  const confrarias = await getConfrarias();
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="max-w-4xl mx-auto">
@@ -28,7 +31,7 @@ export default function SubmitPage() {
                   Preencha os detalhes abaixo. A sua sugestão será revista pela nossa equipa.
                 </CardDescription>
               </CardHeader>
-              <SubmissionForm />
+              <SubmissionForm confrarias={confrarias} />
             </Card>
           </TabsContent>
           <TabsContent value="submissions">
@@ -52,9 +55,13 @@ export default function SubmitPage() {
                     {userSubmissions.map((submission) => (
                       <TableRow key={submission.id}>
                         <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
-                        <TableCell>{submission.date}</TableCell>
+                        <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">
                           <Badge
+                            className={cn({
+                              'bg-green-700 text-white': submission.status === 'Aprovado',
+                              'bg-red-700 text-white': submission.status === 'Rejeitado',
+                            })}
                             variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
                           >
                             {submission.status}

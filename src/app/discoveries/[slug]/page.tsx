@@ -1,11 +1,11 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { discoveries, confrarias } from '@/lib/data';
+import { getDiscoveries, getConfrarias } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Shield } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone } from 'lucide-react';
 import Link from 'next/link';
 
 type DiscoveryPageProps = {
@@ -14,14 +14,15 @@ type DiscoveryPageProps = {
   };
 };
 
-export default function DiscoveryPage({ params }: DiscoveryPageProps) {
+export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
+  const discoveries = await getDiscoveries();
   const discovery = discoveries.find((d) => d.slug === params.slug);
 
   if (!discovery) {
     notFound();
   }
-
-  const confraria = confrarias.find(c => c.id === discovery.confrariaId);
+  
+  const confraria = discovery.confrarias;
   const relatedDiscoveries = discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5);
 
   return (

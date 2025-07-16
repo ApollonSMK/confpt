@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { discoveries } from '@/lib/data';
+import { getDiscoveries } from '@/lib/data';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
 
-export default function Home() {
-  const featuredDiscoveries = discoveries.slice(0, 6);
+export default async function Home() {
+  const allDiscoveries = await getDiscoveries();
+  const featuredDiscoveries = allDiscoveries.slice(0, 6);
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CardContent, CardFooter } from './ui/card';
-import { regions, discoveryTypes, confrarias } from '@/lib/data';
+import { regions, discoveryTypes, type Confraria } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 
@@ -31,7 +31,11 @@ const formSchema = z.object({
   image: z.any().optional(),
 });
 
-export function SubmissionForm() {
+interface SubmissionFormProps {
+  confrarias: Confraria[];
+}
+
+export function SubmissionForm({ confrarias }: SubmissionFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubmissionForm } from '@/components/submission-form';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { userSubmissions } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
@@ -55,12 +55,7 @@ export default function SubmitPage() {
                         <TableCell>{submission.date}</TableCell>
                         <TableCell className="text-right">
                           <Badge
-                            className={cn({
-                              'bg-green-600/20 text-green-800 border-green-600/30': submission.status === 'Aprovado',
-                              'bg-yellow-600/20 text-yellow-800 border-yellow-600/30': submission.status === 'Pendente',
-                              'bg-red-600/20 text-red-800 border-red-600/30': submission.status === 'Rejeitado',
-                            })}
-                            variant="outline"
+                            variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
                           >
                             {submission.status}
                           </Badge>

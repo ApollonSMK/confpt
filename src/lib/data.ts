@@ -17,6 +17,14 @@ export type Discovery = {
   website?: string | null;
   phone?: string | null;
   confrarias?: Confraria; // Relação opcional
+  confrariaId: number; // Para compatibilidade com componentes existentes
+  imageUrl: string;
+  imageHint: string;
+  contextualData?: {
+    address?: string | null;
+    website?: string | null;
+    phone?: string | null;
+  };
 };
 
 export type Confraria = {
@@ -27,6 +35,9 @@ export type Confraria = {
   seal_url: string;
   seal_hint: string;
   discoveries?: Discovery[]; // Relação opcional
+  sealUrl: string; // Para compatibilidade
+  sealHint: string; // Para compatibilidade
+  discoveryCount?: number;
 };
 
 export type Submission = {
@@ -34,6 +45,7 @@ export type Submission = {
   discovery_title: string;
   date: string;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
+  discoveryTitle: string; // Para compatibilidade
 };
 
 
@@ -54,10 +66,7 @@ export async function getDiscoveries(): Promise<Discovery[]> {
         console.error('Error fetching discoveries:', error);
         return [];
     }
-
-    // O Supabase retorna a relação como um objeto, mas nosso componente espera `confrariaId`.
-    // E o objeto da relação está no plural 'confrarias', vamos ajustar para o singular 'confraria'.
-    // Também ajustamos o nome das colunas para corresponder ao que os componentes esperam.
+    
     return data.map(d => ({
         ...d,
         confrariaId: d.confraria_id,
@@ -68,7 +77,7 @@ export async function getDiscoveries(): Promise<Discovery[]> {
             website: d.website,
             phone: d.phone
         },
-        confraria: d.confrarias // O componente DiscoveryCard pode usar isso diretamente
+        confraria: d.confrarias
     })) as unknown as Discovery[];
 }
 
@@ -88,7 +97,6 @@ export async function getConfrarias(): Promise<Confraria[]> {
         return [];
     }
     
-    // Ajustar o nome das colunas e a contagem de descobertas
     return data.map(c => ({
         ...c,
         sealUrl: c.seal_url,
@@ -103,7 +111,6 @@ export async function getSubmissions(): Promise<Submission[]> {
         console.error('Error fetching submissions:', error);
         return [];
     }
-     // Ajustar o nome das colunas
     return data.map(s => ({
         ...s,
         discoveryTitle: s.discovery_title,

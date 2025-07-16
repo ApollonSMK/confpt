@@ -1,0 +1,106 @@
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { discoveries, confrarias } from '@/lib/data';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { DiscoveryCard } from '@/components/discovery-card';
+import { MapPin, Tag, Globe, Phone, Shield } from 'lucide-react';
+import Link from 'next/link';
+
+type DiscoveryPageProps = {
+  params: {
+    slug: string;
+  };
+};
+
+export default function DiscoveryPage({ params }: DiscoveryPageProps) {
+  const discovery = discoveries.find((d) => d.slug === params.slug);
+
+  if (!discovery) {
+    notFound();
+  }
+
+  const confraria = confrarias.find(c => c.id === discovery.confrariaId);
+  const relatedDiscoveries = discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5);
+
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-16">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="lg:col-span-3">
+          <div className="aspect-video relative w-full overflow-hidden rounded-lg shadow-lg mb-6">
+            <Image
+              src={discovery.imageUrl}
+              alt={discovery.title}
+              fill
+              className="object-cover"
+              data-ai-hint={discovery.imageHint}
+              priority
+            />
+          </div>
+        </div>
+        <div className="lg:col-span-2">
+          <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.region}</Badge>
+              <Badge variant="secondary" className="text-sm flex items-center gap-1"><Tag className="h-3 w-3" />{discovery.type}</Badge>
+          </div>
+          <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
+
+          {confraria && (
+            <Link href="/confrarias" className="inline-block">
+                <Card className="mb-6 hover:bg-accent/10 transition-colors">
+                <CardHeader className='flex-row items-center gap-4'>
+                    <Image src={confraria.sealUrl} alt={confraria.name} width={60} height={60} className="rounded-full bg-muted p-1" data-ai-hint={confraria.sealHint} />
+                    <div>
+                        <p className="text-sm font-medium text-primary">Recomendado por:</p>
+                        <p className="font-semibold">{confraria.name}</p>
+                    </div>
+                </CardHeader>
+                </Card>
+            </Link>
+          )}
+
+          {discovery.contextualData && (
+             <Card className="mb-6 bg-transparent">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Informações</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-muted-foreground">
+                    {discovery.contextualData.address && <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {discovery.contextualData.address}</p>}
+                    {discovery.contextualData.website && <p className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> <a href={discovery.contextualData.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary">{discovery.contextualData.website}</a></p>}
+                    {discovery.contextualData.phone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {discovery.contextualData.phone}</p>}
+                </CardContent>
+             </Card>
+          )}
+
+        </div>
+      </div>
+
+       <div className="mt-8 lg:mt-0 lg:col-span-5 prose max-w-none">
+          <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
+          <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
+      </div>
+
+      {relatedDiscoveries.length > 0 && (
+        <section className="mt-16 md:mt-24">
+          <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 text-center">
+            Mais na Região de {discovery.region}
+          </h2>
+          <Carousel opts={{ align: 'start' }} className="w-full">
+            <CarouselContent>
+              {relatedDiscoveries.map((related) => (
+                <CarouselItem key={related.id} className="md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1 h-full">
+                    <DiscoveryCard discovery={related} />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,198 @@
+'use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CardContent, CardFooter } from './ui/card';
+import { regions, discoveryTypes, confrarias } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import { Upload } from 'lucide-react';
+
+const formSchema = z.object({
+  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+  description: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
+  region: z.string().nonempty('Por favor, selecione uma região.'),
+  type: z.string().nonempty('Por favor, selecione um tipo.'),
+  confrariaId: z.string().nonempty('Por favor, selecione uma confraria.'),
+  links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
+  image: z.any().optional(),
+});
+
+export function SubmissionForm() {
+  const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      region: '',
+      type: '',
+      confrariaId: '',
+      links: '',
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+    toast({
+        title: "Submissão Enviada!",
+        description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
+    });
+    form.reset();
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <CardContent className="space-y-6">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Título da Descoberta</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Queijo da Serra da Estrela" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição Editorial</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Descreva a sua descoberta de forma poética e pessoal..."
+                    rows={5}
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>Conte-nos porque é que esta descoberta é especial.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="region"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Região</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a região" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="confrariaId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confraria Sugerida</FormLabel>
+                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Associe a uma confraria existente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                <FormDescription>Se aplicável, qual a confraria que melhor representa esta descoberta?</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="image"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Imagem</FormLabel>
+                <FormControl>
+                    <div className="relative">
+                        <Input type="file" className="opacity-0 absolute inset-0 w-full h-full z-10 cursor-pointer" {...field} />
+                        <Button type="button" variant="outline" className="w-full" asChild>
+                            <div className='flex items-center justify-center gap-2'>
+                                <Upload className="h-4 w-4" />
+                                <span>Carregar Imagem Autêntica</span>
+                            </div>
+                        </Button>
+                    </div>
+                </FormControl>
+                <FormDescription>Uma boa imagem faz toda a diferença.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="links"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Links</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://exemplo.com" {...field} />
+                </FormControl>
+                <FormDescription>Website oficial, redes sociais, etc.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" size="lg">Submeter Descoberta</Button>
+        </CardFooter>
+      </form>
+    </Form>
+  );
+}

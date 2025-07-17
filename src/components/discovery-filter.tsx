@@ -78,30 +78,31 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
               placeholder="Ex: Vinho do Porto, azeite..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
               className="pl-10"
             />
           </div>
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block">Região</label>
-          <Select value={region} onValueChange={setRegion}>
+          <Select value={region} onValueChange={(value) => setRegion(value === 'all' ? '' : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Todas as regiões" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as regiões</SelectItem>
+              <SelectItem value="all">Todas as regiões</SelectItem>
               {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block">Tipo</label>
-          <Select value={type} onValueChange={setType}>
+          <Select value={type} onValueChange={(value) => setType(value === 'all' ? '' : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Todos os tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os tipos</SelectItem>
+              <SelectItem value="all">Todos os tipos</SelectItem>
               {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>

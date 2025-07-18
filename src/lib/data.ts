@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-import { createServerClient } from './supabase/server';
 
 // Tipos principais baseados no esquema do Supabase
 

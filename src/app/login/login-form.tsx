@@ -26,10 +26,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function LoginForm() {
+interface LoginFormProps {
+  isSignUp: boolean;
+  setIsSignUp: (isSignUp: boolean) => void;
+}
+
+export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,8 +56,8 @@ export function LoginForm() {
       });
     } else {
         toast({
-            title: isSignUp ? 'Conta criada com sucesso!' : 'Login efetuado!',
-            description: isSignUp ? 'Bem-vindo(a)!' : 'Bem-vindo(a) de volta!',
+            title: isSignUp ? 'Adesão concluída!' : 'Sessão iniciada!',
+            description: isSignUp ? 'Bem-vindo(a) à nossa irmandade!' : 'Bem-vindo(a) de volta!',
         });
     }
     setLoading(false);
@@ -93,7 +97,7 @@ export function LoginForm() {
         <CardFooter className="flex-col gap-4">
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSignUp ? 'Registar' : 'Entrar'}
+            {isSignUp ? 'Aderir à Irmandade' : 'Entrar'}
           </Button>
           <Button
             type="button"
@@ -103,8 +107,8 @@ export function LoginForm() {
             disabled={loading}
           >
             {isSignUp
-              ? 'Já tem uma conta? Entre aqui.'
-              : 'Não tem uma conta? Registe-se.'}
+              ? 'Já é um membro? Inicie sessão.'
+              : 'Ainda não é membro? Adira aqui.'}
           </Button>
         </CardFooter>
       </form>

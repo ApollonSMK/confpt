@@ -20,6 +20,8 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isAdmin = user?.email === process.env.ADMIN_EMAIL;
+
   return (
     <html lang="en" className="scroll-smooth">
       <head>
@@ -29,7 +31,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground">
         <div className="flex flex-col min-h-screen">
-          <MainNav user={user}/>
+          <MainNav user={user} isAdmin={isAdmin}/>
           <main className="flex-grow">{children}</main>
           <Footer />
         </div>

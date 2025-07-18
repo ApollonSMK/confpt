@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -28,9 +28,10 @@ const navLinks = [
 
 interface MainNavProps {
     user: any | null;
+    isAdmin: boolean;
 }
 
-export function MainNav({ user }: MainNavProps) {
+export function MainNav({ user, isAdmin }: MainNavProps) {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
 
@@ -101,6 +102,14 @@ export function MainNav({ user }: MainNavProps) {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                       {isAdmin && (
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                            <Link href="/admin/dashboard">
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                <span>Painel Admin</span>
+                            </Link>
+                        </DropdownMenuItem>
+                       )}
                       <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Sair</span>

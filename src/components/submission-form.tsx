@@ -76,7 +76,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
   }
 
   return (
-    <Form form={form} onSubmit={onSubmit} className="space-y-8">
+    <Form {...form} onSubmit={onSubmit} className="space-y-8">
         <FormField
           control={form.control}
           name="title"
@@ -160,7 +160,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Associe a uma confraria existente" />
-                    </SelectTrigger>
+                    </Trigger>
                   </FormControl>
                   <SelectContent>
                     {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}

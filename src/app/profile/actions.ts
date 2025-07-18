@@ -1,9 +1,10 @@
 'use server';
 
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import { type Discovery, type Submission } from "@/lib/data";
 
 export async function getSealedDiscoveriesForUser(userId: string): Promise<Discovery[]> {
+    const supabase = createServerClient();
     const { data: seals, error: sealsError } = await supabase
         .from('seals')
         .select('discovery_id')
@@ -50,13 +51,14 @@ export async function getSealedDiscoveriesForUser(userId: string): Promise<Disco
             phone: d.phone
         },
         confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+        seal_count: d.discovery_seal_counts.length > 0 ? d.discovery_seal_counts[0].seal_count : 0,
         user_has_sealed: userSeals.has(d.id),
     })) as unknown as Discovery[];
 }
 
 
 export async function getUserSubmissions(userId: string): Promise<Submission[]> {
+    const supabase = createServerClient();
     if (!userId) return [];
 
     const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });

@@ -7,13 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { createServerClient } from '@/lib/supabase/server';
 import { getUserSubmissions } from '../profile/actions';
+import { redirect } from 'next/navigation';
 
 export default async function SubmitPage() {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const userSubmissions = user ? await getUserSubmissions(user.id) : [];
-  const confrarias = await getConfrarias();
+  if (!user) {
+    redirect('/login');
+  }
+
+  const [userSubmissions, confrarias] = await Promise.all([
+    getUserSubmissions(user.id),
+    getConfrarias()
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -48,7 +55,7 @@ export default async function SubmitPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {user ? (
+                {userSubmissions.length > 0 ? (
                    <Table>
                     <TableHeader>
                       <TableRow>
@@ -79,7 +86,7 @@ export default async function SubmitPage() {
                   </Table>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">
-                    Faça <a href="/login" className="text-primary hover:underline">login</a> para ver as suas submissões.
+                    Você ainda não fez nenhuma submissão. Tem um tesouro para <a href="/submit" className="text-primary hover:underline">partilhar</a>?
                   </p>
                 )}
                 

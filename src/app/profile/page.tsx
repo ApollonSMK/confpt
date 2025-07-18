@@ -5,8 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getSealedDiscoveriesForUser } from './actions';
-import { getUserSubmissions } from '../submit/actions';
+import { getUserSubmissions, getSealedDiscoveriesForUser } from '../submit/actions';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
@@ -31,7 +30,7 @@ function processRegionData(discoveries: Discovery[]) {
         return acc;
     }, {} as Record<string, { region: string; selos: number }>);
 
-    return Object.values(regionCounts);
+    return Object.values(regionCounts).sort((a, b) => b.selos - a.selos);
 }
 
 

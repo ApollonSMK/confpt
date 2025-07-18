@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -17,6 +18,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logout } from '@/app/login/actions';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 
 const navLinks = [
@@ -83,39 +90,57 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
         </div>
         <div className="flex items-center justify-end space-x-2 ml-auto">
             {user ? (
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-12 w-12 rounded-full">
-                        <Avatar className="h-12 w-12 border-2 border-primary/50">
-                           <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
-                           <AvatarFallback className="bg-primary/20 text-primary font-bold">{userInitial}</AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{userFullName || 'Confrade'}</p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {user.email}
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                       {isAdmin && (
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                            <Link href="/admin/dashboard">
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                <span>Painel Admin</span>
-                            </Link>
-                        </DropdownMenuItem>
-                       )}
-                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Sair</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div className="flex items-center gap-2">
+                    {isAdmin && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" asChild>
+                                        <Link href="/admin/dashboard">
+                                            <ShieldCheck className="h-6 w-6 text-primary" />
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Painel Administrativo</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="relative h-12 w-12 rounded-full">
+                            <Avatar className="h-12 w-12 border-2 border-primary/50">
+                               <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
+                               <AvatarFallback className="bg-primary/20 text-primary font-bold">{userInitial}</AvatarFallback>
+                            </Avatar>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="end" forceMount>
+                          <DropdownMenuLabel className="font-normal">
+                            <div className="flex flex-col space-y-1">
+                              <p className="text-sm font-medium leading-none">{userFullName || 'Confrade'}</p>
+                              <p className="text-xs leading-none text-muted-foreground">
+                                {user.email}
+                              </p>
+                            </div>
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                           {isAdmin && (
+                            <DropdownMenuItem asChild className="cursor-pointer">
+                                <Link href="/admin/dashboard">
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    <span>Painel Admin</span>
+                                </Link>
+                            </DropdownMenuItem>
+                           )}
+                          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Sair</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                </div>
             ) : (
                 <Button asChild>
                     <Link href="/login">

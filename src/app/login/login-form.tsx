@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +18,7 @@ import { CardContent, CardFooter } from '@/components/ui/card';
 import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regions } from '@/lib/data';
 
@@ -46,6 +47,7 @@ interface LoginFormProps {
 export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(isSignUp ? signUpSchema : loginSchema),
@@ -138,9 +140,19 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Senha</FormLabel>
-                <FormControl>
-                  <Input placeholder="********" type="password" {...field} />
-                </FormControl>
+                <div className="relative">
+                    <FormControl>
+                    <Input placeholder="********" type={showPassword ? 'text' : 'password'} {...field} className="pr-10" />
+                    </FormControl>
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-primary"
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

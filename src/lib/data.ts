@@ -45,6 +45,7 @@ export type Confraria = {
 
 export type Submission = {
   id: number;
+  user_id: string;
   discovery_title: string;
   date: string;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';

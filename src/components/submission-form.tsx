@@ -58,8 +58,6 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    // Nota: o upload da imagem seria tratado aqui antes de chamar a action.
-    // Por simplicidade, estamos a focar-nos nos dados de texto.
     const result = await createSubmission(values);
     setLoading(false);
 

@@ -1,12 +1,12 @@
+
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, User, Award, FileText } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
 import { getSealedDiscoveriesForUser, getUserSubmissions } from './actions';
 import Link from 'next/link';
-import Image from 'next/image';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
   Table,
@@ -15,8 +15,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import { cn } from '@/lib/utils';
+import { ProfileRegionChart } from './profile-region-chart';
+import type { Discovery } from '@/lib/data';
+
+function processRegionData(discoveries: Discovery[]) {
+    const regionCounts = discoveries.reduce((acc, discovery) => {
+        const region = discovery.region;
+        if (!acc[region]) {
+            acc[region] = { region, selos: 0 };
+        }
+        acc[region].selos += 1;
+        return acc;
+    }, {} as Record<string, { region: string; selos: number }>);
+
+    return Object.values(regionCounts);
+}
+
 
 export default async function ProfilePage() {
   const supabase = createServerClient();
@@ -37,33 +53,64 @@ export default async function ProfilePage() {
   const userRegion = user.user_metadata?.region || 'Região Desconhecida';
   const userInitial = userFullName.charAt(0).toUpperCase();
 
+  const chartData = processRegionData(sealedDiscoveries);
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader className="items-center text-center">
-              <Avatar className="h-24 w-24 mb-4 border-4 border-primary/50">
-                <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName} />
-                <AvatarFallback className="bg-primary/20 text-primary font-bold text-3xl">{userInitial}</AvatarFallback>
-              </Avatar>
-              <CardTitle className="font-headline text-2xl">{userFullName}</CardTitle>
-              <CardDescription>{user.email}</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Badge variant="outline" className="flex items-center justify-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>{userRegion}</span>
+        <div className="flex flex-col md:flex-row items-center gap-6 mb-12">
+            <Avatar className="h-28 w-28 border-4 border-primary/50">
+              <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName} />
+              <AvatarFallback className="bg-primary/20 text-primary font-bold text-4xl">{userInitial}</AvatarFallback>
+            </Avatar>
+            <div>
+                <h1 className="font-headline text-4xl md:text-5xl font-bold">{userFullName}</h1>
+                <p className="text-lg text-muted-foreground">{user.email}</p>
+                <Badge variant="outline" className="mt-2 flex items-center justify-center gap-2 w-fit">
+                    <MapPin className="h-4 w-4" />
+                    <span>Confrade da região de {userRegion}</span>
               </Badge>
-            </CardContent>
-          </Card>
+            </div>
         </div>
-        <div className="md:col-span-3 space-y-8">
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Selos Concedidos</CardTitle>
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{sealedDiscoveries.length}</div>
+                    <p className="text-xs text-muted-foreground">descobertas que você aprovou</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Submissões Feitas</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{userSubmissions.length}</div>
+                    <p className="text-xs text-muted-foreground">contribuições para a comunidade</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Região Favorita</CardTitle>
+                    <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{chartData[0]?.region || 'N/A'}</div>
+                    <p className="text-xs text-muted-foreground">com base nos seus selos</p>
+                </CardContent>
+            </Card>
+      </div>
+
+      <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline text-3xl flex items-center gap-3">
                         <Award className="h-7 w-7 text-primary"/>
-                        Meus Selos Concedidos
+                        Minhas Descobertas Seladas
                     </CardTitle>
                     <CardDescription>
                         As descobertas que você visitou, provou e aprovou com o seu selo de confrade.
@@ -79,6 +126,25 @@ export default async function ProfilePage() {
                     ) : (
                         <p className="text-muted-foreground">Você ainda não concedeu nenhum selo. Explore as <Link href="/discoveries" className="text-primary hover:underline">descobertas</Link> e comece a sua jornada!</p>
                     )}
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                        <BarChart2 className="h-7 w-7 text-primary"/>
+                        Selos por Região
+                    </CardTitle>
+                    <CardDescription>
+                       Uma visão geral das suas explorações por todo o país.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {chartData.length > 0 ? (
+                        <ProfileRegionChart data={chartData} />
+                     ) : (
+                         <p className="text-muted-foreground">Conceda selos para ver as suas estatísticas por região.</p>
+                     )}
                 </CardContent>
             </Card>
 
@@ -128,7 +194,6 @@ export default async function ProfilePage() {
                 </CardContent>
             </Card>
         </div>
-      </div>
     </div>
   );
 }

@@ -129,7 +129,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                            <DropdownMenuItem asChild className="cursor-pointer">
                                 <Link href="/profile">
                                     <UserCog className="mr-2 h-4 w-4" />
-                                    <span>Meu Perfil</span>
+                                    <span>Meu Painel</span>
                                 </Link>
                             </DropdownMenuItem>
                            {isAdmin && (

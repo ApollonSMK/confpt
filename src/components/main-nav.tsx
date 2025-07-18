@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, Search, User, LogOut } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -20,10 +20,10 @@ import { logout } from '@/app/login/actions';
 
 
 const navLinks = [
-  { href: '/', label: 'Início' },
-  { href: '/discoveries', label: 'Descobertas' },
-  { href: '/confrarias', label: 'Confrarias' },
-  { href: '/submit', label: 'Submeter' },
+  { href: '/', label: 'Início', icon: Home },
+  { href: '/discoveries', label: 'Descobertas', icon: BookOpen },
+  { href: '/confrarias', label: 'Confrarias', icon: Handshake },
+  { href: '/submit', label: 'Submeter', icon: PlusCircle },
 ];
 
 interface MainNavProps {
@@ -37,11 +37,14 @@ export function MainNav({ user }: MainNavProps) {
   const handleLogout = async () => {
     await logout();
   }
+  
+  const userFullName = user?.user_metadata?.full_name;
+  const userInitial = userFullName ? userFullName.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase();
 
   const NavContent = ({ isMobile = false }: { isMobile?: boolean }) => (
     <nav
       className={cn(
-        'flex items-center space-x-6 lg:space-x-8',
+        'flex items-center space-x-4 lg:space-x-6',
         isMobile && 'flex-col space-x-0 space-y-4 pt-8'
       )}
     >
@@ -51,11 +54,12 @@ export function MainNav({ user }: MainNavProps) {
           href={link.href}
           onClick={() => setSheetOpen(false)}
           className={cn(
-            'text-sm font-medium transition-colors hover:text-primary border-b-2',
+            'text-sm font-medium transition-colors hover:text-primary border-b-2 flex items-center gap-2',
             pathname === link.href ? 'text-primary border-primary' : 'text-muted-foreground border-transparent',
-            isMobile && 'text-lg'
+            isMobile && 'text-lg p-2 rounded-md w-full justify-start'
           )}
         >
+          <link.icon className="h-4 w-4" />
           {link.label}
         </Link>
       ))}
@@ -64,43 +68,40 @@ export function MainNav({ user }: MainNavProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
+      <div className="container flex h-20 items-center">
         <div className="mr-4 flex items-center">
           <Link href="/" className="flex items-center space-x-2">
-            <div className='bg-primary text-primary-foreground p-2 rounded-full'>
+            <div className='bg-primary text-primary-foreground p-2 rounded-full shadow-md'>
                 <Grape className="h-6 w-6" />
             </div>
-            <span className="font-bold font-headline text-lg">Confrarias Portugal</span>
+            <span className="font-bold font-headline text-xl">Confrarias.pt</span>
           </Link>
         </div>
         <div className="hidden md:flex flex-1 items-center justify-center space-x-4">
           <NavContent />
         </div>
-        <div className="hidden md:flex items-center justify-end space-x-2">
-            <Button variant="ghost" size="icon">
-                <Search />
-            </Button>
+        <div className="flex items-center justify-end space-x-2 ml-auto">
             {user ? (
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                        <Avatar className="h-10 w-10">
-                           <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
-                           <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                      <Button variant="ghost" className="relative h-12 w-12 rounded-full">
+                        <Avatar className="h-12 w-12 border-2 border-primary/50">
+                           <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
+                           <AvatarFallback className="bg-primary/20 text-primary font-bold">{userInitial}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">Minha Conta</p>
+                          <p className="text-sm font-medium leading-none">{userFullName || 'Confrade'}</p>
                           <p className="text-xs leading-none text-muted-foreground">
                             {user.email}
                           </p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
+                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Sair</span>
                       </DropdownMenuItem>
@@ -109,24 +110,24 @@ export function MainNav({ user }: MainNavProps) {
             ) : (
                 <Button asChild>
                     <Link href="/login">
-                        <User className='mr-2' />
-                        Entrar
+                        <UserRound className='mr-2' />
+                        Entrar / Aderir
                     </Link>
                 </Button>
             )}
-        </div>
-        <div className="md:hidden flex flex-1 justify-end">
-          <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <NavContent isMobile />
-            </SheetContent>
-          </Sheet>
+             <div className="md:hidden">
+              <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Toggle Menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="pt-16">
+                  <NavContent isMobile />
+                </SheetContent>
+              </Sheet>
+            </div>
         </div>
       </div>
     </header>

@@ -18,11 +18,23 @@ import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { regions } from '@/lib/data';
 
-const formSchema = z.object({
+
+const loginSchema = z.object({
+    email: z.string().email('Por favor, insira um email válido.'),
+    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
+});
+
+const signUpSchema = z.object({
+  fullName: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
+  region: z.string().nonempty('Por favor, selecione uma região.'),
   email: z.string().email('Por favor, insira um email válido.'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
+
+const formSchema = z.union([loginSchema, signUpSchema]);
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -36,19 +48,22 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(isSignUp ? signUpSchema : loginSchema),
     defaultValues: {
       email: '',
       password: '',
+      ...(isSignUp && { fullName: '', region: '' }),
     },
   });
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    const action = isSignUp ? signup : login;
-    const result = await action(values);
 
-    if (result.error) {
+    const result = isSignUp 
+        ? await signup(values as z.infer<typeof signUpSchema>) 
+        : await login(values as z.infer<typeof loginSchema>);
+
+    if (result && result.error) {
       toast({
         title: 'Erro de autenticação',
         description: result.error,
@@ -67,6 +82,43 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
+          {isSignUp && (
+            <>
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="O seu nome de confrade" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="region"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Região Favorita</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione a sua região do coração" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+              />
+            </>
+          )}
           <FormField
             control={form.control}
             name="email"

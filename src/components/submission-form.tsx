@@ -76,8 +76,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
   }
 
   return (
-    <Form {...form} onSubmit={onSubmit} className="space-y-8">
-      <>
+    <Form form={form} onSubmit={onSubmit} className="space-y-8">
         <FormField
           control={form.control}
           name="title"
@@ -212,7 +211,6 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Submeter Descoberta
         </Button>
-      </>
     </Form>
   );
 }

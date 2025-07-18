@@ -81,8 +81,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+    <Form form={form} onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           {isSignUp && (
             <>
@@ -175,7 +174,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
               : 'Ainda não é membro? Adira aqui.'}
           </Button>
         </CardFooter>
-      </form>
     </Form>
   );
 }

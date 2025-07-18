@@ -19,17 +19,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CardContent, CardFooter } from './ui/card';
 import { regions, discoveryTypes, type Confraria } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Upload } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
+import { createSubmission } from '@/app/submit/actions';
+import { useState } from 'react';
 
 const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
-  description: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
-  region: z.string().nonempty('Por favor, selecione uma região.'),
-  type: z.string().nonempty('Por favor, selecione um tipo.'),
-  confrariaId: z.string().nonempty('Por favor, selecione uma confraria.'),
+  editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
+  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  type: z.enum(discoveryTypes, { required_error: 'Por favor, selecione um tipo.'}),
+  confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
   image: z.any().optional(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface SubmissionFormProps {
   confrarias: Confraria[];
@@ -37,25 +41,40 @@ interface SubmissionFormProps {
 
 export function SubmissionForm({ confrarias }: SubmissionFormProps) {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      description: '',
-      region: '',
-      type: '',
+      editorial: '',
+      region: undefined,
+      type: undefined,
       confrariaId: '',
       links: '',
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-        title: "Submissão Enviada!",
-        description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
-    });
-    form.reset();
+  async function onSubmit(values: FormValues) {
+    setLoading(true);
+    // Nota: o upload da imagem seria tratado aqui antes de chamar a action.
+    // Por simplicidade, estamos a focar-nos nos dados de texto.
+    const result = await createSubmission(values);
+    setLoading(false);
+
+    if (result.error) {
+        toast({
+            title: "Erro ao Enviar",
+            description: result.error,
+            variant: "destructive"
+        });
+    } else {
+        toast({
+            title: "Submissão Enviada!",
+            description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
+        });
+        form.reset();
+    }
   }
 
   return (
@@ -77,7 +96,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
           />
           <FormField
             control={form.control}
-            name="description"
+            name="editorial"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Descrição Editorial</FormLabel>
@@ -124,7 +143,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
+                      </Trigger>
                     </FormControl>
                     <SelectContent>
                       {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -140,7 +159,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
             name="confrariaId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confraria Sugerida</FormLabel>
+                <FormLabel>Confraria Sugerida (Opcional)</FormLabel>
                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -161,11 +180,11 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
             name="image"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Imagem</FormLabel>
+                <FormLabel>Imagem (funcionalidade futura)</FormLabel>
                 <FormControl>
                     <div className="relative">
-                        <Input type="file" className="opacity-0 absolute inset-0 w-full h-full z-10 cursor-pointer" {...field} />
-                        <Button type="button" variant="outline" className="w-full" asChild>
+                        <Input type="file" disabled className="opacity-0 absolute inset-0 w-full h-full z-10 cursor-pointer" {...field} />
+                        <Button type="button" variant="outline" className="w-full" disabled>
                             <div className='flex items-center justify-center gap-2'>
                                 <Upload className="h-4 w-4" />
                                 <span>Carregar Imagem Autêntica</span>
@@ -183,7 +202,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
             name="links"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Links</FormLabel>
+                <FormLabel>Link (Opcional)</FormLabel>
                 <FormControl>
                   <Input placeholder="https://exemplo.com" {...field} />
                 </FormControl>
@@ -194,7 +213,10 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
           />
         </CardContent>
         <CardFooter>
-          <Button type="submit" size="lg">Submeter Descoberta</Button>
+          <Button type="submit" size="lg" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submeter Descoberta
+          </Button>
         </CardFooter>
       </form>
     </Form>

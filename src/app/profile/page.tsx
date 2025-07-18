@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getSealedDiscoveriesForUser, getUserSubmissions } from './actions';
+import { getSealedDiscoveriesForUser } from './actions';
+import { getUserSubmissions } from '../submit/actions';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {

@@ -55,19 +55,3 @@ export async function getSealedDiscoveriesForUser(userId: string): Promise<Disco
         user_has_sealed: userSeals.has(d.id),
     })) as unknown as Discovery[];
 }
-
-
-export async function getUserSubmissions(userId: string): Promise<Submission[]> {
-    const supabase = createServerClient();
-    if (!userId) return [];
-
-    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
-    if (error) {
-        console.error('Error fetching submissions:', error);
-        return [];
-    }
-    return data.map(s => ({
-        ...s,
-        discoveryTitle: s.discovery_title,
-    })) as Submission[];
-}

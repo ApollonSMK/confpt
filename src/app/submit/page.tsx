@@ -6,7 +6,7 @@ import { getConfrarias } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { createServerClient } from '@/lib/supabase/server';
-import { getUserSubmissions } from '../profile/actions';
+import { getUserSubmissions } from './actions';
 import { redirect } from 'next/navigation';
 
 export default async function SubmitPage() {

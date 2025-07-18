@@ -21,7 +21,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const discoveries = await getDiscoveries();
+  const discoveries = await getDiscoveries(user?.id);
   const discovery = discoveries.find((d) => d.slug === params.slug);
 
   if (!discovery) {

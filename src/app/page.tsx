@@ -4,9 +4,13 @@ import { DiscoveryCard } from '@/components/discovery-card';
 import { getDiscoveries } from '@/lib/data';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
+import { createServerClient } from '@/lib/supabase/server';
 
 export default async function Home() {
-  const allDiscoveries = await getDiscoveries();
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const allDiscoveries = await getDiscoveries(user?.id);
   const featuredDiscoveries = allDiscoveries.slice(0, 6);
 
   return (

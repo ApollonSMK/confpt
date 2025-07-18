@@ -1,5 +1,5 @@
-import { createServerClient } from "./supabase/server";
 import { supabase } from "./supabase";
+import { createServerClient } from './supabase/server';
 
 // Tipos principais baseados no esquema do Supabase
 
@@ -26,8 +26,8 @@ export type Discovery = {
     website?: string | null;
     phone?: string | null;
   };
-  seal_count?: number;
-  user_has_sealed?: boolean;
+  seal_count: number;
+  user_has_sealed: boolean;
 };
 
 export type Confraria = {
@@ -54,10 +54,7 @@ export type Submission = {
 
 // Funções para buscar dados do Supabase
 
-export async function getDiscoveries(): Promise<Discovery[]> {
-    const supabaseClient = createServerClient();
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
+export async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     const { data, error } = await supabase
         .from('discoveries')
         .select(`
@@ -79,8 +76,8 @@ export async function getDiscoveries(): Promise<Discovery[]> {
     }
 
     let userSeals = new Set<number>();
-    if (user) {
-        const { data: sealsData } = await supabase.from('seals').select('discovery_id').eq('user_id', user.id);
+    if (user_id) {
+        const { data: sealsData } = await supabase.from('seals').select('discovery_id').eq('user_id', user_id);
         if (sealsData) {
             userSeals = new Set(sealsData.map(s => s.discovery_id));
         }

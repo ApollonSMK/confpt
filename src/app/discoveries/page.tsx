@@ -1,13 +1,17 @@
 import { getDiscoveries, regions, discoveryTypes } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';
+import { createServerClient } from '@/lib/supabase/server';
 
 export default async function DiscoveriesPage({
   searchParams,
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  let discoveries = await getDiscoveries();
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let discoveries = await getDiscoveries(user?.id);
+  const allDiscoveriesForFilter = await getDiscoveries();
 
   const searchTerm = searchParams?.search as string || '';
   const region = searchParams?.region as string || '';
@@ -33,7 +37,7 @@ export default async function DiscoveriesPage({
         Filtre por região, tipo ou palavra-chave para encontrar os tesouros escondidos de Portugal.
       </p>
 
-      <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={await getDiscoveries()} />
+      <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveriesForFilter} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {discoveries.map(discovery => (

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getUserSubmissions, getSealedDiscoveriesForUser } from '../submit/actions';
+import { getSealedDiscoveriesForUser, getSubmissionsForUser } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
@@ -46,7 +46,7 @@ export default async function ProfilePage() {
 
   const [sealedDiscoveries, userSubmissions] = await Promise.all([
     getSealedDiscoveriesForUser(user.id),
-    getUserSubmissions(user.id)
+    getSubmissionsForUser(user.id)
   ]);
 
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
@@ -157,7 +157,7 @@ export default async function ProfilePage() {
                     <CardDescription>
                         O seu historial de contribuições para a comunidade.
                     </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                      {userSubmissions.length > 0 ? (
                         <Table>

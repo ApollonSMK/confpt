@@ -76,7 +76,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
   }
 
   return (
-    <Form {...form}>
+    <Form form={form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}

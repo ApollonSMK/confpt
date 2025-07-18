@@ -124,7 +124,10 @@ export async function getConfrarias(): Promise<(Confraria & { discoveryCount: nu
 }
 
 export async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
-    if (!userId) return [];
+    if (!userId) {
+        console.warn('No userId provided to getSubmissionsForUser');
+        return [];
+    }
 
     const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
     

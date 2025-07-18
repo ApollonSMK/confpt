@@ -3,12 +3,16 @@ import { SubmissionForm } from '@/components/submission-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getConfrarias } from '@/lib/data';
-import { getSubmissions } from './actions';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { createServerClient } from '@/lib/supabase/server';
+import { getUserSubmissions } from '../profile/actions';
 
 export default async function SubmitPage() {
-  const userSubmissions = await getSubmissions();
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const userSubmissions = user ? await getUserSubmissions(user.id) : [];
   const confrarias = await getConfrarias();
 
   return (
@@ -44,34 +48,41 @@ export default async function SubmitPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Descoberta</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Estado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {userSubmissions.map((submission) => (
-                      <TableRow key={submission.id}>
-                        <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
-                        <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge
-                            className={cn({
-                              'bg-green-700 text-white': submission.status === 'Aprovado',
-                              'bg-red-700 text-white': submission.status === 'Rejeitado',
-                            })}
-                            variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
-                          >
-                            {submission.status}
-                          </Badge>
-                        </TableCell>
+                {user ? (
+                   <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descoberta</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Estado</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {userSubmissions.map((submission) => (
+                        <TableRow key={submission.id}>
+                          <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
+                          <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge
+                              className={cn({
+                                'bg-green-700 text-white': submission.status === 'Aprovado',
+                                'bg-red-700 text-white': submission.status === 'Rejeitado',
+                              })}
+                              variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
+                            >
+                              {submission.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Faça <a href="/login" className="text-primary hover:underline">login</a> para ver as suas submissões.
+                  </p>
+                )}
+                
               </CardContent>
             </Card>
           </TabsContent>

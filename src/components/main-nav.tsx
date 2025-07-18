@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -126,6 +126,12 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                             </div>
                           </DropdownMenuLabel>
                           <DropdownMenuSeparator />
+                           <DropdownMenuItem asChild className="cursor-pointer">
+                                <Link href="/profile">
+                                    <UserCog className="mr-2 h-4 w-4" />
+                                    <span>Meu Perfil</span>
+                                </Link>
+                            </DropdownMenuItem>
                            {isAdmin && (
                             <DropdownMenuItem asChild className="cursor-pointer">
                                 <Link href="/admin/dashboard">
@@ -134,6 +140,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                                 </Link>
                             </DropdownMenuItem>
                            )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Sair</span>

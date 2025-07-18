@@ -1,3 +1,4 @@
+import { createServerClient } from "./supabase/server";
 import { supabase } from "./supabase";
 
 // Tipos principais baseados no esquema do Supabase
@@ -25,6 +26,8 @@ export type Discovery = {
     website?: string | null;
     phone?: string | null;
   };
+  seal_count?: number;
+  user_has_sealed?: boolean;
 };
 
 export type Confraria = {
@@ -52,6 +55,9 @@ export type Submission = {
 // Funções para buscar dados do Supabase
 
 export async function getDiscoveries(): Promise<Discovery[]> {
+    const supabaseClient = createServerClient();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
     const { data, error } = await supabase
         .from('discoveries')
         .select(`
@@ -61,12 +67,23 @@ export async function getDiscoveries(): Promise<Discovery[]> {
                 name,
                 seal_url,
                 seal_hint
+            ),
+            discovery_seal_counts (
+                seal_count
             )
         `);
 
     if (error) {
         console.error('Error fetching discoveries:', error);
         return [];
+    }
+
+    let userSeals = new Set<number>();
+    if (user) {
+        const { data: sealsData } = await supabase.from('seals').select('discovery_id').eq('user_id', user.id);
+        if (sealsData) {
+            userSeals = new Set(sealsData.map(s => s.discovery_id));
+        }
     }
     
     return data.map(d => ({
@@ -79,7 +96,9 @@ export async function getDiscoveries(): Promise<Discovery[]> {
             website: d.website,
             phone: d.phone
         },
-        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined
+        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+        user_has_sealed: userSeals.has(d.id),
     })) as unknown as Discovery[];
 }
 

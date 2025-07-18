@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { type Discovery } from '@/lib/data';
-import { ArrowRight, MapPin, Tag, Shield } from 'lucide-react';
+import { ArrowRight, MapPin, Tag, Shield, Award } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface DiscoveryCardProps {
@@ -42,6 +42,12 @@ export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
             <Tag className="h-3 w-3" />
             {discovery.type}
           </Badge>
+          {discovery.seal_count > 0 && (
+            <Badge variant="outline" className="flex items-center gap-1">
+                <Award className="h-3 w-3 text-primary" />
+                {discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}
+            </Badge>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">

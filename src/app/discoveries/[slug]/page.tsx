@@ -1,12 +1,15 @@
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
-import { getDiscoveries, getConfrarias } from '@/lib/data';
+import { notFound, redirect } from 'next/navigation';
+import { getDiscoveries } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield } from 'lucide-react';
 import Link from 'next/link';
+import { createServerClient } from '@/lib/supabase/server';
+import { toggleSeal } from './actions';
+import { Button } from '@/components/ui/button';
 
 type DiscoveryPageProps = {
   params: {
@@ -15,6 +18,9 @@ type DiscoveryPageProps = {
 };
 
 export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const discoveries = await getDiscoveries();
   const discovery = discoveries.find((d) => d.slug === params.slug);
 
@@ -24,6 +30,18 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   
   const confraria = discovery.confrarias;
   const relatedDiscoveries = discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5);
+
+  const SealButton = () => (
+    <form action={toggleSeal}>
+      <input type="hidden" name="discoveryId" value={discovery.id} />
+      <input type="hidden" name="hasSealed" value={String(discovery.user_has_sealed)} />
+      <input type="hidden" name="slug" value={discovery.slug} />
+      <Button type="submit" variant={discovery.user_has_sealed ? 'secondary' : 'default'} size="lg">
+        <Award className="mr-2 h-5 w-5" />
+        {discovery.user_has_sealed ? 'Remover Selo de Confrade' : 'Conceder Selo de Confrade'}
+      </Button>
+    </form>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -44,16 +62,17 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
           <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.region}</Badge>
               <Badge variant="secondary" className="text-sm flex items-center gap-1"><Tag className="h-3 w-3" />{discovery.type}</Badge>
+              <Badge variant="outline" className="text-sm flex items-center gap-1"><Award className="h-3 w-3 text-primary" />{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}</Badge>
           </div>
           <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
 
           {confraria && (
-            <Link href="/confrarias" className="inline-block">
-                <Card className="mb-6 hover:bg-accent/10 transition-colors">
+            <Link href={`/confrarias/${confraria.id}`} className="inline-block w-full">
+                <Card className="mb-6 hover:bg-accent/50 transition-colors">
                 <CardHeader className='flex-row items-center gap-4'>
                     <Image src={confraria.sealUrl} alt={confraria.name} width={60} height={60} className="rounded-full bg-muted p-1" data-ai-hint={confraria.sealHint} />
                     <div>
-                        <p className="text-sm font-medium text-primary">Recomendado por:</p>
+                        <p className="text-sm font-medium text-primary flex items-center gap-2"><Shield className="h-4 w-4"/> Recomendado por:</p>
                         <p className="font-semibold">{confraria.name}</p>
                     </div>
                 </CardHeader>
@@ -62,16 +81,22 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
           )}
 
           {discovery.contextualData && (
-             <Card className="mb-6 bg-transparent">
+             <Card className="mb-6 bg-transparent border-none shadow-none">
                 <CardHeader>
                     <CardTitle className="font-headline text-2xl">Informações</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-muted-foreground">
-                    {discovery.contextualData.address && <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {discovery.contextualData.address}</p>}
-                    {discovery.contextualData.website && <p className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> <a href={discovery.contextualData.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary">{discovery.contextualData.website}</a></p>}
+                    {discovery.contextualData.address && <p className="flex items-start gap-2"><MapPin className="h-4 w-4 text-primary mt-1 shrink-0" /> <span>{discovery.contextualData.address}</span></p>}
+                    {discovery.contextualData.website && <p className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> <a href={discovery.contextualData.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary break-all">{discovery.contextualData.website}</a></p>}
                     {discovery.contextualData.phone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {discovery.contextualData.phone}</p>}
                 </CardContent>
              </Card>
+          )}
+
+          {user && (
+            <div className="mt-6">
+              <SealButton />
+            </div>
           )}
 
         </div>

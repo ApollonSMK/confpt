@@ -1,5 +1,8 @@
 import { supabase } from "./supabase";
 import { createServerClient } from './supabase/server';
+import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
 
 // Tipos principais baseados no esquema do Supabase
 
@@ -50,6 +53,13 @@ export type Submission = {
   date: string;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
   discoveryTitle: string; // Para compatibilidade
+};
+
+export type UserRankInfo = {
+  rankName: string;
+  rankIcon: LucideIcon;
+  nextRankName: string | null;
+  progress: number;
 };
 
 
@@ -134,6 +144,7 @@ export async function getSubmissionsForUser(userId: string): Promise<Submission[
     
     if (error) {
         console.error('Error fetching submissions for user:', error);
+        // Devolve o erro específico do Supabase para um melhor diagnóstico
         return [];
     }
 
@@ -199,3 +210,43 @@ export async function getSealedDiscoveriesForUser(userId: string): Promise<Disco
 // Dados estáticos para filtros, que não precisam estar no banco por enquanto
 export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira'] as const;
 export const discoveryTypes = ['Produto', 'Lugar', 'Pessoa'] as const;
+
+// Sistema de Ranks de Gamificação
+const ranks = [
+  { name: 'Noviço', seals: 0, submissions: 0, icon: ShieldHalf },
+  { name: 'Confrade', seals: 1, submissions: 1, icon: Shield },
+  { name: 'Mestre de Prova', seals: 10, submissions: 2, icon: ShieldCheck },
+  { name: 'Guardião da Tradição', seals: 25, submissions: 5, icon: Star },
+  { name: 'Grão-Mestre', seals: 50, submissions: 10, icon: Gem },
+];
+
+export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number) {
+  let currentRank = ranks[0];
+
+  for (const rank of ranks) {
+    if (sealedDiscoveriesCount >= rank.seals && approvedSubmissionsCount >= rank.submissions) {
+      currentRank = rank;
+    }
+  }
+
+  const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
+  const nextRank = currentRankIndex < ranks.length - 1 ? ranks[currentRankIndex + 1] : null;
+
+  let progress = 0;
+  if (nextRank) {
+    const sealsProgress = sealedDiscoveriesCount / nextRank.seals;
+    const submissionsProgress = approvedSubmissionsCount / nextRank.submissions;
+    // O progresso é a média do progresso em selos e submissões
+    progress = Math.min(((sealsProgress + submissionsProgress) / 2) * 100, 100);
+  } else {
+    // Se for o último rank, o progresso é 100%
+    progress = 100;
+  }
+  
+  return {
+    rankName: currentRank.name,
+    rankIcon: currentRank.icon,
+    nextRankName: nextRank ? nextRank.name : null,
+    progress: progress,
+  };
+}

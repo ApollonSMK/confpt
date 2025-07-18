@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getSealedDiscoveriesForUser, getSubmissionsForUser } from '@/lib/data';
+import { MapPin, Award, FileText, BarChart2, Shield } from 'lucide-react';
+import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
@@ -49,6 +49,12 @@ export default async function ProfilePage() {
     getSubmissionsForUser(user.id)
   ]);
 
+  const approvedSubmissionsCount = userSubmissions.filter(s => s.status === 'Aprovado').length;
+  const sealedDiscoveriesCount = sealedDiscoveries.length;
+
+  const { rankName, rankIcon: RankIcon } = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
+
+
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
   const userRegion = user.user_metadata?.region || 'Região Desconhecida';
   const userInitial = userFullName.charAt(0).toUpperCase();
@@ -64,7 +70,11 @@ export default async function ProfilePage() {
             </Avatar>
             <div>
                 <h1 className="font-headline text-4xl md:text-5xl font-bold">{userFullName}</h1>
-                <p className="text-lg text-muted-foreground">{user.email}</p>
+                <Badge variant="secondary" className="mt-2 text-base font-semibold flex items-center gap-2 w-fit px-4 py-1">
+                    <RankIcon className="h-5 w-5 text-primary" />
+                    <span>{rankName}</span>
+                </Badge>
+                <p className="text-lg text-muted-foreground mt-2">{user.email}</p>
                 <Badge variant="outline" className="mt-2 flex items-center justify-center gap-2 w-fit">
                     <MapPin className="h-4 w-4" />
                     <span>Confrade da região de {userRegion}</span>
@@ -79,18 +89,18 @@ export default async function ProfilePage() {
                     <Award className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{sealedDiscoveries.length}</div>
+                    <div className="text-2xl font-bold">{sealedDiscoveriesCount}</div>
                     <p className="text-xs text-muted-foreground">descobertas que você aprovou</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Submissões Feitas</CardTitle>
+                    <CardTitle className="text-sm font-medium">Submissões Aprovadas</CardTitle>
                     <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{userSubmissions.length}</div>
-                    <p className="text-xs text-muted-foreground">contribuições para a comunidade</p>
+                    <div className="text-2xl font-bold">{approvedSubmissionsCount}</div>
+                    <p className="text-xs text-muted-foreground">de {userSubmissions.length} contribuições totais</p>
                 </CardContent>
             </Card>
             <Card>

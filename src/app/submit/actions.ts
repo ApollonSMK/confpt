@@ -32,6 +32,11 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
 
     const { title, editorial, region, type, confrariaId, links } = parsedData.data;
 
+    // Correção: Formatar a data para YYYY-MM-DD
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+
     const { error } = await supabase
         .from('submissions')
         .insert({
@@ -43,12 +48,13 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
             confraria_id: confrariaId ? parseInt(confrariaId, 10) : null,
             links: links || null,
             status: 'Pendente',
-            date: new Date().toISOString(),
+            date: formattedDate, // Usar a data formatada
         });
     
     if (error) {
         console.error("Error creating submission:", error);
-        return { error: "Ocorreu um erro ao criar a sua submissão. Tente novamente." };
+        // Devolve o erro específico do Supabase para um melhor diagnóstico
+        return { error: `Erro ao criar submissão: ${error.message}` };
     }
 
     revalidatePath('/submit');

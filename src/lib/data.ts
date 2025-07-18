@@ -65,7 +65,7 @@ export async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 seal_url,
                 seal_hint
             ),
-            discovery_seal_counts!discovery_id (
+            discovery_seal_counts (
                 seal_count
             )
         `);
@@ -122,24 +122,6 @@ export async function getConfrarias(): Promise<(Confraria & { discoveryCount: nu
         discoveryCount: c.discoveries.length
     })) as (Confraria & { discoveryCount: number })[];
 }
-
-export async function getSubmissions(): Promise<Submission[]> {
-    const supabase = createServerClient();
-    const {data: {user}} = await supabase.auth.getUser();
-
-    if (!user) return [];
-
-    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', user.id);
-    if (error) {
-        console.error('Error fetching submissions:', error);
-        return [];
-    }
-    return data.map(s => ({
-        ...s,
-        discoveryTitle: s.discovery_title,
-    })) as Submission[];
-}
-
 
 // Dados estáticos para filtros, que não precisam estar no banco por enquanto
 export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira'];

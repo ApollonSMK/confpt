@@ -65,7 +65,7 @@ export async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 seal_url,
                 seal_hint
             ),
-            discovery_seal_counts (
+            discovery_seal_counts!discovery_id (
                 seal_count
             )
         `);
@@ -124,7 +124,12 @@ export async function getConfrarias(): Promise<(Confraria & { discoveryCount: nu
 }
 
 export async function getSubmissions(): Promise<Submission[]> {
-    const { data, error } = await supabase.from('submissions').select('*');
+    const supabase = createServerClient();
+    const {data: {user}} = await supabase.auth.getUser();
+
+    if (!user) return [];
+
+    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', user.id);
     if (error) {
         console.error('Error fetching submissions:', error);
         return [];

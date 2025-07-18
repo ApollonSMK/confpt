@@ -17,7 +17,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CardContent, CardFooter } from '@/components/ui/card';
 import { regions, discoveryTypes, type Confraria } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
@@ -78,8 +77,8 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <CardContent className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-6">
           <FormField
             control={form.control}
             name="title"
@@ -210,13 +209,11 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
               </FormItem>
             )}
           />
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" size="lg" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submeter Descoberta
-          </Button>
-        </CardFooter>
+        </div>
+        <Button type="submit" size="lg" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Submeter Descoberta
+        </Button>
       </form>
     </Form>
   );

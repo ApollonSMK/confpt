@@ -3,17 +3,23 @@ import './globals.css';
 import { MainNav } from '@/components/main-nav';
 import { Footer } from '@/components/footer';
 import { Toaster } from '@/components/ui/toaster';
+import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Confrarias Portugal',
   description: 'Discover the gastronomic treasures of Portugal, curated by its brotherhoods.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en" className="scroll-smooth">
       <head>
@@ -23,7 +29,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground">
         <div className="flex flex-col min-h-screen">
-          <MainNav />
+          <MainNav user={user}/>
           <main className="flex-grow">{children}</main>
           <Footer />
         </div>

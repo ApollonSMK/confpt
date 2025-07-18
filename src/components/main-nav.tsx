@@ -3,10 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, Search, User } from 'lucide-react';
+import { Grape, Menu, Search, User, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { logout } from '@/app/login/actions';
+
 
 const navLinks = [
   { href: '/', label: 'Início' },
@@ -15,9 +26,17 @@ const navLinks = [
   { href: '/submit', label: 'Submeter' },
 ];
 
-export function MainNav() {
+interface MainNavProps {
+    user: any | null;
+}
+
+export function MainNav({ user }: MainNavProps) {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+  }
 
   const NavContent = ({ isMobile = false }: { isMobile?: boolean }) => (
     <nav
@@ -61,10 +80,40 @@ export function MainNav() {
             <Button variant="ghost" size="icon">
                 <Search />
             </Button>
-            <Button>
-                <User className='mr-2' />
-                Entrar
-            </Button>
+            {user ? (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                        <Avatar className="h-10 w-10">
+                           <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                           <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">Minha Conta</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sair</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+            ) : (
+                <Button asChild>
+                    <Link href="/login">
+                        <User className='mr-2' />
+                        Entrar
+                    </Link>
+                </Button>
+            )}
         </div>
         <div className="md:hidden flex flex-1 justify-end">
           <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>

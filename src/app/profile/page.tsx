@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2, Loader2 } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
 import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';

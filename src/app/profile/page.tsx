@@ -33,7 +33,6 @@ function processRegionData(discoveries: Discovery[]) {
     return Object.values(regionCounts).sort((a, b) => b.selos - a.selos);
 }
 
-
 export default async function ProfilePage() {
   const supabase = createServerClient();
   const {

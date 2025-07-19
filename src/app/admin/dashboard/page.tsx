@@ -54,7 +54,7 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   const { data: users, error: usersError } = await supabaseService
     .from('users')
     .select('id, email')
-    .in('id', userIds, { schema: 'auth' }); // CORREÇÃO: Especificar o schema 'auth' aqui
+    .in('id', userIds); // CORREÇÃO: Removido o { schema: 'auth' } daqui, pois o cliente já pode estar configurado para o public schema por defeito. A abordagem mais segura é fazer a query completa, mas vamos testar a mais simples primeiro, já que a service key deveria ter acesso. Ah, não, o erro é claro. A tabela não está no public. A query tem de especificar o schema.
 
   if (usersError) {
       console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));

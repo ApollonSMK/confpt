@@ -26,33 +26,54 @@ async function checkAdmin() {
   return user;
 }
 
+// SOLUÇÃO DEFINITIVA: Fazer duas queries separadas e juntar na aplicação.
+// Isto contorna o problema persistente de relacionamento entre esquemas (public e auth) no Supabase.
 async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
   const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-  // A correção crucial: usar a sintaxe explícita de junção (foreign key table)
-  // `users:user_id(email)` ou, como alias implícito: `users:submissions_user_id_fkey(email)`
-  // A sintaxe mais limpa e recomendada é `table!foreign_key_column(columns...)`
-  // Neste caso, `users:user_id` é o nome da tabela e `user_id` a coluna com a FK.
-  const { data, error } = await supabaseService
+  // 1. Obter todas as submissões com o status desejado.
+  const { data: submissions, error: submissionsError } = await supabaseService
     .from('submissions')
-    .select(`
-      *,
-      users:user_id (
-        email
-      )
-    `)
+    .select('*')
     .eq('status', status)
     .order('date', { ascending: true });
 
-  if (error) {
-    console.error(`Erro ao buscar submissões com status "${status}":`, JSON.stringify(error, null, 2));
+  if (submissionsError) {
+    console.error(`Erro ao buscar submissões com status "${status}":`, JSON.stringify(submissionsError, null, 2));
     return [];
   }
 
-  return (data || []).map((s: any) => ({
+  if (!submissions || submissions.length === 0) {
+    return [];
+  }
+
+  // 2. Obter os IDs de todos os utilizadores das submissões encontradas.
+  const userIds = [...new Set(submissions.map(s => s.user_id))];
+
+  // 3. Obter os dados (id e email) desses utilizadores.
+  const { data: users, error: usersError } = await supabaseService
+    .from('users')
+    .select('id, email')
+    .in('id', userIds);
+
+  if (usersError) {
+      console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));
+      // Mesmo com erro, retornamos as submissões para não quebrar a página.
+      return submissions.map(s => ({
+        ...s,
+        discoveryTitle: s.discovery_title ?? 'Sem título',
+        users: { email: 'Erro ao buscar utilizador' }
+      })) as Submission[];
+  }
+
+  // 4. Mapear os utilizadores por ID para uma busca rápida.
+  const usersById = new Map(users.map(u => [u.id, u]));
+
+  // 5. Juntar os dados das submissões com os dados dos utilizadores.
+  return submissions.map((s: any) => ({
     ...s,
     discoveryTitle: s.discovery_title ?? 'Sem título',
-    users: s.users ?? { email: 'Utilizador Desconhecido' },
+    users: usersById.get(s.user_id) ?? { email: 'Utilizador Desconhecido' },
   })) as Submission[];
 }
 

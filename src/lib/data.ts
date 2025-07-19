@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { createServerClient } from './supabase/server';
+import { createServiceRoleClient } from './supabase/service';
 import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -156,7 +157,8 @@ export async function getSubmissionsForUser(userId: string): Promise<Submission[
 
 
 export async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
-    const { data, error } = await supabase
+    const supabaseService = createServiceRoleClient();
+    const { data, error } = await supabaseService
         .from('submissions')
         .select(`
             *,

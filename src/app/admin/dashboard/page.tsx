@@ -29,11 +29,15 @@ async function checkAdmin() {
 async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
   const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+  // A correção crucial: usar a sintaxe explícita de junção (foreign key table)
+  // `users:user_id(email)` ou, como alias implícito: `users:submissions_user_id_fkey(email)`
+  // A sintaxe mais limpa e recomendada é `table!foreign_key_column(columns...)`
+  // Neste caso, `users:user_id` é o nome da tabela e `user_id` a coluna com a FK.
   const { data, error } = await supabaseService
     .from('submissions')
     .select(`
       *,
-      users (
+      users:user_id (
         email
       )
     `)

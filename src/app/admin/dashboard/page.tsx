@@ -50,9 +50,9 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   // 2. Obter os IDs de todos os utilizadores das submissões encontradas.
   const userIds = [...new Set(submissions.map(s => s.user_id))];
 
-  // 3. Obter os dados (id e email) desses utilizadores.
+  // 3. Obter os dados (id e email) desses utilizadores, especificando o schema 'auth'.
   const { data: users, error: usersError } = await supabaseService
-    .from('users')
+    .from('users', { schema: 'auth' })
     .select('id, email')
     .in('id', userIds);
 

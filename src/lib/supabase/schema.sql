@@ -1,5 +1,6 @@
--- Drop existing objects to avoid "already exists" errors
+-- Drop existing objects to start fresh
 DROP VIEW IF EXISTS public.discovery_seal_counts;
+DROP VIEW IF EXISTS public.user_emails;
 DROP TABLE IF EXISTS public.seals;
 DROP TABLE IF EXISTS public.submissions;
 DROP TABLE IF EXISTS public.discoveries;
@@ -13,32 +14,25 @@ CREATE TYPE public.region_type AS ENUM ('Norte', 'Centro', 'Lisboa', 'Alentejo',
 CREATE TYPE public.discovery_type AS ENUM ('Produto', 'Lugar', 'Pessoa');
 CREATE TYPE public.submission_status AS ENUM ('Pendente', 'Aprovado', 'Rejeitado');
 
--- Create Confrarias Table
--- This table stores information about the gastronomic brotherhoods.
+-- Create Confrarias table
 CREATE TABLE public.confrarias (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     motto TEXT,
-    region public.region_type NOT NULL,
+    region region_type,
     seal_url TEXT,
     seal_hint TEXT
 );
--- Enable RLS
-ALTER TABLE public.confrarias ENABLE ROW LEVEL SECURITY;
--- Allow public read access
-CREATE POLICY "Allow public read access to confrarias" ON public.confrarias FOR SELECT USING (true);
 
-
--- Create Discoveries Table
--- This table stores the gastronomic discoveries.
+-- Create Discoveries table
 CREATE TABLE public.discoveries (
     id SERIAL PRIMARY KEY,
     slug TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     editorial TEXT,
-    region public.region_type NOT NULL,
-    type public.discovery_type NOT NULL,
+    region region_type,
+    type discovery_type,
     confraria_id INTEGER REFERENCES public.confrarias(id),
     image_url TEXT,
     image_hint TEXT,
@@ -46,60 +40,67 @@ CREATE TABLE public.discoveries (
     website TEXT,
     phone TEXT
 );
--- Enable RLS
-ALTER TABLE public.discoveries ENABLE ROW LEVEL SECURITY;
--- Allow public read access
-CREATE POLICY "Allow public read access to discoveries" ON public.discoveries FOR SELECT USING (true);
 
-
--- Create Submissions Table
--- This table stores user suggestions for new discoveries.
+-- Create Submissions table
 CREATE TABLE public.submissions (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
     discovery_title TEXT NOT NULL,
     editorial TEXT,
-    region public.region_type,
-    type public.discovery_type,
+    region region_type,
+    type discovery_type,
     confraria_id INTEGER REFERENCES public.confrarias(id),
     links TEXT,
-    status public.submission_status DEFAULT 'Pendente',
     date DATE NOT NULL,
+    status submission_status DEFAULT 'Pendente'::public.submission_status,
     CONSTRAINT submissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
--- Enable RLS
-ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
--- Allow users to manage their own submissions
-CREATE POLICY "Allow users to manage their own submissions" ON public.submissions 
-FOR ALL 
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
 
-
--- Create Seals Table
--- This is a join table for users sealing discoveries (liking/vouching).
+-- Create Seals table
 CREATE TABLE public.seals (
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    discovery_id INTEGER NOT NULL REFERENCES public.discoveries(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (user_id, discovery_id)
+    user_id UUID NOT NULL,
+    discovery_id INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (user_id, discovery_id),
+    CONSTRAINT seals_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+    CONSTRAINT seals_discovery_id_fkey FOREIGN KEY (discovery_id) REFERENCES public.discoveries(id) ON DELETE CASCADE
 );
--- Enable RLS
-ALTER TABLE public.seals ENABLE ROW LEVEL SECURITY;
--- Allow users to manage their own seals
-CREATE POLICY "Allow users to manage their own seals" ON public.seals
-FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
 
-
--- Create a view to count seals per discovery
--- This makes it easier and more performant to get the seal count.
-CREATE OR REPLACE VIEW public.discovery_seal_counts AS
+-- Create Views for aggregated data
+CREATE VIEW public.discovery_seal_counts AS
 SELECT
     discovery_id,
-    count(*) as seal_count
+    count(*) AS seal_count
 FROM
     public.seals
 GROUP BY
     discovery_id;
+
+-- NEW VIEW: Create a safe bridge to auth.users
+CREATE VIEW public.user_emails AS
+SELECT
+    id,
+    email
+FROM
+    auth.users;
+
+
+-- Enable RLS for all tables
+ALTER TABLE public.confrarias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.discoveries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seals ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS Policies
+-- Allow public read access to confrarias and discoveries
+CREATE POLICY "Allow public read access to confrarias" ON public.confrarias FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to discoveries" ON public.discoveries FOR SELECT USING (true);
+
+-- Allow users to manage their own submissions
+CREATE POLICY "Allow users to read their own submissions" ON public.submissions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow users to insert their own submissions" ON public.submissions FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to manage their own seals
+CREATE POLICY "Allow users to read their own seals" ON public.seals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow users to insert their own seals" ON public.seals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow users to delete their own seals" ON public.seals FOR DELETE USING (auth.uid() = user_id);

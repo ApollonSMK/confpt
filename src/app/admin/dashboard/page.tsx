@@ -52,9 +52,9 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
 
   // 3. Obter os dados (id e email) desses utilizadores, especificando o schema 'auth'.
   const { data: users, error: usersError } = await supabaseService
-    .from('users', { schema: 'auth' })
+    .from('users')
     .select('id, email')
-    .in('id', userIds);
+    .in('id', userIds, { schema: 'auth' }); // CORREÇÃO: Especificar o schema 'auth' aqui
 
   if (usersError) {
       console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));

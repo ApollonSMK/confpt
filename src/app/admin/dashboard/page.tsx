@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-4">
               <span>Aprovação de Submissões</span>
-              <Badge variant="destructive">{pendingSubmissions.length} Pendentes</Badge>
+              {pendingSubmissions.length > 0 && <Badge variant="destructive">{pendingSubmissions.length} Pendentes</Badge>}
             </CardTitle>
             <CardDescription>
               Aqui você poderá rever e aprovar as descobertas submetidas pela comunidade.

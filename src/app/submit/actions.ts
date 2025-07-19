@@ -27,12 +27,12 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
     const parsedData = submissionSchema.safeParse(values);
 
     if (!parsedData.success) {
+        console.error("Validation errors:", parsedData.error.errors);
         return { error: "Dados inválidos." };
     }
 
     const { title, editorial, region, type, confrariaId, links } = parsedData.data;
 
-    // Correção: Formatar a data para YYYY-MM-DD
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -40,7 +40,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
     const { error } = await supabase
         .from('submissions')
         .insert({
-            user_id: user.id,
+            user_id: user.id, // AQUI ESTÁ A CORREÇÃO CRUCIAL
             discovery_title: title,
             editorial,
             region,
@@ -48,17 +48,17 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
             confraria_id: confrariaId ? parseInt(confrariaId, 10) : null,
             links: links || null,
             status: 'Pendente',
-            date: formattedDate, // Usar a data formatada
+            date: formattedDate,
         });
     
     if (error) {
         console.error("Error creating submission:", error);
-        // Devolve o erro específico do Supabase para um melhor diagnóstico
         return { error: `Erro ao criar submissão: ${error.message}` };
     }
 
     revalidatePath('/submit');
     revalidatePath('/profile');
+    revalidatePath('/admin/dashboard'); // Para atualizar o painel admin
     
     return { success: true };
 }

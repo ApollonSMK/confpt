@@ -24,7 +24,6 @@ import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 function processRegionData(discoveries: Discovery[]) {
     if (!discoveries || discoveries.length === 0) return [];
     const regionCounts = discoveries.reduce((acc, discovery) => {
@@ -253,5 +252,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

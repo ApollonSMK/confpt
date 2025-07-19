@@ -213,7 +213,7 @@ export default function ProfilePage() {
                     <CardDescription>
                         O seu historial de contribuições para a comunidade.
                     </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                      {userSubmissions.length > 0 ? (
                         <Table>
@@ -253,3 +253,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

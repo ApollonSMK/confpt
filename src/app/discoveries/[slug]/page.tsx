@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
-import { getDiscoveries } from '@/lib/data';
+import { getDiscoveries } from '@/lib/data-server';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';

@@ -1,5 +1,5 @@
 import { ConfrariaCard } from "@/components/confraria-card";
-import { getConfrarias } from "@/lib/data";
+import { getConfrarias } from "@/lib/data-server";
 
 export default async function ConfrariasPage() {
     const confrarias = await getConfrarias();

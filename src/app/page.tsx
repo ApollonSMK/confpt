@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { getDiscoveries } from '@/lib/data';
+import { getDiscoveries } from '@/lib/data-server';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';

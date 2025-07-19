@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
+import { getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
@@ -23,6 +23,75 @@ import { cn } from '@/lib/utils';
 import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
+
+async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promise<Discovery[]> {
+    const { data: seals, error: sealsError } = await supabase
+        .from('seals')
+        .select('discovery_id')
+        .eq('user_id', userId);
+
+    if (sealsError || !seals || seals.length === 0) {
+        return [];
+    }
+
+    const discoveryIds = seals.map(s => s.discovery_id);
+
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select(`
+            *,
+            confrarias (
+                id,
+                name,
+                seal_url,
+                seal_hint
+            ),
+            discovery_seal_counts (
+                seal_count
+            )
+        `)
+        .in('id', discoveryIds);
+
+     if (error) {
+        console.error('Error fetching sealed discoveries:', error);
+        return [];
+    }
+
+    const userSeals = new Set(discoveryIds);
+    
+    return data.map(d => ({
+        ...d,
+        confrariaId: d.confraria_id,
+        imageUrl: d.image_url,
+        imageHint: d.image_hint,
+        contextualData: {
+            address: d.address,
+            website: d.website,
+            phone: d.phone
+        },
+        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+        seal_count: d.discovery_seal_counts.length > 0 ? d.discovery_seal_counts[0].seal_count : 0,
+        user_has_sealed: userSeals.has(d.id),
+    })) as unknown as Discovery[];
+}
+
+async function getSubmissionsForUser(supabase: any, userId: string): Promise<Submission[]> {
+    if (!userId) {
+        return [];
+    }
+    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching submissions for user:', error);
+        return [];
+    }
+
+    return data.map(s => ({
+        ...s,
+        discoveryTitle: s.discovery_title,
+    })) as Submission[];
+}
+
 
 function processRegionData(discoveries: Discovery[]) {
     if (!discoveries || discoveries.length === 0) return [];
@@ -58,8 +127,8 @@ export default function ProfilePage() {
             setUser(user);
 
             const [sealedData, submissionsData] = await Promise.all([
-                getSealedDiscoveriesForUser(user.id),
-                getSubmissionsForUser(user.id),
+                getSealedDiscoveriesForUser(supabase, user.id),
+                getSubmissionsForUser(supabase, user.id),
             ]);
 
             setSealedDiscoveries(sealedData);

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { getSubmissionsByStatus } from '@/lib/data';
+import { getSubmissionsByStatus } from '@/lib/data-server';
 import type { Submission } from '@/lib/data';
 
 async function checkAdmin() {
@@ -18,7 +18,6 @@ async function checkAdmin() {
     redirect('/login');
   }
 
-  // Verifica se o email do utilizador corresponde ao email de administrador definido nas variáveis de ambiente
   if (user.email !== process.env.ADMIN_EMAIL) {
     console.warn(`User ${user.email} is not the admin. Redirecting.`);
     redirect('/');

@@ -1,4 +1,5 @@
-import { getDiscoveries, regions, discoveryTypes } from '@/lib/data';
+import { getDiscoveries } from '@/lib/data-server';
+import { regions, discoveryTypes } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { createServerClient } from '@/lib/supabase/server';

@@ -1,3 +1,4 @@
+
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
@@ -25,30 +26,30 @@ async function checkAdmin() {
   return user;
 }
 
-
 async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
-    const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { data, error } = await supabaseService
-        .from('submissions')
-        .select(`
-            *,
-            users (
-                email
-            )
-        `)
-        .eq('status', status)
-        .order('date', { ascending: true });
+  const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-    if (error) {
-        console.error(`Error fetching ${status} submissions:`, error);
-        return [];
-    }
+  const { data, error } = await supabaseService
+    .from('submissions')
+    .select(`
+      *,
+      users (
+        email
+      )
+    `)
+    .eq('status', status)
+    .order('date', { ascending: true });
 
-    return data.map(s => ({
-        ...s,
-        discoveryTitle: s.discovery_title,
-        users: s.users ? { email: s.users.email } : { email: 'Utilizador Desconhecido' },
-    })) as unknown as Submission[];
+  if (error) {
+    console.error(`Erro ao buscar submissões com status "${status}":`, JSON.stringify(error, null, 2));
+    return [];
+  }
+
+  return (data || []).map((s: any) => ({
+    ...s,
+    discoveryTitle: s.discovery_title ?? 'Sem título',
+    users: s.users ?? { email: 'Utilizador Desconhecido' },
+  })) as Submission[];
 }
 
 

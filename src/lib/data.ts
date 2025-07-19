@@ -144,7 +144,6 @@ export async function getSubmissionsForUser(userId: string): Promise<Submission[
     
     if (error) {
         console.error('Error fetching submissions for user:', error);
-        // Devolve o erro específico do Supabase para um melhor diagnóstico
         return [];
     }
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import type { Submission } from '@/lib/data';
+import Link from 'next/link';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -54,7 +55,7 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   const { data: users, error: usersError } = await supabaseService
     .from('users')
     .select('id, email')
-    .in('id', userIds); // CORREÇÃO: Removido o { schema: 'auth' } daqui, pois o cliente já pode estar configurado para o public schema por defeito. A abordagem mais segura é fazer a query completa, mas vamos testar a mais simples primeiro, já que a service key deveria ter acesso. Ah, não, o erro é claro. A tabela não está no public. A query tem de especificar o schema.
+    .in('id', userIds);
 
   if (usersError) {
       console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));
@@ -118,8 +119,10 @@ export default async function AdminDashboardPage() {
                       <TableCell className="text-muted-foreground">{submission.users?.email}</TableCell>
                       <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
-                          Rever
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/admin/dashboard/review/${submission.id}`}>
+                            Rever
+                          </Link>
                         </Button>
                       </TableCell>
                     </TableRow>

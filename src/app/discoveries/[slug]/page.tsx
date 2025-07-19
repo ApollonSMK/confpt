@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
-import { getDiscoveries } from '@/lib/data-server';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -10,12 +9,59 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
 import { Button } from '@/components/ui/button';
+import type { Discovery } from '@/lib/data';
 
 type DiscoveryPageProps = {
   params: {
     slug: string;
   };
 };
+
+async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select(`
+            *,
+            confrarias (
+                id,
+                name,
+                seal_url,
+                seal_hint
+            ),
+            discovery_seal_counts (
+                seal_count
+            )
+        `);
+
+    if (error) {
+        console.error('Error fetching discoveries:', error);
+        return [];
+    }
+
+    let userSeals = new Set<number>();
+    if (user_id) {
+        const { data: sealsData } = await supabase.from('seals').select('discovery_id').eq('user_id', user_id);
+        if (sealsData) {
+            userSeals = new Set(sealsData.map(s => s.discovery_id));
+        }
+    }
+    
+    return data.map(d => ({
+        ...d,
+        confrariaId: d.confraria_id,
+        imageUrl: d.image_url,
+        imageHint: d.image_hint,
+        contextualData: {
+            address: d.address,
+            website: d.website,
+            phone: d.phone
+        },
+        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+        user_has_sealed: userSeals.has(d.id),
+    })) as unknown as Discovery[];
+}
 
 export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   const supabase = createServerClient();

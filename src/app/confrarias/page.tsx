@@ -1,5 +1,30 @@
 import { ConfrariaCard } from "@/components/confraria-card";
-import { getConfrarias } from "@/lib/data-server";
+import { createServerClient } from "@/lib/supabase/server";
+import type { Confraria } from "@/lib/data";
+
+async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })[]> {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+        .from('confrarias')
+        .select(`
+            *,
+            discoveries (
+                id
+            )
+        `);
+
+    if (error) {
+        console.error('Error fetching confrarias:', error);
+        return [];
+    }
+    
+    return data.map(c => ({
+        ...c,
+        sealUrl: c.seal_url,
+        sealHint: c.seal_hint,
+        discoveryCount: c.discoveries.length
+    })) as (Confraria & { discoveryCount: number })[];
+}
 
 export default async function ConfrariasPage() {
     const confrarias = await getConfrarias();

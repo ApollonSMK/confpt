@@ -2,11 +2,55 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubmissionForm } from '@/components/submission-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getConfrarias, getSubmissionsForUser } from '@/lib/data-server';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import type { Submission, Confraria } from '@/lib/data';
+
+async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
+    if (!userId) {
+        console.warn('No userId provided to getSubmissionsForUser');
+        return [];
+    }
+    const supabase = createServerClient();
+    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching submissions for user:', error);
+        return [];
+    }
+
+    return data.map(s => ({
+        ...s,
+        discoveryTitle: s.discovery_title,
+    })) as Submission[];
+}
+
+
+async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })[]> {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+        .from('confrarias')
+        .select(`
+            *,
+            discoveries (
+                id
+            )
+        `);
+
+    if (error) {
+        console.error('Error fetching confrarias:', error);
+        return [];
+    }
+    
+    return data.map(c => ({
+        ...c,
+        sealUrl: c.seal_url,
+        sealHint: c.seal_hint,
+        discoveryCount: c.discoveries.length
+    })) as (Confraria & { discoveryCount: number })[];
+}
 
 export default async function SubmitPage() {
   const supabase = createServerClient();

@@ -1,11 +1,10 @@
-
 import { createServerClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { getSubmissionsByStatus } from '@/lib/data-server';
 import type { Submission } from '@/lib/data';
 
 async function checkAdmin() {
@@ -25,6 +24,33 @@ async function checkAdmin() {
   
   return user;
 }
+
+
+async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
+    const supabaseService = createServiceRoleClient();
+    const { data, error } = await supabaseService
+        .from('submissions')
+        .select(`
+            *,
+            users (
+                email
+            )
+        `)
+        .eq('status', status)
+        .order('date', { ascending: true });
+
+    if (error) {
+        console.error(`Error fetching ${status} submissions:`, error);
+        return [];
+    }
+
+    return data.map(s => ({
+        ...s,
+        discoveryTitle: s.discovery_title,
+        users: s.users ? { email: s.users.email } : { email: 'Utilizador Desconhecido' },
+    })) as unknown as Submission[];
+}
+
 
 export default async function AdminDashboardPage() {
   const user = await checkAdmin();

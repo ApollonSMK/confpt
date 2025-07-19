@@ -1,6 +1,8 @@
 import { createServerClient as createSupabaseServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// This function is intended for PAGES and LAYOUTS in the app directory,
+// which are primarily Server Components.
 export const createServerClient = () => {
   const cookieStore = cookies()
 

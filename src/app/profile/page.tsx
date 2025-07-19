@@ -1,11 +1,14 @@
 
-import { createServerClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
-import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank } from '@/lib/data';
+import { MapPin, Award, FileText, BarChart2, Loader2 } from 'lucide-react';
+import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
 import {
@@ -18,9 +21,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from '@/lib/utils';
 import { ProfileRegionChart } from './profile-region-chart';
-import type { Discovery } from '@/lib/data';
+import type { User } from '@supabase/supabase-js';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 function processRegionData(discoveries: Discovery[]) {
+    if (!discoveries || discoveries.length === 0) return [];
     const regionCounts = discoveries.reduce((acc, discovery) => {
         const region = discovery.region;
         if (!acc[region]) {
@@ -33,26 +39,68 @@ function processRegionData(discoveries: Discovery[]) {
     return Object.values(regionCounts).sort((a, b) => b.selos - a.selos);
 }
 
-export default async function ProfilePage() {
-  const supabase = createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function ProfilePage() {
+    const [user, setUser] = useState<User | null>(null);
+    const [sealedDiscoveries, setSealedDiscoveries] = useState<Discovery[]>([]);
+    const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
+    const [rankInfo, setRankInfo] = useState<UserRankInfo | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  if (!user) {
-    redirect('/login');
-  }
+    useEffect(() => {
+        const supabase = createClient();
 
-  const [sealedDiscoveries, userSubmissions] = await Promise.all([
-    getSealedDiscoveriesForUser(user.id),
-    getSubmissionsForUser(user.id),
-  ]);
+        async function fetchData() {
+            const { data: { user } } = await supabase.auth.getUser();
 
+            if (!user) {
+                redirect('/login');
+                return;
+            }
+            setUser(user);
+
+            const [sealedData, submissionsData] = await Promise.all([
+                getSealedDiscoveriesForUser(user.id),
+                getSubmissionsForUser(user.id),
+            ]);
+
+            setSealedDiscoveries(sealedData);
+            setUserSubmissions(submissionsData);
+
+            const approvedSubmissionsCount = submissionsData.filter(s => s.status === 'Aprovado').length;
+            const sealedDiscoveriesCount = sealedData.length;
+            setRankInfo(getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount));
+
+            setLoading(false);
+        }
+
+        fetchData();
+    }, []);
+
+    if (loading || !user || !rankInfo) {
+        return (
+            <div className="container mx-auto px-4 py-8 md:py-16">
+                <div className="flex flex-col md:flex-row items-center gap-6 mb-12">
+                    <Skeleton className="h-28 w-28 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-10 w-64" />
+                        <Skeleton className="h-8 w-40" />
+                        <Skeleton className="h-6 w-80" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+                </div>
+                 <Skeleton className="h-96 w-full" />
+            </div>
+        );
+    }
+    
   const approvedSubmissionsCount = userSubmissions.filter(s => s.status === 'Aprovado').length;
   const sealedDiscoveriesCount = sealedDiscoveries.length;
-
-  const { rankName, rankIcon: RankIcon } = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
-
+  const { rankName, rankIcon: RankIcon } = rankInfo;
+  
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
   const userRegion = user.user_metadata?.region || 'Região Desconhecida';
   const userInitial = userFullName.charAt(0).toUpperCase();

@@ -40,7 +40,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
     const { error } = await supabase
         .from('submissions')
         .insert({
-            user_id: user.id, // AQUI ESTÁ A CORREÇÃO CRUCIAL
+            user_id: user.id,
             discovery_title: title,
             editorial,
             region,
@@ -58,7 +58,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
 
     revalidatePath('/submit');
     revalidatePath('/profile');
-    revalidatePath('/admin/dashboard'); // Para atualizar o painel admin
+    revalidatePath('/admin/dashboard');
     
     return { success: true };
 }

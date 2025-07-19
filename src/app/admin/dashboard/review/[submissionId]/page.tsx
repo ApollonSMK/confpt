@@ -29,7 +29,7 @@ async function checkAdmin() {
 }
 
 async function getSubmission(id: string): Promise<(Submission & { confrariaName?: string }) | null> {
-    const supabase = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createServiceRoleClient();
     const { data: submission, error } = await supabase
         .from('submissions')
         .select('*')
@@ -41,13 +41,11 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
         return null;
     }
 
+    // Explicitly fetch user email from auth schema using RPC
     const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', submission.user_id)
-        .single();
+        .rpc('get_user_emails_by_ids', { p_user_ids: [submission.user_id] });
 
-    if (userError) {
+    if (userError || !user || user.length === 0) {
         console.error('Error fetching submission user:', userError);
     }
 
@@ -64,9 +62,9 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
     return {
         ...submission,
         discoveryTitle: submission.discovery_title,
-        users: { email: user?.email },
+        users: { email: user && user.length > 0 ? user[0].email : 'Utilizador Desconhecido' },
         confrariaName,
-    };
+    } as Submission & { confrariaName?: string };
 }
 
 
@@ -81,7 +79,7 @@ export async function approveSubmission(formData: FormData) {
         return;
     }
 
-    const supabase = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createServiceRoleClient();
 
     // 1. Create slug from title
     const slug = submission.discoveryTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
@@ -131,7 +129,7 @@ export async function rejectSubmission(formData: FormData) {
     'use server'
     await checkAdmin();
     const submissionId = formData.get('submissionId') as string;
-    const supabase = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createServiceRoleClient();
 
     const { error } = await supabase
         .from('submissions')

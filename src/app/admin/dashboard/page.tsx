@@ -30,7 +30,7 @@ async function checkAdmin() {
 // SOLUÇÃO DEFINITIVA: Fazer duas queries separadas e juntar na aplicação.
 // Isto contorna o problema persistente de relacionamento entre esquemas (public e auth) no Supabase.
 async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
-  const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const supabaseService = createServiceRoleClient();
 
   // 1. Obter todas as submissões com o status desejado.
   const { data: submissions, error: submissionsError } = await supabaseService
@@ -52,10 +52,7 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   const userIds = [...new Set(submissions.map(s => s.user_id))];
 
   // 3. Obter os dados (id e email) desses utilizadores, especificando o schema 'auth'.
-  const { data: users, error: usersError } = await supabaseService
-    .from('users')
-    .select('id, email')
-    .in('id', userIds);
+  const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
 
   if (usersError) {
       console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));
@@ -68,7 +65,7 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   }
 
   // 4. Mapear os utilizadores por ID para uma busca rápida.
-  const usersById = new Map(users.map(u => [u.id, u]));
+  const usersById = new Map(users.map((u: any) => [u.id, u]));
 
   // 5. Juntar os dados das submissões com os dados dos utilizadores.
   return submissions.map((s: any) => ({

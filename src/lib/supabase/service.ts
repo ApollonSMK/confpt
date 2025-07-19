@@ -5,11 +5,12 @@ import { createClient } from '@supabase/supabase-js'
 // NOTE: We are using createClient from supabase-js directly to avoid any
 // dependencies on cookies or next/headers, as this client is for server-side
 // logic that doesn't involve a user session.
-export const createServiceRoleClient = (supabaseServiceRoleKey: string) => {
+export const createServiceRoleClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Supabase URL or Service Role Key is not set in .env.local or was not passed to the client');
+    throw new Error('Supabase URL or Service Role Key is not set in .env.local');
   }
 
   return createClient(

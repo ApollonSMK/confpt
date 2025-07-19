@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2, Shield } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
 import { getSealedDiscoveriesForUser, getSubmissionsForUser, getUserRank } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
@@ -45,14 +45,13 @@ export default async function ProfilePage() {
 
   const [sealedDiscoveries, userSubmissions] = await Promise.all([
     getSealedDiscoveriesForUser(user.id),
-    getSubmissionsForUser(user.id)
+    getSubmissionsForUser(user.id),
   ]);
 
   const approvedSubmissionsCount = userSubmissions.filter(s => s.status === 'Aprovado').length;
   const sealedDiscoveriesCount = sealedDiscoveries.length;
 
   const { rankName, rankIcon: RankIcon } = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
-
 
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
   const userRegion = user.user_metadata?.region || 'Região Desconhecida';

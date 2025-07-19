@@ -53,6 +53,7 @@ export type Submission = {
   date: string;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
   discoveryTitle: string; // Para compatibilidade
+  users?: { email: string | undefined }; // Relação opcional
 };
 
 export type UserRankInfo = {
@@ -152,6 +153,32 @@ export async function getSubmissionsForUser(userId: string): Promise<Submission[
         discoveryTitle: s.discovery_title,
     })) as Submission[];
 }
+
+
+export async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
+    const { data, error } = await supabase
+        .from('submissions')
+        .select(`
+            *,
+            users (
+                email
+            )
+        `)
+        .eq('status', status)
+        .order('date', { ascending: true });
+
+    if (error) {
+        console.error(`Error fetching ${status} submissions:`, error);
+        return [];
+    }
+
+    return data.map(s => ({
+        ...s,
+        discoveryTitle: s.discovery_title,
+        users: s.users ? { email: s.users.email } : { email: 'Utilizador Desconhecido' },
+    })) as unknown as Submission[];
+}
+
 
 export async function getSealedDiscoveriesForUser(userId: string): Promise<Discovery[]> {
     const { data: seals, error: sealsError } = await supabase

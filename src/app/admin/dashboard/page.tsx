@@ -1,8 +1,11 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { getSubmissionsByStatus } from '@/lib/data';
+import type { Submission } from '@/lib/data';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -10,9 +13,18 @@ async function checkAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!user) {
+    redirect('/login');
+  }
 
-  if (!user || user.email !== adminEmail) {
+  const { data: adminUsers, error } = await supabase
+    .from('admin_users')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error || !adminUsers) {
+    console.warn('Admin check failed or user is not an admin, redirecting.');
     redirect('/');
   }
 
@@ -21,30 +33,58 @@ async function checkAdmin() {
 
 export default async function AdminDashboardPage() {
   const user = await checkAdmin();
+  const pendingSubmissions = await getSubmissionsByStatus('Pendente');
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Painel Administrativo</h1>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel Administrativo</h1>
         <p className="text-lg text-muted-foreground mb-10">
           Bem-vindo, Confrade-Mor {user.user_metadata?.full_name || user.email}.
         </p>
 
         <Card>
           <CardHeader>
-            <CardTitle>Aprovação de Submissões</CardTitle>
+            <CardTitle className="flex items-center gap-4">
+              <span>Aprovação de Submissões</span>
+              <Badge variant="destructive">{pendingSubmissions.length} Pendentes</Badge>
+            </CardTitle>
             <CardDescription>
               Aqui você poderá rever e aprovar as descobertas submetidas pela comunidade.
             </CardDescription>
           </CardHeader>
           <CardContent>
-             <Alert>
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Em Breve!</AlertTitle>
-              <AlertDescription>
-                A funcionalidade de gestão de submissões está em desenvolvimento.
-              </AlertDescription>
-            </Alert>
+            {pendingSubmissions.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Descoberta</TableHead>
+                    <TableHead>Autor</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingSubmissions.map((submission) => (
+                    <TableRow key={submission.id}>
+                      <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
+                      <TableCell className="text-muted-foreground">{submission.users?.email}</TableCell>
+                      <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm">
+                          Rever
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="font-semibold text-lg">Tudo em ordem!</p>
+                <p>Não há nenhuma submissão pendente de revisão.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

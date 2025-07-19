@@ -27,7 +27,7 @@ async function checkAdmin() {
 
 
 async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeitado'): Promise<Submission[]> {
-    const supabaseService = createServiceRoleClient();
+    const supabaseService = createServiceRoleClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const { data, error } = await supabaseService
         .from('submissions')
         .select(`

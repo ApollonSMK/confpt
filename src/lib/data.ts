@@ -1,4 +1,3 @@
-import { supabase } from "./supabase";
 import { createServerClient } from './supabase/server';
 import { createServiceRoleClient } from './supabase/service';
 import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
@@ -68,6 +67,7 @@ export type UserRankInfo = {
 // Funções para buscar dados do Supabase
 
 export async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
+    const supabase = createServerClient();
     const { data, error } = await supabase
         .from('discoveries')
         .select(`
@@ -114,6 +114,7 @@ export async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
 
 
 export async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })[]> {
+    const supabase = createServerClient();
     const { data, error } = await supabase
         .from('confrarias')
         .select(`
@@ -141,7 +142,7 @@ export async function getSubmissionsForUser(userId: string): Promise<Submission[
         console.warn('No userId provided to getSubmissionsForUser');
         return [];
     }
-
+    const supabase = createServerClient();
     const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
     
     if (error) {
@@ -183,6 +184,7 @@ export async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | '
 
 
 export async function getSealedDiscoveriesForUser(userId: string): Promise<Discovery[]> {
+    const supabase = createServerClient();
     const { data: seals, error: sealsError } = await supabase
         .from('seals')
         .select('discovery_id')

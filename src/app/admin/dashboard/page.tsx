@@ -1,3 +1,4 @@
+
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,17 +18,12 @@ async function checkAdmin() {
     redirect('/login');
   }
 
-  const { data: adminUsers, error } = await supabase
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (error || !adminUsers) {
-    console.warn('Admin check failed or user is not an admin, redirecting.');
+  // Verifica se o email do utilizador corresponde ao email de administrador definido nas variáveis de ambiente
+  if (user.email !== process.env.ADMIN_EMAIL) {
+    console.warn(`User ${user.email} is not the admin. Redirecting.`);
     redirect('/');
   }
-
+  
   return user;
 }
 

@@ -1,17 +1,26 @@
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
 // This function is for SERVER-SIDE use when you need to bypass RLS.
 // It uses the service role key.
+// NOTE: We are using createClient from supabase-js directly to avoid any
+// dependencies on cookies or next/headers, as this client is for server-side
+// logic that doesn't involve a user session.
 export const createServiceRoleClient = () => {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set in .env.local')
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Supabase URL or Service Role Key is not set in .env.local');
   }
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  return createClient(
+    supabaseUrl,
+    supabaseServiceRoleKey,
     {
-      cookies: {}, // No cookies needed for service role
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
     }
   );
 }

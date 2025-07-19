@@ -30,7 +30,6 @@ const navLinks = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/discoveries', label: 'Descobertas', icon: BookOpen },
   { href: '/confrarias', label: 'Confrarias', icon: Handshake },
-  { href: '/submit', label: 'Submeter', icon: PlusCircle },
 ];
 
 interface MainNavProps {
@@ -130,6 +129,12 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                                 <Link href="/profile">
                                     <UserCog className="mr-2 h-4 w-4" />
                                     <span>Meu Painel</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild className="cursor-pointer">
+                                <Link href="/submit">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    <span>Submeter Descoberta</span>
                                 </Link>
                             </DropdownMenuItem>
                            {isAdmin && (

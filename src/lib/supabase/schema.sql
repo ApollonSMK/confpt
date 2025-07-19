@@ -1,106 +1,105 @@
--- Drop existing objects to start fresh
-DROP VIEW IF EXISTS public.discovery_seal_counts;
-DROP VIEW IF EXISTS public.user_emails;
-DROP TABLE IF EXISTS public.seals;
-DROP TABLE IF EXISTS public.submissions;
-DROP TABLE IF EXISTS public.discoveries;
-DROP TABLE IF EXISTS public.confrarias;
-DROP TYPE IF EXISTS public.discovery_type;
-DROP TYPE IF EXISTS public.region_type;
-DROP TYPE IF EXISTS public.submission_status;
+-- Apaga tabelas e tipos existentes para uma recriação limpa
+drop table if exists "seals" cascade;
+drop table if exists "discoveries" cascade;
+drop table if exists "confrarias" cascade;
+drop table if exists "submissions" cascade;
+drop view if exists "discovery_seal_counts";
+drop type if exists "region_enum";
+drop type if exists "discovery_type_enum";
+drop type if exists "submission_status_enum";
+drop function if exists get_user_emails_by_ids;
 
--- Recreate types
-CREATE TYPE public.region_type AS ENUM ('Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira');
-CREATE TYPE public.discovery_type AS ENUM ('Produto', 'Lugar', 'Pessoa');
-CREATE TYPE public.submission_status AS ENUM ('Pendente', 'Aprovado', 'Rejeitado');
 
--- Create Confrarias table
-CREATE TABLE public.confrarias (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    motto TEXT,
-    region region_type,
-    seal_url TEXT,
-    seal_hint TEXT
+-- Tipos ENUM para consistência de dados
+create type region_enum as enum ('Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira');
+create type discovery_type_enum as enum ('Produto', 'Lugar', 'Pessoa');
+create type submission_status_enum as enum ('Pendente', 'Aprovado', 'Rejeitado');
+
+-- Tabela das Confrarias
+create table confrarias (
+  id serial primary key,
+  name text not null unique,
+  motto text,
+  region region_enum,
+  seal_url text not null,
+  seal_hint text not null
 );
 
--- Create Discoveries table
-CREATE TABLE public.discoveries (
-    id SERIAL PRIMARY KEY,
-    slug TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    editorial TEXT,
-    region region_type,
-    type discovery_type,
-    confraria_id INTEGER REFERENCES public.confrarias(id),
-    image_url TEXT,
-    image_hint TEXT,
-    address TEXT,
-    website TEXT,
-    phone TEXT
+-- Tabela das Descobertas
+create table discoveries (
+  id serial primary key,
+  slug text not null unique,
+  title text not null,
+  description text not null,
+  editorial text not null,
+  region region_enum not null,
+  type discovery_type_enum not null,
+  confraria_id integer references confrarias(id) on delete set null,
+  image_url text not null,
+  image_hint text not null,
+  address text,
+  website text,
+  phone text
 );
 
--- Create Submissions table
-CREATE TABLE public.submissions (
-    id SERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,
-    discovery_title TEXT NOT NULL,
-    editorial TEXT,
-    region region_type,
-    type discovery_type,
-    confraria_id INTEGER REFERENCES public.confrarias(id),
-    links TEXT,
-    date DATE NOT NULL,
-    status submission_status DEFAULT 'Pendente'::public.submission_status,
-    CONSTRAINT submissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+-- Tabela das Submissões da Comunidade
+create table submissions (
+  id serial primary key,
+  user_id uuid not null,
+  discovery_title text not null,
+  editorial text not null,
+  region region_enum not null,
+  type discovery_type_enum not null,
+  confraria_id integer references confrarias(id) on delete set null,
+  links text,
+  image_data text,
+  date date not null,
+  status submission_status_enum not null,
+  constraint submissions_user_id_fkey foreign key (user_id) references auth.users(id) on delete cascade
 );
 
--- Create Seals table
-CREATE TABLE public.seals (
-    user_id UUID NOT NULL,
-    discovery_id INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    PRIMARY KEY (user_id, discovery_id),
-    CONSTRAINT seals_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-    CONSTRAINT seals_discovery_id_fkey FOREIGN KEY (discovery_id) REFERENCES public.discoveries(id) ON DELETE CASCADE
+-- Tabela de Selos dos Confrades
+create table seals (
+  id serial primary key,
+  user_id uuid not null,
+  discovery_id integer not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint seals_user_id_fkey foreign key (user_id) references auth.users(id) on delete cascade,
+  constraint seals_discovery_id_fkey foreign key (discovery_id) references discoveries(id) on delete cascade,
+  unique (user_id, discovery_id)
 );
 
--- Create Views for aggregated data
-CREATE VIEW public.discovery_seal_counts AS
-SELECT
-    discovery_id,
-    count(*) AS seal_count
-FROM
-    public.seals
-GROUP BY
-    discovery_id;
+-- View para contagem de selos por descoberta
+create view discovery_seal_counts as
+select
+  discovery_id,
+  count(*) as seal_count
+from
+  seals
+group by
+  discovery_id;
 
--- NEW VIEW: Create a safe bridge to auth.users
-CREATE VIEW public.user_emails AS
-SELECT
-    id,
-    email
-FROM
-    auth.users;
+-- Função RPC para buscar emails de utilizadores de forma segura
+create function get_user_emails_by_ids(p_user_ids uuid[])
+returns table (id uuid, email text)
+language sql
+security definer
+as $$
+  select id, raw_user_meta_data->>'email' as email
+  from auth.users
+  where id = any(p_user_ids);
+$$;
 
+-- Dados Iniciais (Exemplos)
+insert into confrarias (name, motto, region, seal_url, seal_hint) values
+('Confraria do Vinho do Porto', 'In Vino Veritas', 'Norte', 'https://placehold.co/100x100.png', 'porto wine'),
+('Confraria do Queijo da Serra', 'O Sabor da Montanha', 'Centro', 'https://placehold.co/100x100.png', 'serra cheese'),
+('Confraria dos Sabores do Alentejo', 'Tradição à Mesa', 'Alentejo', 'https://placehold.co/100x100.png', 'alentejo food');
 
--- Enable RLS for all tables
-ALTER TABLE public.confrarias ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.discoveries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.seals ENABLE ROW LEVEL SECURITY;
-
--- Create RLS Policies
--- Allow public read access to confrarias and discoveries
-CREATE POLICY "Allow public read access to confrarias" ON public.confrarias FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to discoveries" ON public.discoveries FOR SELECT USING (true);
-
--- Allow users to manage their own submissions
-CREATE POLICY "Allow users to read their own submissions" ON public.submissions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow users to insert their own submissions" ON public.submissions FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Allow users to manage their own seals
-CREATE POLICY "Allow users to read their own seals" ON public.seals FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow users to insert their own seals" ON public.seals FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Allow users to delete their own seals" ON public.seals FOR DELETE USING (auth.uid() = user_id);
+insert into discoveries (slug, title, description, editorial, region, type, confraria_id, image_url, image_hint, website) values
+('vinho-do-porto-taylors', 'Vinho do Porto Taylor''s', 'Um néctar dos deuses envelhecido em caves seculares.', 'Cada gole conta uma história de gerações dedicadas à arte de criar o mais icónico dos vinhos portugueses. O aroma adocicado e a cor rubi intensa são um convite a uma experiência sensorial única, que perdura na memória muito depois de a taça estar vazia.', 'Norte', 'Produto', 1, 'https://placehold.co/600x400.png', 'wine bottle', 'https://www.taylor.pt'),
+('queijo-serra-estrela-seia', 'Queijo da Serra da Estrela DOP', 'Aveludado, cremoso e com um sabor que ecoa as pastagens.', 'Feito com leite cru de ovelha Bordaleira, este queijo é o resultado de uma sabedoria ancestral. A sua pasta amanteigada e o sabor suave mas persistente fazem dele o rei dos queijos portugueses, uma verdadeira joia gastronómica.', 'Centro', 'Produto', 2, 'https://placehold.co/600x400.png', 'cheese wheel', 'https://www.google.com/search?q=Queijo+da+Serra+da+Estrela'),
+('azeite-esporao', 'Azeite Esporão', 'O ouro líquido do Alentejo, intenso e frutado.', 'Das planícies alentejanas, este azeite virgem extra é um tributo à oliveira. Com notas de maçã, amêndoa e um final ligeiramente picante, é o companheiro perfeito para o pão quente e a alma da cozinha mediterrânica.', 'Alentejo', 'Produto', 3, 'https://placehold.co/600x400.png', 'olive oil', 'https://www.esporao.com/'),
+('pasteis-de-belem', 'Pastéis de Belém', 'A receita original, um segredo bem guardado.', 'Mais do que um simples pastel de nata, é uma instituição. A massa folhada estaladiça e o creme dourado, polvilhado com canela, são uma peregrinação obrigatória em Lisboa. O segredo da receita, guardado a sete chaves desde 1837, torna cada dentada um momento de pura felicidade.', 'Lisboa', 'Lugar', null, 'https://placehold.co/600x400.png', 'custard tart', 'https://pasteisdebelem.pt/'),
+('livraria-lello', 'Livraria Lello', 'Uma catedral de livros no coração do Porto.', 'Com a sua escadaria carmim icónica e vitrais deslumbrantes, a Livraria Lello é um santuário para os amantes da literatura. Cada prateleira e detalhe arquitetónico contam histórias, inspirando visitantes de todo o mundo. É um lugar onde a magia dos livros ganha vida.', 'Norte', 'Lugar', null, 'https://placehold.co/600x400.png', 'bookstore interior', 'https://www.livrarialello.pt/'),
+('amalia-rodrigues', 'Amália Rodrigues', 'A voz eterna do Fado.', 'Amália não cantava o Fado, ela era o Fado. A sua voz poderosa e a sua interpretação visceral levaram a alma portuguesa aos quatro cantos do mundo. Honrar Amália é honrar a saudade, a paixão e a essência de um povo, um legado que continua a ecoar nas ruas de Alfama.', 'Lisboa', 'Pessoa', null, 'https://placehold.co/600x400.png', 'singer portrait', 'https://pt.wikipedia.org/wiki/Am%C3%A1lia_Rodrigues');

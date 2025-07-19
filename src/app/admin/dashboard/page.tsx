@@ -51,8 +51,9 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   // 2. Obter os IDs de todos os utilizadores das submissões encontradas.
   const userIds = [...new Set(submissions.map(s => s.user_id))];
 
-  // 3. Obter os dados (id e email) desses utilizadores, especificando o schema 'auth'.
+  // 3. Obter os dados (id e email) desses utilizadores usando a função RPC.
   const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
+
 
   if (usersError) {
       console.error(`Erro ao buscar utilizadores das submissões:`, JSON.stringify(usersError, null, 2));

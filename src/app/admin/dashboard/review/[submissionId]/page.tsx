@@ -38,7 +38,7 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
     
     if (error || !submission) {
         console.error('Error fetching submission:', error);
-        return null;
+        notFound();
     }
 
     // Explicitly fetch user email from auth schema using RPC

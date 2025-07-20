@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import type { Submission } from '@/lib/data';
+import type { Submission, Confraria } from '@/lib/data';
 import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -76,18 +77,38 @@ async function getSubmissionsByStatus(status: 'Pendente' | 'Aprovado' | 'Rejeita
   })) as Submission[];
 }
 
+async function getConfrarias(): Promise<Confraria[]> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('confrarias')
+        .select('*')
+        .order('name');
+    
+    if (error) {
+        console.error('Error fetching confrarias:', error);
+        return [];
+    }
+
+    return data as Confraria[];
+}
+
 
 export default async function AdminDashboardPage() {
   const user = await checkAdmin();
-  const pendingSubmissions = await getSubmissionsByStatus('Pendente');
+  const [pendingSubmissions, confrarias] = await Promise.all([
+    getSubmissionsByStatus('Pendente'),
+    getConfrarias()
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel Administrativo</h1>
-        <p className="text-lg text-muted-foreground mb-10">
-          Bem-vindo, Confrade-Mor {user.user_metadata?.full_name || user.email}.
-        </p>
+      <div className="max-w-6xl mx-auto space-y-10">
+        <div>
+          <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel Administrativo</h1>
+          <p className="text-lg text-muted-foreground">
+            Bem-vindo, Confrade-Mor {user.user_metadata?.full_name || user.email}.
+          </p>
+        </div>
 
         <Card>
           <CardHeader>
@@ -131,6 +152,52 @@ export default async function AdminDashboardPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <p className="font-semibold text-lg">Tudo em ordem!</p>
                 <p>Não há nenhuma submissão pendente de revisão.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Gestor de Confrarias</CardTitle>
+              <CardDescription>
+                Adicione, edite ou remova as confrarias oficiais.
+              </CardDescription>
+            </div>
+             <Button asChild>
+                <Link href="/admin/confrarias/new">
+                    <PlusCircle />
+                    Adicionar Nova
+                </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nome da Confraria</TableHead>
+                        <TableHead>Região</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {confrarias.map((confraria) => (
+                        <TableRow key={confraria.id}>
+                            <TableCell className="font-medium">{confraria.name}</TableCell>
+                            <TableCell>{confraria.region}</TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="outline" size="sm" disabled>
+                                    Editar
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+             {confrarias.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Nenhuma confraria encontrada.</p>
               </div>
             )}
           </CardContent>

@@ -181,11 +181,11 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <h3 className="font-semibold">Região</h3>
-                                <p><Badge variant="secondary">{submission.region}</Badge></p>
+                                <div><Badge variant="secondary">{submission.region}</Badge></div>
                             </div>
                              <div className="space-y-1">
                                 <h3 className="font-semibold">Tipo</h3>
-                                <p><Badge variant="secondary">{submission.type}</Badge></p>
+                                <div><Badge variant="secondary">{submission.type}</Badge></div>
                             </div>
                         </div>
                          {submission.confrariaName && (

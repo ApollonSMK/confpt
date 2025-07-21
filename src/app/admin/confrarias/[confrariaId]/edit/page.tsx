@@ -133,108 +133,110 @@ export default function EditConfrariaPage({ params }: { params: { confrariaId: s
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nome da Confraria</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="motto"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Lema</FormLabel>
-                                        <FormControl>
-                                            <Textarea {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="region"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Região</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                        <SelectValue placeholder="Selecione a região principal" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                    </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="seal_url"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>URL do Selo</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                                 <FormField
-                                control={form.control}
-                                name="seal_hint"
-                                render={({ field }) => (
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nome da Confraria</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="motto"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Lema</FormLabel>
+                                            <FormControl>
+                                                <Textarea {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="region"
+                                    render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Dica para o Selo (IA)</FormLabel>
+                                        <FormLabel>Região</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <Input {...field} />
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Selecione a região principal" />
+                                            </SelectTrigger>
                                         </FormControl>
+                                        <SelectContent>
+                                            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                        </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
-                                )}
-                            />
-                            <Card className="bg-accent/50 border-primary/20">
-                                <CardHeader>
-                                    <CardTitle className="text-xl">Acesso do Responsável</CardTitle>
-                                    <CardDescription>
-                                        Indique o email do confrade que irá gerir esta confraria. Se o email não existir, será criado um novo utilizador com uma senha temporária.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="seal_url"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>URL do Selo</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                     <FormField
-                                        control={form.control}
-                                        name="responsible_email"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Email do Responsável</FormLabel>
-                                                <FormControl>
-                                                    <Input type="email" placeholder="responsavel@confraria.pt" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
+                                    control={form.control}
+                                    name="seal_hint"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Dica para o Selo (IA)</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Card className="bg-accent/50 border-primary/20">
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">Acesso do Responsável</CardTitle>
+                                        <CardDescription>
+                                            Indique o email do confrade que irá gerir esta confraria. Se o email não existir, será criado um novo utilizador com uma senha temporária.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FormField
+                                            control={form.control}
+                                            name="responsible_email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Email do Responsável</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="email" placeholder="responsavel@confraria.pt" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
 
 
-                            <Button type="submit" size="lg" disabled={loading} className="w-full">
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Guardar Alterações
-                            </Button>
+                                <Button type="submit" size="lg" disabled={loading} className="w-full">
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Guardar Alterações
+                                </Button>
+                            </form>
                         </Form>
                     </CardContent>
                 </Card>

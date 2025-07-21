@@ -18,7 +18,8 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
             discovery_seal_counts (
                 seal_count
             )
-        `);
+        `)
+        .order('id');
 
     if (error) {
         console.error('Error fetching discoveries:', error);
@@ -53,28 +54,29 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
 export default async function DiscoveriesPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let discoveries = await getDiscoveries(user?.id);
-  const allDiscoveriesForFilter = await getDiscoveries();
-
+  const allDiscoveries = await getDiscoveries(user?.id);
+  
   const searchTerm = searchParams?.search as string || '';
   const region = searchParams?.region as string || '';
   const type = searchParams?.type as string || '';
 
+  let filteredDiscoveries = allDiscoveries;
+
   if (searchTerm) {
-    discoveries = discoveries.filter(d =>
+    filteredDiscoveries = filteredDiscoveries.filter(d =>
       d.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
   if (region) {
-    discoveries = discoveries.filter(d => d.region === region);
+    filteredDiscoveries = filteredDiscoveries.filter(d => d.region === region);
   }
   if (type) {
-    discoveries = discoveries.filter(d => d.type === type);
+    filteredDiscoveries = filteredDiscoveries.filter(d => d.type === type);
   }
 
   return (
@@ -84,14 +86,14 @@ export default async function DiscoveriesPage({
         Filtre por região, tipo ou palavra-chave para encontrar os tesouros escondidos de Portugal.
       </p>
 
-      <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveriesForFilter} />
+      <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveries} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {discoveries.map(discovery => (
+        {filteredDiscoveries.map(discovery => (
           <DiscoveryCard key={discovery.id} discovery={discovery} />
         ))}
       </div>
-      {discoveries.length === 0 && (
+      {filteredDiscoveries.length === 0 && (
         <div className="text-center col-span-full py-16">
             <p className="text-muted-foreground text-lg">Nenhuma descoberta encontrada. Tente alargar os seus critérios de pesquisa.</p>
         </div>

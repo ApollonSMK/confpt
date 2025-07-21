@@ -21,7 +21,8 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
             discovery_seal_counts (
                 seal_count
             )
-        `);
+        `)
+        .order('id');
 
     if (error) {
         console.error('Error fetching discoveries:', error);

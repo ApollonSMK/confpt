@@ -131,7 +131,7 @@ export default async function SubmitPage() {
                   </Table>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">
-                    Você ainda não fez nenhuma submissão. Tem um tesouro para <a href="/submit" className="text-primary hover:underline">partilhar</a>?
+                    Você ainda não fez nenhuma submissão. Tem um tesouro para <Link href="/submit" className="text-primary hover:underline">partilhar</Link>?
                   </p>
                 )}
                 

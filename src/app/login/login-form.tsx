@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regions } from '@/lib/data';
@@ -35,9 +35,6 @@ const signUpSchema = z.object({
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
 
-// A forma correta de criar o schema combinado é usando `z.discriminatedUnion` se tiver uma chave comum,
-// mas para este caso, podemos manter `z.union` e validar com base na flag `isSignUp`.
-// Contudo, a melhor abordagem é ter schemas separados e usar o resolver correto.
 const formSchema = z.union([loginSchema, signUpSchema]);
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,7 +49,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Usamos useForm com o schema correto dependendo do estado
   const form = useForm<FormValues>({
     resolver: zodResolver(isSignUp ? signUpSchema : loginSchema),
     defaultValues: {
@@ -62,9 +58,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     },
   });
 
-  // A cada mudança de estado (login/signup), resetamos o formulário
-  // com os novos valores por defeito e a validação correta.
-  React.useEffect(() => {
+  useEffect(() => {
     form.reset({
       email: '',
       password: '',
@@ -96,7 +90,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
           {isSignUp && (
             <>

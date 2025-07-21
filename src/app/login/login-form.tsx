@@ -52,7 +52,8 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     defaultValues: {
       email: '',
       password: '',
-      ...(isSignUp ? { fullName: '', region: '' } : {}),
+      fullName: '',
+      region: '',
     },
   });
 
@@ -60,7 +61,8 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     form.reset({
       email: '',
       password: '',
-      ...(isSignUp ? { fullName: '', region: '' } : {}),
+      fullName: '',
+      region: '',
     });
   }, [isSignUp, form]);
 
@@ -111,7 +113,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Região Favorita</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Selecione a sua região do coração" />

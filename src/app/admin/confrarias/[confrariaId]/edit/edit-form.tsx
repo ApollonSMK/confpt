@@ -2,11 +2,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -62,8 +61,8 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                 description: result.error,
                 variant: "destructive"
             });
-            setLoading(false);
         }
+        setLoading(false);
     }
     
     async function handleDelete() {
@@ -118,7 +117,7 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                         </AlertDialog>
                     </CardHeader>
                     <CardContent>
-                        <Form {...form}>
+                        <FormProvider {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                                 <FormField
                                     control={form.control}
@@ -221,7 +220,7 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                                     Guardar Alterações
                                 </Button>
                             </form>
-                        </Form>
+                        </FormProvider>
                     </CardContent>
                 </Card>
             </div>

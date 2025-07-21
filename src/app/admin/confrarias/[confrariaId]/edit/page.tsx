@@ -1,231 +1,62 @@
 
-'use client';
+import { createServiceRoleClient } from '@/lib/supabase/service';
+import { createServerClient } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
+import { EditConfrariaForm } from './edit-form';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { updateConfraria, getConfraria } from './actions';
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { notFound } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
+async function checkAdmin() {
+  const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-const formSchema = z.object({
-  id: z.number(),
-  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
-  motto: z.string().min(5, 'O lema deve ter pelo menos 5 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  seal_url: z.string().url('Por favor, insira um URL válido para o selo.'),
-  seal_hint: z.string().min(2, 'O hint deve ter pelo menos 2 caracteres.'),
-  responsible_email: z.string().email("Por favor, insira um email válido para o responsável.").optional().or(z.literal('')),
-});
+  if (!user || user.email !== process.env.ADMIN_EMAIL) {
+    redirect('/login');
+  }
+}
 
-type FormValues = z.infer<typeof formSchema>;
+async function getConfraria(id: number) {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.from('confrarias').select('*').eq('id', id).single();
 
-export default function EditConfrariaPage({ params }: { params: { confrariaId: string } }) {
-    const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
-    const [initializing, setInitializing] = useState(true);
-
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
-    });
-
-    const loadConfraria = useCallback(async (id: number) => {
-        const confrariaData = await getConfraria(id);
-        if (confrariaData) {
-            form.reset(confrariaData);
-        } else {
-            notFound();
-        }
-        setInitializing(false);
-    }, [form]);
-
-    useEffect(() => {
-        const confrariaId = parseInt(params.confrariaId, 10);
-        if (!isNaN(confrariaId)) {
-            loadConfraria(confrariaId);
-        } else {
-            notFound();
-        }
-    }, [params.confrariaId, loadConfraria]);
-
-
-    async function onSubmit(values: FormValues) {
-        setLoading(true);
-        const result = await updateConfraria(values);
-
-        if (result && result.error) {
-            toast({
-                title: "Erro ao Atualizar Confraria",
-                description: result.error,
-                variant: "destructive"
-            });
-            setLoading(false);
-        } else {
-             toast({
-                title: "Confraria Atualizada!",
-                description: "Os dados da confraria foram atualizados com sucesso.",
-            });
-        }
+    if (error || !data) {
+        console.error("Error fetching confraria for edit", error);
+        notFound();
     }
 
-    if (initializing) {
-        return (
-             <div className="container mx-auto px-4 py-8 md:py-16">
-                <div className="max-w-2xl mx-auto">
-                    <Card>
-                        <CardHeader>
-                            <Skeleton className="h-8 w-64 mb-2" />
-                            <Skeleton className="h-4 w-full" />
-                        </CardHeader>
-                        <CardContent className="space-y-8">
-                            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
-                            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-20 w-full" /></div>
-                            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
-                            <Skeleton className="h-12 w-full" />
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        )
+    let responsible_email = '';
+    if (data.responsible_user_id) {
+        const { data: user, error: userError } = await supabase.from('users').select('email').eq('id', data.responsible_user_id).single();
+        if (user) {
+            responsible_email = user.email || '';
+        } else {
+            console.warn("Could not fetch responsible user email:", userError);
+        }
     }
+    
+    // Ensure all required fields exist
+    return {
+      id: data.id,
+      name: data.name,
+      motto: data.motto,
+      region: data.region,
+      seal_url: data.seal_url,
+      seal_hint: data.seal_hint,
+      responsible_email: responsible_email,
+    };
+}
+
+
+export default async function EditConfrariaPage({ params }: { params: { confrariaId: string } }) {
+    await checkAdmin();
+    const confrariaId = parseInt(params.confrariaId, 10);
+    if (isNaN(confrariaId)) {
+        notFound();
+    }
+    
+    const confrariaData = await getConfraria(confrariaId);
 
     return (
-        <div className="container mx-auto px-4 py-8 md:py-16">
-            <div className="max-w-2xl mx-auto">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl">Editar Confraria</CardTitle>
-                        <CardDescription>
-                           Atualize os detalhes da confraria e atribua um responsável.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nome da Confraria</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="motto"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Lema</FormLabel>
-                                            <FormControl>
-                                                <Textarea {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="region"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Região</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder="Selecione a região principal" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                        </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="seal_url"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>URL do Selo</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                    <FormField
-                                    control={form.control}
-                                    name="seal_hint"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Dica para o Selo (IA)</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Card className="bg-accent/50 border-primary/20">
-                                    <CardHeader>
-                                        <CardTitle className="text-xl">Acesso do Responsável</CardTitle>
-                                        <CardDescription>
-                                            Indique o email de um confrade existente para o tornar responsável por esta confraria.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <FormField
-                                            control={form.control}
-                                            name="responsible_email"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Email do Responsável</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="email" placeholder="responsavel@confraria.pt" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </CardContent>
-                                </Card>
-
-
-                                <Button type="submit" size="lg" disabled={loading || initializing} className="w-full">
-                                    {(loading || initializing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Guardar Alterações
-                                </Button>
-                            </form>
-                        </Form>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+        <EditConfrariaForm confraria={confrariaData} />
     );
 }

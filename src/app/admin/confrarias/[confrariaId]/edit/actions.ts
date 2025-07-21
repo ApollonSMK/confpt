@@ -45,8 +45,6 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
 
     let responsibleUserId: string | null = null;
     if (responsible_email) {
-        // Por agora, apenas associamos um user existente.
-        // A criação de users será um passo futuro.
         const { data: userData, error: userError } = await supabase.from('users').select('id').eq('email', responsible_email).single();
         if (userError || !userData) {
             console.error("User not found for email:", responsible_email, userError);
@@ -76,26 +74,4 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
     revalidatePath(`/confrarias/${id}`);
     
     redirect('/admin/dashboard');
-}
-
-export async function getConfraria(id: number): Promise<z.infer<typeof formSchema> | null> {
-    const supabase = createServiceRoleClient();
-    const { data, error } = await supabase.from('confrarias').select('*').eq('id', id).single();
-
-    if (error || !data) {
-        console.error("Error fetching confraria for edit", error);
-        return null;
-    }
-
-    let responsible_email = '';
-    if (data.responsible_user_id) {
-        const { data: user, error: userError } = await supabase.from('users').select('email').eq('id', data.responsible_user_id).single();
-        if (user) {
-            responsible_email = user.email || '';
-        } else {
-            console.warn("Could not fetch responsible user email:", userError);
-        }
-    }
-    
-    return { ...data, responsible_email } as z.infer<typeof formSchema>;
 }

@@ -45,6 +45,7 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
 
     let responsibleUserId: string | null = null;
     if (responsible_email) {
+        // We need to use the service client to look up users by email
         const { data: userData, error: userError } = await supabase.from('users').select('id').eq('email', responsible_email).single();
         if (userError || !userData) {
             console.error("User not found for email:", responsible_email, userError);

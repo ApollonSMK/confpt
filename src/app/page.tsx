@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { DiscoveryCard } from '@/components/discovery-card';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Discovery } from '@/lib/data';
+import { FeaturedCarousel } from '@/components/featured-carousel';
 
 
 async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
@@ -89,25 +88,7 @@ export default async function Home() {
         <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 text-center">
           Destaques
         </h2>
-        <Carousel
-          opts={{
-            align: 'start',
-            loop: true,
-          }}
-          className="w-full"
-        >
-          <CarouselContent>
-            {featuredDiscoveries.map((discovery) => (
-              <CarouselItem key={discovery.id} className="md:basis-1/2 lg:basis-1/3">
-                <div className="p-1 h-full">
-                  <DiscoveryCard discovery={discovery} />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="hidden md:flex" />
-          <CarouselNext className="hidden md:flex" />
-        </Carousel>
+        <FeaturedCarousel discoveries={featuredDiscoveries} />
       </section>
     </div>
   );

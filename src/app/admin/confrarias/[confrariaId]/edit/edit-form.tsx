@@ -18,10 +18,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { updateConfraria } from './actions';
+import { Loader2, Trash2 } from 'lucide-react';
+import { deleteConfraria, updateConfraria } from './actions';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   id: z.number(),
@@ -41,7 +43,9 @@ interface EditConfrariaFormProps {
 
 export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
     const { toast } = useToast();
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -59,12 +63,25 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                 variant: "destructive"
             });
             setLoading(false);
-        } else {
-             toast({
-                title: "Confraria Atualizada!",
-                description: "Os dados da confraria foram atualizados com sucesso.",
+        }
+    }
+    
+    async function handleDelete() {
+        setDeleting(true);
+        const result = await deleteConfraria(confraria.id);
+        if (result && result.error) {
+            toast({
+                title: "Erro ao Apagar Confraria",
+                description: result.error,
+                variant: "destructive"
             });
-            // O redirect na server action tratará da navegação.
+            setDeleting(false);
+        } else {
+            toast({
+                title: "Confraria Apagada!",
+                description: "A confraria foi removida com sucesso.",
+            });
+            router.push('/admin/dashboard');
         }
     }
 
@@ -72,11 +89,33 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
         <div className="container mx-auto px-4 py-8 md:py-16">
             <div className="max-w-2xl mx-auto">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl">Editar Confraria</CardTitle>
-                        <CardDescription>
-                           Atualize os detalhes da confraria e atribua um responsável.
-                        </CardDescription>
+                    <CardHeader className="flex flex-row justify-between items-start">
+                        <div>
+                            <CardTitle className="font-headline text-3xl">Editar Confraria</CardTitle>
+                            <CardDescription>
+                               Atualize os detalhes da confraria e atribua um responsável.
+                            </CardDescription>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isto irá apagar permanentemente a confraria e desassociar todas as descobertas relacionadas.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Sim, apagar confraria
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardHeader>
                     <CardContent>
                         <Form {...form}>
@@ -157,7 +196,7 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                                     <CardHeader>
                                         <CardTitle className="text-xl">Acesso do Responsável</CardTitle>
                                         <CardDescription>
-                                            Indique o email de um confrade existente para o tornar responsável por esta confraria.
+                                            Indique o email de um confrade existente para o tornar responsável por esta confraria. Se o utilizador não existir, terá que ser criado manualmente.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>

@@ -26,15 +26,16 @@ async function getConfraria(id: number) {
 
     let responsible_email = '';
     if (data.responsible_user_id) {
-        const { data: user, error: userError } = await supabase.from('users').select('email').eq('id', data.responsible_user_id).single();
-        if (user) {
-            responsible_email = user.email || '';
+        // We need to use the service client to get user data from auth.users
+        const { data: user, error: userError } = await supabase.auth.admin.getUserById(data.responsible_user_id);
+        
+        if (user?.user) {
+            responsible_email = user.user.email || '';
         } else {
             console.warn("Could not fetch responsible user email:", userError);
         }
     }
     
-    // Ensure all required fields exist
     return {
       id: data.id,
       name: data.name,

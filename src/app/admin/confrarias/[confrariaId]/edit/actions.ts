@@ -15,7 +15,7 @@ async function checkAdmin() {
   } = await supabase.auth.getUser();
 
   if (!user || user.email !== process.env.ADMIN_EMAIL) {
-    redirect('/login');
+    throw new Error('Not authorized');
   }
 }
 
@@ -46,12 +46,13 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
     let responsibleUserId: string | null = null;
     if (responsible_email) {
         // We need to use the service client to look up users by email
-        const { data: userData, error: userError } = await supabase.from('users').select('id').eq('email', responsible_email).single();
-        if (userError || !userData) {
-            console.error("User not found for email:", responsible_email, userError);
+        const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers({ email: responsible_email });
+        
+        if (usersError || !usersData.users || usersData.users.length === 0) {
+            console.error("User not found for email:", responsible_email, usersError);
             return { error: `Utilizador com o email ${responsible_email} não encontrado.`};
         }
-        responsibleUserId = userData.id;
+        responsibleUserId = usersData.users[0].id;
     }
 
     const { error } = await supabase
@@ -75,4 +76,21 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
     revalidatePath(`/confrarias/${id}`);
     
     redirect('/admin/dashboard');
+}
+
+export async function deleteConfraria(id: number) {
+    await checkAdmin();
+
+    const supabase = createServiceRoleClient();
+    const { error } = await supabase.from('confrarias').delete().eq('id', id);
+
+    if (error) {
+        console.error('Error deleting confraria:', error);
+        return { error: 'Ocorreu um erro ao apagar a confraria.' };
+    }
+
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/confrarias');
+
+    return { success: true };
 }

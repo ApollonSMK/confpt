@@ -187,8 +187,10 @@ export default async function AdminDashboardPage() {
                             <TableCell className="font-medium">{confraria.name}</TableCell>
                             <TableCell>{confraria.region}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="outline" size="sm" disabled>
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={`/admin/confrarias/${confraria.id}/edit`}>
                                     Editar
+                                  </Link>
                                 </Button>
                             </TableCell>
                         </TableRow>

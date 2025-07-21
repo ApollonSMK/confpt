@@ -2,11 +2,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -35,10 +34,6 @@ const signUpSchema = z.object({
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
 
-const formSchema = z.union([loginSchema, signUpSchema]);
-
-type FormValues = z.infer<typeof formSchema>;
-
 interface LoginFormProps {
   isSignUp: boolean;
   setIsSignUp: (isSignUp: boolean) => void;
@@ -48,9 +43,12 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  const currentSchema = isSignUp ? signUpSchema : loginSchema;
+  type FormValues = z.infer<typeof currentSchema>;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(isSignUp ? signUpSchema : loginSchema),
+    resolver: zodResolver(currentSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -89,7 +87,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
   }
 
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
           {isSignUp && (
@@ -184,6 +182,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
           </Button>
         </CardFooter>
       </form>
-    </Form>
+    </FormProvider>
   );
 }

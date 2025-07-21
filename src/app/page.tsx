@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
@@ -68,11 +69,16 @@ export default async function Home() {
           <Grape className="w-10 h-10 text-primary" />
         </div>
         <h1 className="font-headline text-4xl md:text-6xl font-bold text-primary mb-4">
-          Confrarias de Portugal
+          Confrarias Gastronómicas
         </h1>
-        <p className="text-lg md:text-xl max-w-3xl mx-auto text-muted-foreground mb-8">
-          Uma viagem pelas autênticas descobertas gastronómicas e culturais, partilhadas pelas irmandades que preservam a nossa herança.
-        </p>
+        <div className="text-lg md:text-xl max-w-3xl mx-auto text-muted-foreground mb-8 space-y-4">
+            <p className="font-headline italic text-2xl">
+                &quot;Aqui não se navega. Aqui degusta-se cada descoberta.&quot;
+            </p>
+            <p>
+                Uma plataforma editorial onde cada entrada representa uma descoberta viva, uma história partilhada com a confiança das antigas confrarias portuguesas.
+            </p>
+        </div>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg">
             <Link href="/discoveries">

@@ -1,9 +1,9 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery } from '@/lib/data';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { toggleMembershipRequest } from './actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { User } from '@supabase/supabase-js';
 
 type ConfrariaPageProps = {
   params: {
@@ -22,11 +23,11 @@ type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
   member_count: number;
   membership_status: 'member' | 'pending' | 'none';
+  is_responsible: boolean;
 };
 
-async function getConfrariaDetails(id: string): Promise<ConfrariaDetails | null> {
+async function getConfrariaDetails(id: string, user: User | null): Promise<ConfrariaDetails | null> {
     const supabase = createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     const { data: confraria, error } = await supabase
         .from('confrarias')
@@ -97,14 +98,15 @@ async function getConfrariaDetails(id: string): Promise<ConfrariaDetails | null>
         discoveries,
         member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
         membership_status,
+        is_responsible: user?.id === confraria.responsible_user_id,
     } as ConfrariaDetails;
 }
 
 
 export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
-    const confraria = await getConfrariaDetails(params.confrariaId);
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const confraria = await getConfrariaDetails(params.confrariaId, user);
 
     if (!confraria) {
         notFound();
@@ -116,6 +118,16 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                 <Button asChild>
                     <Link href={`/login?redirect=/confrarias/${confraria.id}`}>
                         <UserPlus /> Solicitar Associação
+                    </Link>
+                </Button>
+            );
+        }
+
+        if (confraria.is_responsible) {
+             return (
+                <Button asChild>
+                    <Link href={`/confrarias/${confraria.id}/manage`}>
+                        <Wrench /> Gerir Confraria
                     </Link>
                 </Button>
             );
@@ -216,7 +228,7 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                             </div>
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">
-                        <MembershipButton />
+                            <MembershipButton />
                         </div>
                     </div>
                 </section>
@@ -263,8 +275,8 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                                     A Nossa História
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="font-body text-foreground/90">
-                                <p>Preserva as receitas secretas dos conventos, doçaria que é património imaterial da nação.</p>
+                            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
+                                {confraria.history || 'A história desta confraria ainda não foi contada. Seja o primeiro a escrevê-la!'}
                             </CardContent>
                         </Card>
                          <Card>
@@ -274,8 +286,8 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                                     Fundadores
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="font-body text-foreground/90">
-                                <p>Informação de fundadores em breve.</p>
+                            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
+                                {confraria.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.'}
                             </CardContent>
                         </Card>
                     </aside>
@@ -284,4 +296,3 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
         </div>
     );
 }
-

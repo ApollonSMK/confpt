@@ -80,91 +80,89 @@ export default function NewConfrariaPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Form form={form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nome da Confraria</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ex: Confraria do Queijo da Serra" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="motto"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Lema</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="Um lema que inspire gerações..."
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>A frase que representa o espírito da confraria.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="region"
-                                    render={({ field }) => (
+                        <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Região</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormLabel>Nome da Confraria</FormLabel>
                                         <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder="Selecione a região principal" />
-                                            </SelectTrigger>
+                                            <Input placeholder="Ex: Confraria do Queijo da Serra" {...field} />
                                         </FormControl>
-                                        <SelectContent>
-                                            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                        </SelectContent>
-                                        </Select>
                                         <FormMessage />
                                     </FormItem>
-                                    )}
-                                />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="motto"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Lema</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                            placeholder="Um lema que inspire gerações..."
+                                            {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>A frase que representa o espírito da confraria.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="region"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Região</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Selecione a região principal" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="seal_url"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>URL do Selo</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://exemplo.com/selo.png" {...field} />
+                                        </FormControl>
+                                        <FormDescription>O link para a imagem que serve como selo oficial.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                                 <FormField
-                                    control={form.control}
-                                    name="seal_url"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>URL do Selo</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://exemplo.com/selo.png" {...field} />
-                                            </FormControl>
-                                            <FormDescription>O link para a imagem que serve como selo oficial.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                 <FormField
-                                    control={form.control}
-                                    name="seal_hint"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Dica para o Selo (IA)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ex: chave dourada" {...field} />
-                                            </FormControl>
-                                            <FormDescription>Duas palavras para ajudar a IA a identificar a imagem.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Button type="submit" size="lg" disabled={loading} className="w-full">
-                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Adicionar Confraria
-                                </Button>
-                            </form>
+                                control={form.control}
+                                name="seal_hint"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Dica para o Selo (IA)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ex: chave dourada" {...field} />
+                                        </FormControl>
+                                        <FormDescription>Duas palavras para ajudar a IA a identificar a imagem.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" size="lg" disabled={loading} className="w-full">
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Adicionar Confraria
+                            </Button>
                         </Form>
                     </CardContent>
                 </Card>

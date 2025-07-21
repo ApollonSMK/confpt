@@ -18,16 +18,21 @@ import {
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
-interface FormProps<TFieldValues extends FieldValues> {
+interface FormProps<TFieldValues extends FieldValues>
+  extends React.ComponentPropsWithoutRef<'form'> {
   form: UseFormReturn<TFieldValues>;
-  children: React.ReactNode;
 }
 
 const Form = <TFieldValues extends FieldValues>({
   form,
   children,
+  ...props
 }: FormProps<TFieldValues>) => {
-  return <FormProvider {...form}>{children}</FormProvider>;
+  return (
+    <FormProvider {...form}>
+      <form {...props}>{children}</form>
+    </FormProvider>
+  );
 };
 
 type FormFieldContextValue<

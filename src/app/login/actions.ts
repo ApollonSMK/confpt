@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -38,6 +39,7 @@ export async function signup(formData: z.infer<typeof signUpSchema>) {
     email: formData.email,
     password: formData.password,
     options: {
+        email_confirm: false, // Desativar confirmação de email para simplificar
         data: {
             full_name: formData.fullName,
             region: formData.region,
@@ -46,10 +48,11 @@ export async function signup(formData: z.infer<typeof signUpSchema>) {
   });
 
   if (error) {
+    console.error("Signup error:", error.message);
     if (error.message.includes('User already registered')) {
         return { error: 'Este email já está registado. Tente fazer login.'};
     }
-    return { error: 'Não foi possível criar a conta. Tente novamente.' };
+    return { error: `Não foi possível criar a conta. Tente novamente. (${error.message})` };
   }
 
   revalidatePath('/', 'layout');

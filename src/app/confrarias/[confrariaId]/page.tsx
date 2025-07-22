@@ -1,4 +1,5 @@
 
+
 import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery, Event } from '@/lib/data';
 import { notFound } from 'next/navigation';
@@ -342,3 +343,5 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
         </div>
     );
 }
+
+    

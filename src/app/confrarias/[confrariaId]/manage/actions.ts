@@ -22,6 +22,7 @@ const eventFormSchema = z.object({
   location: z.string().optional(),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
+  is_public: z.boolean().default(true),
 });
 
 
@@ -136,7 +137,7 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, image_url, image_hint } = parsedData.data;
+    const { id, confraria_id, name, description, event_date, location, image_url, image_hint, is_public } = parsedData.data;
 
     // Check permissions before upserting
     await checkPermissions(confraria_id, supabase);
@@ -148,7 +149,8 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
         event_date: event_date.toISOString(),
         location: location || null,
         image_url: image_url || 'https://placehold.co/600x400.png',
-        image_hint: image_hint || 'event placeholder'
+        image_hint: image_hint || 'event placeholder',
+        is_public,
     };
 
     let error;

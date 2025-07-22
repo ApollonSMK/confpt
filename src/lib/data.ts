@@ -1,3 +1,4 @@
+
 import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -70,6 +71,7 @@ export type Event = {
   location?: string | null;
   image_url?: string | null;
   image_hint?: string | null;
+  is_public: boolean;
 };
 
 export type UserRankInfo = {

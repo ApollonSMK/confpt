@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { Switch } from '@/components/ui/switch';
 
 const formSchema = z.object({
   id: z.number().optional(), // optional for new events
@@ -35,6 +36,7 @@ const formSchema = z.object({
   location: z.string().optional(),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
+  is_public: z.boolean().default(true),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -59,7 +61,8 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
             image_url: event?.image_url || 'https://placehold.co/600x400.png',
-            image_hint: event?.image_hint || 'event placeholder'
+            image_hint: event?.image_hint || 'event placeholder',
+            is_public: event?.is_public ?? true,
         },
     });
 
@@ -178,6 +181,27 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="is_public"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <FormLabel>Visibilidade do Evento</FormLabel>
+                            <FormDescription>
+                                Eventos públicos são visíveis a todos. Eventos privados apenas para membros da confraria.
+                            </FormDescription>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                />
+
 
                 <Button type="submit" size="lg" disabled={loading} className="w-full">
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

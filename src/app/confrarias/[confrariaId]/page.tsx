@@ -3,14 +3,14 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery, Event } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toggleMembershipRequest } from './actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
 
 type ConfrariaPageProps = {
@@ -31,6 +31,8 @@ async function getConfrariaDetails(id: string, user: User | null): Promise<Confr
     const supabase = createServerClient();
     const { data: { user: currentUser } } = await supabase.auth.getUser();
 
+    // The RLS policies on 'events' will handle filtering public vs private events
+    // automatically based on the user's session.
     const { data: confraria, error } = await supabase
         .from('confrarias')
         .select(`
@@ -253,10 +255,26 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                                     {confraria.events.map(event => (
                                          <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
                                             <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
-                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} layout="fill" className="object-cover rounded-l-lg" data-ai-hint={event.image_hint ?? 'event'} />
+                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} layout="fill" className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
                                             </div>
                                             <CardHeader className="flex-grow">
-                                                <CardTitle className="font-headline text-2xl">{event.name}</CardTitle>
+                                                <CardTitle className="font-headline text-2xl flex items-center justify-between">
+                                                    {event.name}
+                                                    {!event.is_public && (
+                                                         <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                                                        <EyeOff className="h-3 w-3" /> Privado
+                                                                    </Badge>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>Este evento é visível apenas para membros.</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    )}
+                                                </CardTitle>
                                                 <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
                                                 <CardContent className="p-0 pt-2">
                                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>

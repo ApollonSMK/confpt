@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
+import { regions } from '@/lib/data';
 
 const detailsFormSchema = z.object({
   id: z.number(),
@@ -20,6 +21,7 @@ const eventFormSchema = z.object({
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
+  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   is_public: z.boolean().default(true),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
@@ -139,7 +141,7 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, image_url, image_hint, is_public } = parsedData.data;
+    const { id, confraria_id, name, description, event_date, location, region, image_url, image_hint, is_public } = parsedData.data;
 
     // Check permissions before upserting
     await checkPermissions(confraria_id, supabase);
@@ -150,6 +152,7 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
         description: description || null,
         event_date: event_date.toISOString(),
         location: location || null,
+        region,
         image_url: image_url || 'https://placehold.co/600x400.png',
         image_hint: image_hint || 'event placeholder',
         is_public,
@@ -178,6 +181,7 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
 
     revalidatePath(`/confrarias/${confraria_id}`);
     revalidatePath(`/confrarias/${confraria_id}/manage`);
+    revalidatePath('/events');
 
     return { success: true, message: id ? "Evento atualizado!" : "Evento criado!" };
 }

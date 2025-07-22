@@ -69,6 +69,7 @@ export type Event = {
   description?: string | null;
   event_date: string; // Vem como string do Supabase
   location?: string | null;
+  region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
   image_url?: string | null;
   image_hint?: string | null;
   is_public: boolean;

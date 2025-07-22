@@ -26,6 +26,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { regions } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   id: z.number().optional(), // optional for new events
@@ -34,6 +36,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
+  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image: z.any().optional(),
   image_hint: z.string().optional(),
@@ -44,11 +47,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EventFormProps {
     confrariaId: number;
+    confrariaRegion: (typeof regions)[number];
     event?: Event | null;
     onSuccess?: () => void;
 }
 
-export function EventForm({ confrariaId, event = null, onSuccess }: EventFormProps) {
+export function EventForm({ confrariaId, confrariaRegion, event = null, onSuccess }: EventFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -61,6 +65,7 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
             description: event?.description || '',
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
+            region: event?.region || confrariaRegion,
             image_url: event?.image_url || 'https://placehold.co/600x400.png',
             image_hint: event?.image_hint || 'event placeholder',
             is_public: event?.is_public ?? true,
@@ -103,45 +108,69 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                         </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="event_date"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                        <FormLabel>Data do Evento</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="event_date"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                            <FormLabel>Data do Evento</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                    )}
+                                    >
+                                    {field.value ? (
+                                        format(field.value, "PPP", { locale: pt })
+                                    ) : (
+                                        <span>Escolha uma data</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="region"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Região</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP", { locale: pt })
-                                ) : (
-                                    <span>Escolha uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Selecione a região do evento" />
+                                </SelectTrigger>
                             </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
+                            <SelectContent>
+                                {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
                         </FormItem>
-                    )}
-                />
+                        )}
+                    />
+                </div>
+
                  <FormField
                     control={form.control}
                     name="location"

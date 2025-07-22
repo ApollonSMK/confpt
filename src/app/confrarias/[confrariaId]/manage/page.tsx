@@ -11,7 +11,7 @@ import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { getUserRank, type UserRankInfo } from '@/lib/data';
+import { getUserRank, type UserRankInfo, regions } from '@/lib/data';
 import { EventForm } from './event-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { Event } from '@/lib/data';
@@ -33,6 +33,7 @@ type ConfrariaDataType = {
     motto: string;
     history: string;
     founders: string;
+    region: (typeof regions)[number];
 }
 
 async function getConfrariaAndRelatedData(id: number, user: User) {
@@ -142,6 +143,7 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             motto: confrariaData.motto,
             history: confrariaData.history ?? '',
             founders: confrariaData.founders ?? '',
+            region: confrariaData.region,
         }, 
         pendingMembers,
         events: (events as Event[] || []) 
@@ -326,14 +328,14 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                                 </div>
                             )}
                         </TabContentCard>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-xl">
                             <DialogHeader>
                                 <DialogTitle>Adicionar Novo Evento</DialogTitle>
                                 <DialogDescription>
                                     Preencha os detalhes do seu evento. Clique em guardar quando terminar.
                                 </DialogDescription>
                             </DialogHeader>
-                            <EventForm confrariaId={confrariaData.id} />
+                            <EventForm confrariaId={confrariaData.id} confrariaRegion={confrariaData.region} />
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
@@ -342,5 +344,3 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         </div>
     );
 }
-
-    

@@ -22,6 +22,7 @@ const eventFormSchema = z.object({
   location: z.string().optional(),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
+  image: z.any().optional(), // for the file upload
   is_public: z.boolean().default(true),
 });
 

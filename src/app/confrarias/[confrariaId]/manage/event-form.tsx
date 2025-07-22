@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Upload } from 'lucide-react';
 import { upsertEvent } from './actions';
 import { useState } from 'react';
 import type { Event } from '@/lib/data';
@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
   id: z.number().optional(), // optional for new events
@@ -35,6 +35,7 @@ const formSchema = z.object({
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
+  image: z.any().optional(),
   image_hint: z.string().optional(),
   is_public: z.boolean().default(true),
 });
@@ -168,16 +169,25 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                         </FormItem>
                     )}
                 />
-                 <FormField
+                <FormField
                     control={form.control}
-                    name="image_url"
+                    name="image"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>URL da Imagem do Evento</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
+                        <FormLabel>Imagem (funcionalidade futura)</FormLabel>
+                        <FormControl>
+                            <div className="relative">
+                                <Input type="file" disabled className="opacity-0 absolute inset-0 w-full h-full z-10 cursor-pointer" {...field} />
+                                <Button type="button" variant="outline" className="w-full" disabled>
+                                    <div className='flex items-center justify-center gap-2'>
+                                        <Upload className="h-4 w-4" />
+                                        <span>Carregar Imagem do Evento</span>
+                                    </div>
+                                </Button>
+                            </div>
+                        </FormControl>
+                         <FormDescription>Uma boa imagem promove melhor o seu evento.</FormDescription>
+                        <FormMessage />
                         </FormItem>
                     )}
                 />
@@ -185,22 +195,24 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                     control={form.control}
                     name="is_public"
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <FormLabel>Visibilidade do Evento</FormLabel>
-                            <FormDescription>
-                                Eventos públicos são visíveis a todos. Eventos privados apenas para membros da confraria.
-                            </FormDescription>
-                        </div>
-                        <FormControl>
-                            <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                            <FormControl>
+                                <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                Evento Público
+                                </FormLabel>
+                                <FormDescription>
+                                Se marcado, este evento será visível a todos os visitantes do site. Se não, apenas para membros da confraria.
+                                </FormDescription>
+                            </div>
                         </FormItem>
                     )}
-                />
+                    />
 
 
                 <Button type="submit" size="lg" disabled={loading} className="w-full">

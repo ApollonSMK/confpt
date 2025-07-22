@@ -16,10 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PenSquare } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { updateConfrariaDetails } from './actions';
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
@@ -77,68 +76,55 @@ export function ManageConfrariaForm({ confraria }: ManageConfrariaFormProps) {
     }
     
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                    <PenSquare className="h-7 w-7 text-primary"/>
-                    Editar Detalhes
-                </CardTitle>
-                <CardDescription>
-                    Atualize as informações públicas da sua confraria que todos podem ver.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <FormProvider {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                        <FormField
-                            control={form.control}
-                            name="motto"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Lema da Confraria</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="history"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>A Nossa História</FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={8} placeholder="Conte a história, as origens e a missão da sua confraria..." {...field} />
-                                    </FormControl>
-                                    <FormDescription>Este texto aparecerá na página pública.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                            <FormField
-                            control={form.control}
-                            name="founders"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Fundadores</FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={4} placeholder="Liste os nomes dos membros fundadores..." {...field} />
-                                    </FormControl>
-                                    <FormDescription>Reconheça quem deu início a esta irmandade.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        
-                        <Button type="submit" size="lg" disabled={loading} className="w-full">
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar Alterações
-                        </Button>
-                    </form>
-                </FormProvider>
-            </CardContent>
-        </Card>
+        <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                    control={form.control}
+                    name="motto"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Lema da Confraria</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="history"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>A Nossa História</FormLabel>
+                            <FormControl>
+                                <Textarea rows={8} placeholder="Conte a história, as origens e a missão da sua confraria..." {...field} />
+                            </FormControl>
+                            <FormDescription>Este texto aparecerá na página pública.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                    <FormField
+                    control={form.control}
+                    name="founders"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Fundadores</FormLabel>
+                            <FormControl>
+                                <Textarea rows={4} placeholder="Liste os nomes dos membros fundadores..." {...field} />
+                            </FormControl>
+                            <FormDescription>Reconheça quem deu início a esta irmandade.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                
+                <Button type="submit" size="lg" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Guardar Alterações
+                </Button>
+            </form>
+        </FormProvider>
     );
 }

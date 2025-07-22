@@ -6,15 +6,25 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard } from 'lucide-react';
 import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 type PendingMember = {
     id: number;
     user_id: string;
     user_email: string;
     user_full_name: string | null;
+}
+
+type ConfrariaDataType = {
+    id: number;
+    name: string;
+    motto: string;
+    history: string;
+    founders: string;
 }
 
 async function getConfrariaAndPendingMembers(id: number, user: User) {
@@ -90,6 +100,38 @@ async function getConfrariaAndPendingMembers(id: number, user: User) {
 }
 
 
+const ActionButtons = ({ member, confrariaId }: { member: PendingMember, confrariaId: number }) => (
+    <form action={handleMembershipAction} className="flex gap-2 justify-end">
+        <input type="hidden" name="membershipId" value={member.id} />
+        <input type="hidden" name="confrariaId" value={confrariaId} />
+        <Button type="submit" name="action" value="approve" size="icon" variant="outline" className="text-green-600 hover:bg-green-100 hover:text-green-700">
+            <Check className="h-4 w-4" />
+        </Button>
+        <Button type="submit" name="action" value="reject" size="icon" variant="outline" className="text-red-600 hover:bg-red-100 hover:text-red-700">
+            <X className="h-4 w-4" />
+        </Button>
+    </form>
+);
+
+const TabContentCard = ({ title, description, children, icon: Icon, badgeText }: { title: string, description: string, children: React.ReactNode, icon: React.ElementType, badgeText?: string }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-start justify-between">
+            <div>
+                 <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                    <Icon className="h-7 w-7 text-primary"/>
+                    {title}
+                </CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </div>
+            {badgeText && <Badge variant="destructive">{badgeText}</Badge>}
+        </CardHeader>
+        <CardContent>
+            {children}
+        </CardContent>
+    </Card>
+);
+
+
 export default async function ManageConfrariaPage({ params }: { params: { confrariaId: string } }) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -105,110 +147,98 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
     
     const { confrariaData, pendingMembers } = await getConfrariaAndPendingMembers(confrariaId, user);
 
-    const ActionButtons = ({ member }: { member: PendingMember }) => (
-        <form action={handleMembershipAction} className="flex gap-2 justify-end">
-            <input type="hidden" name="membershipId" value={member.id} />
-            <input type="hidden" name="confrariaId" value={confrariaData.id} />
-            <Button type="submit" name="action" value="approve" size="icon" variant="outline" className="text-green-600 hover:bg-green-100 hover:text-green-700">
-                <Check className="h-4 w-4" />
-            </Button>
-            <Button type="submit" name="action" value="reject" size="icon" variant="outline" className="text-red-600 hover:bg-red-100 hover:text-red-700">
-                <X className="h-4 w-4" />
-            </Button>
-        </form>
-    );
-
     return (
-        <div className="container mx-auto px-4 py-8 md:py-16 space-y-12">
+        <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
             <div>
                  <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel da {confrariaData.name}</h1>
                 <p className="text-lg text-muted-foreground">
                     Bem-vindo, Confrade Responsável. Gira a sua confraria a partir daqui.
                 </p>
             </div>
+            
+            <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                    <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
+                    <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
+                    <TabsTrigger value="requests">
+                        <UserPlus className="mr-2 h-4 w-4"/>
+                        Pedidos de Adesão
+                        {pendingMembers.length > 0 && <Badge className="ml-2">{pendingMembers.length}</Badge>}
+                    </TabsTrigger>
+                    <TabsTrigger value="members" disabled><Users className="mr-2 h-4 w-4"/>Membros</TabsTrigger>
+                    <TabsTrigger value="events" disabled><Calendar className="mr-2 h-4 w-4"/>Eventos</TabsTrigger>
+                </TabsList>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                 <div className="space-y-8">
-                    <ManageConfrariaForm confraria={confrariaData} />
+                <TabsContent value="overview" className="mt-6">
+                    <TabContentCard title="Visão Geral" description="Resumo rápido do estado da sua confraria." icon={LayoutDashboard}>
+                       <p>Bem-vindo ao painel de gestão. Use as abas acima para navegar entre as diferentes secções.</p>
+                        <p className="mt-4 text-sm text-muted-foreground">Futuramente, esta área terá estatísticas e atalhos úteis.</p>
+                    </TabContentCard>
+                </TabsContent>
+                
+                <TabsContent value="details" className="mt-6">
+                    <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
+                        <ManageConfrariaForm confraria={confrariaData} />
+                    </TabContentCard>
+                </TabsContent>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                                <Users className="h-7 w-7 text-primary"/>
-                                Gestão de Membros
-                            </CardTitle>
-                            <CardDescription>
-                                (Funcionalidade Futura) Veja todos os membros, altere cargos ou remova membros.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-12 text-muted-foreground">
-                                <p>Em breve...</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                 </div>
-                 <div className="space-y-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                                <UserPlus className="h-7 w-7 text-primary"/>
-                                Pedidos de Adesão
-                            </CardTitle>
-                            <CardDescription>
-                                Aprove ou rejeite os pedidos dos confrades que desejam juntar-se.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {pendingMembers.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Confrade</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
+                <TabsContent value="requests" className="mt-6">
+                     <TabContentCard 
+                        title="Pedidos de Adesão" 
+                        description="Aprove ou rejeite os pedidos dos confrades que desejam juntar-se." 
+                        icon={UserPlus}
+                        badgeText={pendingMembers.length > 0 ? `${pendingMembers.length} pendente(s)` : undefined}
+                     >
+                        {pendingMembers.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Confrade</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {pendingMembers.map((member) => (
+                                        <TableRow key={member.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="font-bold">{member.user_full_name || 'Desconhecido'}</div>
+                                                <div className="text-xs text-muted-foreground">{member.user_email}</div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <ActionButtons member={member} confrariaId={confrariaData.id} />
+                                            </TableCell>
                                         </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {pendingMembers.map((member) => (
-                                            <TableRow key={member.id}>
-                                                <TableCell className="font-medium">
-                                                    <div className="font-bold">{member.user_full_name || 'Desconhecido'}</div>
-                                                    <div className="text-xs text-muted-foreground">{member.user_email}</div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                <ActionButtons member={member} />
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    <p className="font-semibold text-lg">Nenhum pedido pendente.</p>
-                                    <p>De momento, não há novos aspirantes a confrade.</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                                <Calendar className="h-7 w-7 text-primary"/>
-                                Gestão de Eventos
-                            </CardTitle>
-                            <CardDescription>
-                                (Funcionalidade Futura) Crie e gira os eventos da sua confraria.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
                             <div className="text-center py-12 text-muted-foreground">
-                                <p>Em breve...</p>
+                                <p className="font-semibold text-lg">Nenhum pedido pendente.</p>
+                                <p>De momento, não há novos aspirantes a confrade.</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                        )}
+                    </TabContentCard>
+                </TabsContent>
+
+                 <TabsContent value="members" className="mt-6">
+                    <TabContentCard title="Gestão de Membros" description="Veja todos os membros, altere cargos ou remova membros." icon={Users}>
+                         <div className="text-center py-12 text-muted-foreground">
+                            <p className="font-semibold text-lg">Funcionalidade Futura</p>
+                            <p>Em breve poderá gerir todos os membros da sua confraria aqui.</p>
+                        </div>
+                    </TabContentCard>
+                </TabsContent>
+
+                 <TabsContent value="events" className="mt-6">
+                    <TabContentCard title="Gestão de Eventos" description="Crie e gira os eventos da sua confraria." icon={Calendar}>
+                        <div className="text-center py-12 text-muted-foreground">
+                            <p className="font-semibold text-lg">Funcionalidade Futura</p>
+                            <p>Em breve poderá anunciar os próximos eventos e encontros aqui.</p>
+                        </div>
+                    </TabContentCard>
+                </TabsContent>
+
+            </Tabs>
         </div>
     );
 }

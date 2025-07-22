@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CardContent, CardFooter } from '@/components/ui/card';
-import { login, signup } from './actions';
+import { login } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -24,45 +24,25 @@ const loginSchema = z.object({
     password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
 
-const signUpSchema = z.object({
-  email: z.string().email('Por favor, insira um email válido.'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
-});
+type FormValues = z.infer<typeof loginSchema>;
 
-interface LoginFormProps {
-  isSignUp: boolean;
-  setIsSignUp: (isSignUp: boolean) => void;
-}
-
-export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
+export function LoginForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const currentSchema = isSignUp ? signUpSchema : loginSchema;
-  type FormValues = z.infer<typeof currentSchema>;
-
   const form = useForm<FormValues>({
-    resolver: zodResolver(currentSchema),
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
     },
   });
 
-  useEffect(() => {
-    form.reset({
-      email: '',
-      password: '',
-    });
-  }, [isSignUp, form]);
-
   async function onSubmit(values: FormValues) {
     setLoading(true);
 
-    const result = isSignUp 
-        ? await signup(values as z.infer<typeof signUpSchema>) 
-        : await login(values as z.infer<typeof loginSchema>);
+    const result = await login(values);
 
     if (result && result.error) {
       toast({
@@ -72,8 +52,8 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
       });
     } else {
         toast({
-            title: isSignUp ? 'Adesão concluída!' : 'Sessão iniciada!',
-            description: isSignUp ? 'Bem-vindo(a) à nossa irmandade!' : 'Bem-vindo(a) de volta!',
+            title: 'Sessão iniciada!',
+            description: 'Bem-vindo(a) de volta!',
         });
     }
     setLoading(false);
@@ -123,18 +103,7 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
         <CardFooter className="flex-col gap-4">
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSignUp ? 'Aderir à Irmandade' : 'Entrar'}
-          </Button>
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={() => setIsSignUp(!isSignUp)}
-            disabled={loading}
-          >
-            {isSignUp
-              ? 'Já é um membro? Inicie sessão.'
-              : 'Ainda não é membro? Adira aqui.'}
+            Entrar
           </Button>
         </CardFooter>
       </form>

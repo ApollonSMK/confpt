@@ -72,6 +72,11 @@ export type Event = {
   image_url?: string | null;
   image_hint?: string | null;
   is_public: boolean;
+  confrarias?: {
+    name: string;
+    seal_url: string;
+    seal_hint: string;
+  } | null;
 };
 
 export type UserRankInfo = {

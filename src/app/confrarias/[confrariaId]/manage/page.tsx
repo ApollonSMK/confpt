@@ -52,7 +52,7 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
     }
     
     // Security check: ensure the logged-in user is the responsible user or admin
-    const isAdmin = user.email === process.env.ADMIN_EMAIL;
+    const isAdmin = (user.email === process.env.ADMIN_EMAIL);
     if (confrariaData.responsible_user_id !== user.id && !isAdmin) {
         console.warn(`User ${user.id} tried to manage confraria ${id} without permission.`);
         redirect(`/confrarias/${id}`);
@@ -84,7 +84,7 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             ] = await Promise.all([
                 supabaseService
                     .from('seals')
-                    .select('user_id', { count: 'exact' })
+                    .select('user_id, discovery_id', { count: 'exact' })
                     .in('user_id', userIds),
                 supabaseService
                     .from('submissions')
@@ -94,7 +94,7 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             ]);
             
             // Process the results into maps for efficient lookup
-            const sealsByUser = (sealsData ?? []).reduce((acc: Record<string, number>, record: any) => {
+             const sealsByUser = (sealsData ?? []).reduce((acc: Record<string, number>, record: any) => {
                 if (record.user_id) acc[record.user_id] = (acc[record.user_id] || 0) + 1;
                 return acc;
             }, {});
@@ -104,10 +104,11 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
                 return acc;
             }, {});
 
+
             const usersById = new Map(users.map((u: any) => [u.id, u]));
 
             pendingMembers = pendingRequests.map(request => {
-                const user = usersById.get(request.user_id);
+                const userProfile = usersById.get(request.user_id);
                 const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
                 const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
                 const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
@@ -115,8 +116,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
                 return {
                     id: request.id,
                     user_id: request.user_id,
-                    user_email: user?.email ?? 'Email Desconhecido',
-                    user_full_name: user?.full_name ?? 'Desconhecido',
+                    user_email: userProfile?.email ?? 'Email Desconhecido',
+                    user_full_name: userProfile?.full_name ?? 'Desconhecido',
                     rank: rank,
                 };
             });

@@ -38,8 +38,8 @@ export async function signup(formData: z.infer<typeof signupSchema>) {
     });
     
     if (error) {
-        console.error("Signup Error:", error);
-        return { error: error.message || 'Não foi possível criar a conta. Tente novamente.' };
+        console.error("Supabase Signup Error:", JSON.stringify(error, null, 2));
+        return { error: `Erro ao criar conta: ${error.message}` };
     }
 
     revalidatePath('/', 'layout');

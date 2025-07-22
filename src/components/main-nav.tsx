@@ -4,10 +4,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, Building2 } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, Building2, ShieldQuestion } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { createClient } from '@/lib/supabase/client';
 
 
 const navLinks = [
@@ -40,6 +41,29 @@ interface MainNavProps {
 export function MainNav({ user, isAdmin }: MainNavProps) {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const [managedConfrariaId, setManagedConfrariaId] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchManagedConfraria() {
+      if (user) {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('confrarias')
+          .select('id')
+          .eq('responsible_user_id', user.id)
+          .single();
+
+        if (data) {
+          setManagedConfrariaId(data.id);
+        }
+         if (error && error.code !== 'PGRST116') { // Ignore 'exact one row' error
+            console.error("Error fetching managed confraria:", error);
+        }
+      }
+    }
+
+    fetchManagedConfraria();
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -137,6 +161,14 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                                     <span>Submeter Descoberta</span>
                                 </Link>
                             </DropdownMenuItem>
+                            {managedConfrariaId && (
+                                <DropdownMenuItem asChild className="cursor-pointer">
+                                    <Link href={`/confrarias/${managedConfrariaId}/manage`}>
+                                        <ShieldQuestion className="mr-2 h-4 w-4" />
+                                        <span>Gerir Confraria</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
                            {isAdmin && (
                             <>
                               <DropdownMenuSeparator />
@@ -167,7 +199,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                 <Button asChild>
                     <Link href="/login">
                         <UserRound className='mr-2' />
-                        Entrar / Aderir
+                        Entrar
                     </Link>
                 </Button>
             )}
@@ -189,3 +221,5 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
     </header>
   );
 }
+
+    

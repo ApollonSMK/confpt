@@ -16,10 +16,8 @@ import { Input } from '@/components/ui/input';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
 
 const formSchema = z.object({
     email: z.string().email('Por favor, insira um email válido.'),
@@ -117,3 +115,5 @@ export function LoginForm({ isSignUp }: LoginFormProps) {
     </FormProvider>
   );
 }
+
+    

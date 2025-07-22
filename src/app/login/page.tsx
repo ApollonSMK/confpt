@@ -26,7 +26,7 @@ export default function LoginPage() {
                 </CardDescription>
             </CardHeader>
             <LoginForm isSignUp={isSignUp} />
-            <CardFooter className="flex-col gap-4 pt-6">
+             <CardFooter className="flex-col gap-4 pt-6">
                 <div className="relative w-full">
                     <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t" />
@@ -46,3 +46,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

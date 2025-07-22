@@ -28,6 +28,7 @@ type ConfrariaDetails = Confraria & {
 
 async function getConfrariaDetails(id: string, user: User | null): Promise<ConfrariaDetails | null> {
     const supabase = createServerClient();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     const { data: confraria, error } = await supabase
         .from('confrarias')
@@ -91,6 +92,8 @@ async function getConfrariaDetails(id: string, user: User | null): Promise<Confr
         user_has_sealed: false, 
     })) as unknown as Discovery[];
 
+    const isAdmin = currentUser?.email === process.env.ADMIN_EMAIL;
+
     return {
         ...confraria,
         sealUrl: confraria.seal_url,
@@ -98,7 +101,7 @@ async function getConfrariaDetails(id: string, user: User | null): Promise<Confr
         discoveries,
         member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
         membership_status,
-        is_responsible: user?.id === confraria.responsible_user_id,
+        is_responsible: user?.id === confraria.responsible_user_id || isAdmin,
     } as ConfrariaDetails;
 }
 
@@ -113,21 +116,21 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
     }
     
     const MembershipButton = () => {
-        if (!user) {
-            return (
+        if (confraria.is_responsible && user) {
+             return (
                 <Button asChild>
-                    <Link href={`/login?redirect=/confrarias/${confraria.id}`}>
-                        <UserPlus /> Solicitar Associação
+                    <Link href={`/confrarias/${confraria.id}/manage`}>
+                        <Wrench /> Gerir Confraria
                     </Link>
                 </Button>
             );
         }
 
-        if (confraria.is_responsible) {
-             return (
+        if (!user) {
+            return (
                 <Button asChild>
-                    <Link href={`/confrarias/${confraria.id}/manage`}>
-                        <Wrench /> Gerir Confraria
+                    <Link href={`/login?redirect=/confrarias/${confraria.id}`}>
+                        <UserPlus /> Solicitar Associação
                     </Link>
                 </Button>
             );
@@ -296,3 +299,5 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
         </div>
     );
 }
+
+    

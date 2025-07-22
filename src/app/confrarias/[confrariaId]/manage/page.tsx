@@ -9,69 +9,87 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Check, UserPlus, Users, X } from 'lucide-react';
 import { handleMembershipAction } from './actions';
+import { createServiceRoleClient } from '@/lib/supabase/service';
 
 type PendingMember = {
     id: number;
     user_id: string;
-    users: {
-        email: string;
-        full_name: string | null;
-        avatar_url: string | null;
-    }
+    user_email: string;
+    user_full_name: string | null;
 }
 
 async function getConfrariaAndPendingMembers(id: number, user: User) {
     const supabase = createServerClient();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const supabaseService = createServiceRoleClient(); // Use service client for cross-schema queries if needed
 
     // 1. Get confraria details
-    const { data, error } = await supabase
+    const { data: confrariaData, error: confrariaError } = await supabase
         .from('confrarias')
         .select('*')
         .eq('id', id)
         .single();
 
-    if (error || !data) {
-        console.error("Error fetching confraria for management", error);
+    if (confrariaError || !confrariaData) {
+        console.error("Error fetching confraria for management", confrariaError);
         notFound();
     }
     
-    const isAdmin = currentUser?.email === process.env.ADMIN_EMAIL;
-
     // Security check: ensure the logged-in user is the responsible user or admin
-    if (data.responsible_user_id !== user.id && !isAdmin) {
+    const isAdmin = user.email === process.env.ADMIN_EMAIL;
+    if (confrariaData.responsible_user_id !== user.id && !isAdmin) {
         console.warn(`User ${user.id} tried to manage confraria ${id} without permission.`);
         redirect(`/confrarias/${id}`);
     }
 
-    // 2. Get pending members for this confraria
-    const { data: pendingMembers, error: membersError } = await supabase
+    // 2. Get pending membership requests
+    const { data: pendingRequests, error: membersError } = await supabase
         .from('confraria_members')
-        .select(`
-            id,
-            user_id,
-            users (
-                email,
-                full_name,
-                avatar_url
-            )
-        `)
+        .select('id, user_id')
         .eq('confraria_id', id)
         .eq('status', 'pending');
 
     if (membersError) {
-        console.error("Error fetching pending members:", membersError);
+        console.error("Error fetching pending members requests:", membersError);
+        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
     }
     
-    const confrariaData = {
-      id: data.id,
-      name: data.name,
-      motto: data.motto,
-      history: data.history ?? '',
-      founders: data.founders ?? '',
-    };
+    if (!pendingRequests || pendingRequests.length === 0) {
+        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
+    }
+    
+    // 3. Get user details for pending members
+    const userIds = pendingRequests.map(r => r.user_id);
+    const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
 
-    return { confrariaData, pendingMembers: (pendingMembers as PendingMember[] || []) };
+    if (usersError) {
+        console.error("Error fetching users for pending members:", usersError);
+        // Still return data to avoid crashing the page
+        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
+    }
+
+    const usersById = new Map(users.map((u: any) => [u.id, u]));
+
+    // 4. Combine the data
+    const pendingMembers = pendingRequests.map(request => {
+        const user = usersById.get(request.user_id);
+        return {
+            id: request.id,
+            user_id: request.user_id,
+            user_email: user?.email ?? 'Email Desconhecido',
+            user_full_name: user?.full_name ?? null,
+        };
+    });
+
+    return { 
+        confrariaData: {
+            id: confrariaData.id,
+            name: confrariaData.name,
+            motto: confrariaData.motto,
+            history: confrariaData.history ?? '',
+            founders: confrariaData.founders ?? '',
+        }, 
+        pendingMembers: (pendingMembers as PendingMember[] || []) 
+    };
 }
 
 
@@ -130,7 +148,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                                 {pendingMembers.map((member) => (
                                     <TableRow key={member.id}>
                                         <TableCell className="font-medium">
-                                            {member.users?.full_name || member.users?.email || 'Desconhecido'}
+                                            {member.user_full_name || member.user_email || 'Desconhecido'}
                                         </TableCell>
                                         <TableCell className="text-right">
                                            <ActionButtons member={member} />
@@ -184,5 +202,3 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         </div>
     );
 }
-
-    

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';

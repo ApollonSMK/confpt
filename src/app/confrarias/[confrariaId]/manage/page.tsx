@@ -1,11 +1,12 @@
 
+
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin } from 'lucide-react';
 import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,20 +75,26 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         if (usersError) {
             console.error("Error fetching users for pending members:", usersError);
         } else {
-             const [sealsData, submissionsData] = await Promise.all([
-                supabaseService.from('seals').select('user_id', { count: 'exact' }).in('user_id', userIds),
-                supabaseService.from('submissions').select('user_id', { count: 'exact' }).in('user_id', userIds).eq('status', 'Aprovado')
-            ]);
+             const { data: sealsData } = await supabaseService
+                .from('seals')
+                .select('user_id', { count: 'exact' })
+                .in('user_id', userIds);
 
-            const sealsByUser = (sealsData.data ?? []).reduce((acc, { user_id }) => {
-                acc[user_id] = (acc[user_id] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>);
+             const { data: submissionsData } = await supabaseService
+                .from('submissions')
+                .select('user_id', { count: 'exact' })
+                .in('user_id', userIds)
+                .eq('status', 'Aprovado');
 
-            const submissionsByUser = (submissionsData.data ?? []).reduce((acc, { user_id }) => {
-                acc[user_id] = (acc[user_id] || 0) + 1;
+            const sealsByUser = (sealsData ?? []).reduce((acc: Record<string, number>, { user_id }) => {
+                if (user_id) acc[user_id] = (acc[user_id] || 0) + 1;
                 return acc;
-            }, {} as Record<string, number>);
+            }, {});
+
+            const submissionsByUser = (submissionsData ?? []).reduce((acc: Record<string, number>, { user_id }) => {
+               if (user_id) acc[user_id] = (acc[user_id] || 0) + 1;
+                return acc;
+            }, {});
 
 
             const usersById = new Map(users.map((u: any) => [u.id, u]));
@@ -109,8 +116,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         }
     }
     
-    // 3. Get Events
-    const { data: events, error: eventsError } = await supabase
+    // 3. Get Events using service client to bypass RLS issues on read
+    const { data: events, error: eventsError } = await supabaseService
         .from('events')
         .select('*')
         .eq('confraria_id', id)
@@ -327,4 +334,3 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         </div>
     );
 }
-

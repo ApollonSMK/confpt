@@ -11,6 +11,11 @@ const loginSchema = z.object({
     password: z.string().min(6),
 });
 
+const signupSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+});
+
 export async function login(formData: z.infer<typeof loginSchema>) {
   const supabase = createServerClient();
 
@@ -23,6 +28,24 @@ export async function login(formData: z.infer<typeof loginSchema>) {
   revalidatePath('/', 'layout');
   redirect('/');
 }
+
+export async function signup(formData: z.infer<typeof signupSchema>) {
+    const supabase = createServerClient();
+
+    const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+    });
+    
+    if (error) {
+        console.error("Signup Error:", error);
+        return { error: error.message || 'Não foi possível criar a conta. Tente novamente.' };
+    }
+
+    revalidatePath('/', 'layout');
+    redirect('/');
+}
+
 
 export async function logout() {
     const supabase = createServerClient();

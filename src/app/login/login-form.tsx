@@ -14,25 +14,31 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CardContent, CardFooter } from '@/components/ui/card';
-import { login } from './actions';
+import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const loginSchema = z.object({
+
+const formSchema = z.object({
     email: z.string().email('Por favor, insira um email válido.'),
     password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
 
-type FormValues = z.infer<typeof loginSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
-export function LoginForm() {
+interface LoginFormProps {
+    isSignUp: boolean;
+}
+
+export function LoginForm({ isSignUp }: LoginFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<FormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -42,18 +48,19 @@ export function LoginForm() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
 
-    const result = await login(values);
+    const action = isSignUp ? signup : login;
+    const result = await action(values);
 
     if (result && result.error) {
       toast({
-        title: 'Erro de autenticação',
+        title: isSignUp ? 'Erro ao Criar Conta' : 'Erro de Autenticação',
         description: result.error,
         variant: 'destructive',
       });
     } else {
         toast({
-            title: 'Sessão iniciada!',
-            description: 'Bem-vindo(a) de volta!',
+            title: isSignUp ? 'Conta Criada!' : 'Sessão Iniciada!',
+            description: isSignUp ? 'Bem-vindo(a)! A sua conta foi criada com sucesso.' : 'Bem-vindo(a) de volta!',
         });
     }
     setLoading(false);
@@ -103,7 +110,7 @@ export function LoginForm() {
         <CardFooter className="flex-col gap-4">
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Entrar
+            {isSignUp ? 'Criar Conta' : 'Entrar'}
           </Button>
         </CardFooter>
       </form>

@@ -4,14 +4,17 @@ import { notFound, redirect } from 'next/navigation';
 import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit } from 'lucide-react';
 import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { getUserRank, type UserRankInfo } from '@/lib/data';
+import { EventForm } from './event-form';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import type { Event } from '@/lib/data';
+import Image from 'next/image';
 
 type PendingMember = {
     id: number;
@@ -29,7 +32,7 @@ type ConfrariaDataType = {
     founders: string;
 }
 
-async function getConfrariaAndPendingMembers(id: number, user: User) {
+async function getConfrariaAndRelatedData(id: number, user: User) {
     const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
 
@@ -61,56 +64,61 @@ async function getConfrariaAndPendingMembers(id: number, user: User) {
 
     if (membersError) {
         console.error("Error fetching pending members requests:", membersError);
-        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
     }
     
-    if (!pendingRequests || pendingRequests.length === 0) {
-        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
+    let pendingMembers: PendingMember[] = [];
+    if (pendingRequests && pendingRequests.length > 0) {
+        const userIds = pendingRequests.map(r => r.user_id);
+        const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
+        
+        if (usersError) {
+            console.error("Error fetching users for pending members:", usersError);
+        } else {
+             const [sealsData, submissionsData] = await Promise.all([
+                supabaseService.from('seals').select('user_id', { count: 'exact' }).in('user_id', userIds),
+                supabaseService.from('submissions').select('user_id', { count: 'exact' }).in('user_id', userIds).eq('status', 'Aprovado')
+            ]);
+
+            const sealsByUser = (sealsData.data ?? []).reduce((acc, { user_id }) => {
+                acc[user_id] = (acc[user_id] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+
+            const submissionsByUser = (submissionsData.data ?? []).reduce((acc, { user_id }) => {
+                acc[user_id] = (acc[user_id] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+
+
+            const usersById = new Map(users.map((u: any) => [u.id, u]));
+
+            pendingMembers = pendingRequests.map(request => {
+                const user = usersById.get(request.user_id);
+                const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
+                const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
+                const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
+
+                return {
+                    id: request.id,
+                    user_id: request.user_id,
+                    user_email: user?.email ?? 'Email Desconhecido',
+                    user_full_name: user?.full_name ?? 'Desconhecido',
+                    rank: rank,
+                };
+            });
+        }
     }
     
-    // 3. Get user details and rank info for pending members
-    const userIds = pendingRequests.map(r => r.user_id);
-    const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
-    
-    if (usersError) {
-        console.error("Error fetching users for pending members:", usersError);
-        // Return without rank info if this fails
-        return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
+    // 3. Get Events
+    const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('confraria_id', id)
+        .order('event_date', { ascending: true });
+
+    if(eventsError) {
+        console.error("Error fetching events:", eventsError);
     }
-    
-    // Fetch counts for all pending users in parallel
-    const [sealsData, submissionsData] = await Promise.all([
-        supabaseService.from('seals').select('user_id', { count: 'exact' }).in('user_id', userIds),
-        supabaseService.from('submissions').select('user_id', { count: 'exact' }).in('user_id', userIds).eq('status', 'Aprovado')
-    ]);
-
-    const sealsByUser = (sealsData.data ?? []).reduce((acc, { user_id }) => {
-        acc[user_id] = (acc[user_id] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const submissionsByUser = (submissionsData.data ?? []).reduce((acc, { user_id }) => {
-        acc[user_id] = (acc[user_id] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-
-
-    const usersById = new Map(users.map((u: any) => [u.id, u]));
-
-    const pendingMembers = pendingRequests.map(request => {
-        const user = usersById.get(request.user_id);
-        const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
-        const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
-        const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
-
-        return {
-            id: request.id,
-            user_id: request.user_id,
-            user_email: user?.email ?? 'Email Desconhecido',
-            user_full_name: user?.full_name ?? 'Desconhecido',
-            rank: rank,
-        };
-    });
 
     return { 
         confrariaData: {
@@ -120,7 +128,8 @@ async function getConfrariaAndPendingMembers(id: number, user: User) {
             history: confrariaData.history ?? '',
             founders: confrariaData.founders ?? '',
         }, 
-        pendingMembers: (pendingMembers as PendingMember[] || []) 
+        pendingMembers,
+        events: (events as Event[] || []) 
     };
 }
 
@@ -138,7 +147,7 @@ const ActionButtons = ({ member, confrariaId }: { member: PendingMember, confrar
     </form>
 );
 
-const TabContentCard = ({ title, description, children, icon: Icon, badgeText }: { title: string, description: string, children: React.ReactNode, icon: React.ElementType, badgeText?: string }) => (
+const TabContentCard = ({ title, description, children, icon: Icon, badgeText, actions }: { title: string, description: string, children: React.ReactNode, icon: React.ElementType, badgeText?: string, actions?: React.ReactNode }) => (
     <Card>
         <CardHeader className="flex flex-row items-start justify-between">
             <div>
@@ -148,7 +157,10 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText }:
                 </CardTitle>
                 <CardDescription>{description}</CardDescription>
             </div>
-            {badgeText && <Badge variant="destructive">{badgeText}</Badge>}
+            <div className="flex items-center gap-4">
+                {badgeText && <Badge variant="destructive">{badgeText}</Badge>}
+                {actions}
+            </div>
         </CardHeader>
         <CardContent>
             {children}
@@ -170,8 +182,8 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         notFound();
     }
     
-    const { confrariaData, pendingMembers } = await getConfrariaAndPendingMembers(confrariaId, user);
-
+    const { confrariaData, pendingMembers, events } = await getConfrariaAndRelatedData(confrariaId, user);
+    
     return (
         <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
             <div>
@@ -191,7 +203,11 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                         {pendingMembers.length > 0 && <Badge className="ml-2">{pendingMembers.length}</Badge>}
                     </TabsTrigger>
                     <TabsTrigger value="members" disabled><Users className="mr-2 h-4 w-4"/>Membros</TabsTrigger>
-                    <TabsTrigger value="events" disabled><Calendar className="mr-2 h-4 w-4"/>Eventos</TabsTrigger>
+                    <TabsTrigger value="events">
+                        <Calendar className="mr-2 h-4 w-4"/>
+                        Eventos
+                        {events.length > 0 && <Badge className="ml-2">{events.length}</Badge>}
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-6">
@@ -262,15 +278,53 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                 </TabsContent>
 
                  <TabsContent value="events" className="mt-6">
-                    <TabContentCard title="Gestão de Eventos" description="Crie e gira os eventos da sua confraria." icon={Calendar}>
-                        <div className="text-center py-12 text-muted-foreground">
-                            <p className="font-semibold text-lg">Funcionalidade Futura</p>
-                            <p>Em breve poderá anunciar os próximos eventos e encontros aqui.</p>
-                        </div>
-                    </TabContentCard>
+                     <Dialog>
+                        <TabContentCard 
+                            title="Gestão de Eventos" 
+                            description="Crie e gira os eventos e encontros da sua confraria." 
+                            icon={Calendar}
+                            actions={
+                                <DialogTrigger asChild>
+                                    <Button><PlusCircle/> Adicionar Evento</Button>
+                                </DialogTrigger>
+                            }>
+                            {events.length > 0 ? (
+                                <div className="space-y-4">
+                                    {events.map(event => (
+                                        <Card key={event.id} className="flex items-center p-4 gap-4">
+                                            <Image src={event.image_url ?? 'https://placehold.co/100x100.png'} alt={event.name} width={80} height={80} className="rounded-md object-cover" data-ai-hint={event.image_hint ?? 'event'} />
+                                            <div className="flex-grow">
+                                                <h3 className="font-bold">{event.name}</h3>
+                                                <p className="text-sm text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> {new Date(event.event_date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                                                <p className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {event.location || 'Local a confirmar'}</p>
+                                            </div>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="icon"><Edit className="h-4 w-4"/></Button>
+                                            </DialogTrigger>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <p className="font-semibold text-lg">Nenhum evento agendado.</p>
+                                    <p>Crie o seu primeiro evento para juntar os confrades.</p>
+                                </div>
+                            )}
+                        </TabContentCard>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Adicionar Novo Evento</DialogTitle>
+                                <DialogDescription>
+                                    Preencha os detalhes do seu evento. Clique em guardar quando terminar.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <EventForm confrariaId={confrariaData.id} />
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
 
             </Tabs>
         </div>
     );
 }
+

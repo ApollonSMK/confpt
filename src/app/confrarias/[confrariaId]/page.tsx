@@ -1,6 +1,6 @@
 
 import { createServerClient } from '@/lib/supabase/server';
-import type { Confraria, Discovery } from '@/lib/data';
+import type { Confraria, Discovery, Event } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench } from 'lucide-react';
@@ -21,6 +21,7 @@ type ConfrariaPageProps = {
 
 type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
+  events: Event[];
   member_count: number;
   membership_status: 'member' | 'pending' | 'none';
   is_responsible: boolean;
@@ -49,6 +50,9 @@ async function getConfrariaDetails(id: string, user: User | null): Promise<Confr
             confraria_members (
                 id,
                 status
+            ),
+            events (
+                *
             )
         `)
         .eq('id', id)
@@ -99,6 +103,7 @@ async function getConfrariaDetails(id: string, user: User | null): Promise<Confr
         sealUrl: confraria.seal_url,
         sealHint: confraria.seal_hint,
         discoveries,
+        events: confraria.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
         member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
         membership_status,
         is_responsible: user?.id === confraria.responsible_user_id || isAdmin,
@@ -243,11 +248,31 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                                 <Calendar className="h-8 w-8 text-primary/80"/>
                                 Próximos Eventos
                             </h2>
-                             <Card className="border-l-4 border-primary">
-                                <CardContent className="p-6 text-center text-muted-foreground">
-                                    De momento, não existem eventos agendados.
-                                </CardContent>
-                            </Card>
+                             {confraria.events && confraria.events.length > 0 ? (
+                                <div className="space-y-4">
+                                    {confraria.events.map(event => (
+                                         <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
+                                            <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
+                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} layout="fill" className="object-cover rounded-l-lg" data-ai-hint={event.image_hint ?? 'event'} />
+                                            </div>
+                                            <CardHeader className="flex-grow">
+                                                <CardTitle className="font-headline text-2xl">{event.name}</CardTitle>
+                                                <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
+                                                <CardContent className="p-0 pt-2">
+                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+                                                    <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>
+                                                </CardContent>
+                                            </CardHeader>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border-l-4 border-primary">
+                                    <CardContent className="p-6 text-center text-muted-foreground">
+                                        De momento, não existem eventos agendados.
+                                    </CardContent>
+                                </Card>
+                            )}
                         </section>
                 
                         <section>
@@ -299,5 +324,3 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
         </div>
     );
 }
-
-    

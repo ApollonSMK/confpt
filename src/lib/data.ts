@@ -40,6 +40,7 @@ export type Confraria = {
   seal_hint: string;
   responsible_user_id?: string | null;
   discoveries?: Discovery[]; // Relação opcional
+  events?: Event[]; // Relação opcional
   sealUrl: string; // Para compatibilidade
   sealHint: string; // Para compatibilidade
   discoveryCount?: number;
@@ -58,6 +59,17 @@ export type Submission = {
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
   discoveryTitle: string; // Para compatibilidade
   users?: { email: string | undefined }; // Relação opcional
+};
+
+export type Event = {
+  id: number;
+  confraria_id: number;
+  name: string;
+  description?: string | null;
+  event_date: string; // Vem como string do Supabase
+  location?: string | null;
+  image_url?: string | null;
+  image_hint?: string | null;
 };
 
 export type UserRankInfo = {

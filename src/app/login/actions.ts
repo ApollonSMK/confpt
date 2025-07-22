@@ -8,8 +8,6 @@ import { z } from 'zod';
 import { regions } from '@/lib/data';
 
 const signUpSchema = z.object({
-  fullName: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
-  region: z.string().nonempty('Por favor, selecione uma região.'),
   email: z.string().email('Por favor, insira um email válido.'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
@@ -40,10 +38,6 @@ export async function signup(formData: z.infer<typeof signUpSchema>) {
     password: formData.password,
     options: {
         email_confirm: false, // Desativar confirmação de email para simplificar
-        data: {
-            full_name: formData.fullName,
-            region: formData.region,
-        }
     }
   });
 
@@ -52,6 +46,7 @@ export async function signup(formData: z.infer<typeof signUpSchema>) {
     if (error.message.includes('User already registered')) {
         return { error: 'Este email já está registado. Tente fazer login.'};
     }
+    // Updated generic error to include the actual message from Supabase for better debugging.
     return { error: `Não foi possível criar a conta. Tente novamente. (${error.message})` };
   }
 

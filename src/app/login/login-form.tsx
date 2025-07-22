@@ -18,9 +18,6 @@ import { login, signup } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions } from '@/lib/data';
-
 
 const loginSchema = z.object({
     email: z.string().email('Por favor, insira um email válido.'),
@@ -28,8 +25,6 @@ const loginSchema = z.object({
 });
 
 const signUpSchema = z.object({
-  fullName: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
-  region: z.string().nonempty('Por favor, selecione uma região.'),
   email: z.string().email('Por favor, insira um email válido.'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
@@ -52,8 +47,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     defaultValues: {
       email: '',
       password: '',
-      fullName: '',
-      region: '',
     },
   });
 
@@ -61,8 +54,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     form.reset({
       email: '',
       password: '',
-      fullName: '',
-      region: '',
     });
   }, [isSignUp, form]);
 
@@ -92,43 +83,6 @@ export function LoginForm({ isSignUp, setIsSignUp }: LoginFormProps) {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
-          {isSignUp && (
-            <>
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="O seu nome de confrade" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="region"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Região Favorita</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione a sua região do coração" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-              />
-            </>
-          )}
           <FormField
             control={form.control}
             name="email"

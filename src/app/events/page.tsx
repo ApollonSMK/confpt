@@ -1,8 +1,9 @@
 
 import { createServerClient } from '@/lib/supabase/server';
-import type { Event } from '@/lib/data';
+import { regions, type Event } from '@/lib/data';
 import { EventCard } from '@/components/event-card';
 import { Calendar } from 'lucide-react';
+import { EventFilter } from '@/components/event-filter';
 
 async function getPublicEvents(): Promise<Event[]> {
   const supabase = createServerClient();
@@ -27,8 +28,21 @@ async function getPublicEvents(): Promise<Event[]> {
   return data as Event[];
 }
 
-export default async function EventsPage() {
-  const events = await getPublicEvents();
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const allEvents = await getPublicEvents();
+  
+  const region = searchParams?.region as string || '';
+
+  let filteredEvents = allEvents;
+
+  if (region) {
+    filteredEvents = filteredEvents.filter(d => d.region === region);
+  }
+
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -44,16 +58,18 @@ export default async function EventsPage() {
         </p>
       </div>
 
-      {events.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {events.map((event) => (
+      <EventFilter regions={regions} />
+
+      {filteredEvents.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          {filteredEvents.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-card border rounded-lg">
-          <p className="font-semibold text-lg">Nenhum evento público agendado.</p>
-          <p className="text-muted-foreground">Por favor, volte mais tarde para ver as novidades.</p>
+        <div className="text-center py-16 bg-card border rounded-lg mt-12">
+          <p className="font-semibold text-lg">Nenhum evento encontrado.</p>
+          <p className="text-muted-foreground">Tente limpar os filtros para ver todos os eventos públicos agendados.</p>
         </div>
       )}
     </div>

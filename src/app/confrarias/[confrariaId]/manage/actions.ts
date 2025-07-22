@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { z } from 'zod';
@@ -21,10 +20,10 @@ const eventFormSchema = z.object({
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
+  is_public: z.boolean().default(true),
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
   image: z.any().optional(), // for the file upload
-  is_public: z.boolean().default(true),
 });
 
 
@@ -42,7 +41,8 @@ async function checkPermissions(confrariaId: number, supabaseClient: any) {
     
     if (error) throw new Error('Confraria not found');
 
-    const isAdmin = user.email === process.env.ADMIN_EMAIL;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const isAdmin = session?.user.email === process.env.ADMIN_EMAIL;
     const isResponsible = confraria.responsible_user_id === user.id;
 
     if (!isAdmin && !isResponsible) {

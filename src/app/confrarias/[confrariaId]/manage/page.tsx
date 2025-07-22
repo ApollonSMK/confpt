@@ -11,12 +11,14 @@ import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { getUserRank, type UserRankInfo } from '@/lib/data';
 
 type PendingMember = {
     id: number;
     user_id: string;
     user_email: string;
     user_full_name: string | null;
+    rank: UserRankInfo;
 }
 
 type ConfrariaDataType = {
@@ -66,24 +68,47 @@ async function getConfrariaAndPendingMembers(id: number, user: User) {
         return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
     }
     
-    // 3. Get user details for pending members
+    // 3. Get user details and rank info for pending members
     const userIds = pendingRequests.map(r => r.user_id);
     const { data: users, error: usersError } = await supabaseService.rpc('get_user_emails_by_ids', { p_user_ids: userIds });
-
+    
     if (usersError) {
         console.error("Error fetching users for pending members:", usersError);
+        // Return without rank info if this fails
         return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
     }
+    
+    // Fetch counts for all pending users in parallel
+    const [sealsData, submissionsData] = await Promise.all([
+        supabaseService.from('seals').select('user_id', { count: 'exact' }).in('user_id', userIds),
+        supabaseService.from('submissions').select('user_id', { count: 'exact' }).in('user_id', userIds).eq('status', 'Aprovado')
+    ]);
+
+    const sealsByUser = (sealsData.data ?? []).reduce((acc, { user_id }) => {
+        acc[user_id] = (acc[user_id] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const submissionsByUser = (submissionsData.data ?? []).reduce((acc, { user_id }) => {
+        acc[user_id] = (acc[user_id] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
 
     const usersById = new Map(users.map((u: any) => [u.id, u]));
 
     const pendingMembers = pendingRequests.map(request => {
         const user = usersById.get(request.user_id);
+        const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
+        const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
+        const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
+
         return {
             id: request.id,
             user_id: request.user_id,
             user_email: user?.email ?? 'Email Desconhecido',
-            user_full_name: user?.full_name ?? null,
+            user_full_name: user?.full_name ?? 'Desconhecido',
+            rank: rank,
         };
     });
 
@@ -194,6 +219,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Confrade</TableHead>
+                                        <TableHead>Cargo</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -201,8 +227,14 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
                                     {pendingMembers.map((member) => (
                                         <TableRow key={member.id}>
                                             <TableCell className="font-medium">
-                                                <div className="font-bold">{member.user_full_name || 'Desconhecido'}</div>
+                                                <div className="font-bold">{member.user_full_name}</div>
                                                 <div className="text-xs text-muted-foreground">{member.user_email}</div>
+                                            </TableCell>
+                                             <TableCell>
+                                                <Badge variant="secondary" className="flex items-center gap-2 w-fit">
+                                                    <member.rank.rankIcon className="h-4 w-4 text-primary" />
+                                                    <span>{member.rank.rankName}</span>
+                                                </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <ActionButtons member={member} confrariaId={confrariaData.id} />

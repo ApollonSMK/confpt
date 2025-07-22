@@ -5,9 +5,8 @@ import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar } from 'lucide-react';
 import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 
@@ -20,7 +19,7 @@ type PendingMember = {
 
 async function getConfrariaAndPendingMembers(id: number, user: User) {
     const supabase = createServerClient();
-    const supabaseService = createServiceRoleClient(); // Use service client for cross-schema queries if needed
+    const supabaseService = createServiceRoleClient();
 
     // 1. Get confraria details
     const { data: confrariaData, error: confrariaError } = await supabase
@@ -63,13 +62,11 @@ async function getConfrariaAndPendingMembers(id: number, user: User) {
 
     if (usersError) {
         console.error("Error fetching users for pending members:", usersError);
-        // Still return data to avoid crashing the page
         return { confrariaData: { ...confrariaData, history: confrariaData.history ?? '', founders: confrariaData.founders ?? '' }, pendingMembers: [] };
     }
 
     const usersById = new Map(users.map((u: any) => [u.id, u]));
 
-    // 4. Combine the data
     const pendingMembers = pendingRequests.map(request => {
         const user = usersById.get(request.user_id);
         return {
@@ -123,82 +120,95 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16 space-y-12">
-            <ManageConfrariaForm confraria={confrariaData} />
+            <div>
+                 <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel da {confrariaData.name}</h1>
+                <p className="text-lg text-muted-foreground">
+                    Bem-vindo, Confrade Responsável. Gira a sua confraria a partir daqui.
+                </p>
+            </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                        <UserPlus className="h-7 w-7 text-primary"/>
-                        Pedidos de Adesão
-                    </CardTitle>
-                    <CardDescription>
-                        Aprove ou rejeite os pedidos dos confrades que desejam juntar-se.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {pendingMembers.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Confrade</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {pendingMembers.map((member) => (
-                                    <TableRow key={member.id}>
-                                        <TableCell className="font-medium">
-                                            {member.user_full_name || member.user_email || 'Desconhecido'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                           <ActionButtons member={member} />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                         <div className="text-center py-12 text-muted-foreground">
-                            <p className="font-semibold text-lg">Nenhum pedido pendente.</p>
-                            <p>De momento, não há novos aspirantes a confrade.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                        <Users className="h-7 w-7 text-primary"/>
-                        Gestão de Membros
-                    </CardTitle>
-                    <CardDescription>
-                        (Funcionalidade Futura) Veja todos os membros, altere cargos ou remova membros.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center py-12 text-muted-foreground">
-                        <p>Em breve...</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                 <div className="space-y-8">
+                    <ManageConfrariaForm confraria={confrariaData} />
 
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                        <Users className="h-7 w-7 text-primary"/>
-                        Gestão de Eventos
-                    </CardTitle>
-                    <CardDescription>
-                        (Funcionalidade Futura) Crie e gira os eventos da sua confraria.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="text-center py-12 text-muted-foreground">
-                        <p>Em breve...</p>
-                    </div>
-                </CardContent>
-            </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                                <Users className="h-7 w-7 text-primary"/>
+                                Gestão de Membros
+                            </CardTitle>
+                            <CardDescription>
+                                (Funcionalidade Futura) Veja todos os membros, altere cargos ou remova membros.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-12 text-muted-foreground">
+                                <p>Em breve...</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                 </div>
+                 <div className="space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                                <UserPlus className="h-7 w-7 text-primary"/>
+                                Pedidos de Adesão
+                            </CardTitle>
+                            <CardDescription>
+                                Aprove ou rejeite os pedidos dos confrades que desejam juntar-se.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {pendingMembers.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Confrade</TableHead>
+                                            <TableHead className="text-right">Ações</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {pendingMembers.map((member) => (
+                                            <TableRow key={member.id}>
+                                                <TableCell className="font-medium">
+                                                    <div className="font-bold">{member.user_full_name || 'Desconhecido'}</div>
+                                                    <div className="text-xs text-muted-foreground">{member.user_email}</div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                <ActionButtons member={member} />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <p className="font-semibold text-lg">Nenhum pedido pendente.</p>
+                                    <p>De momento, não há novos aspirantes a confrade.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                                <Calendar className="h-7 w-7 text-primary"/>
+                                Gestão de Eventos
+                            </CardTitle>
+                            <CardDescription>
+                                (Funcionalidade Futura) Crie e gira os eventos da sua confraria.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-12 text-muted-foreground">
+                                <p>Em breve...</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 }

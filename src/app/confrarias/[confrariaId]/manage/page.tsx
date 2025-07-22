@@ -16,6 +16,8 @@ import { EventForm } from './event-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { Event } from '@/lib/data';
 import Image from 'next/image';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 type PendingMember = {
     id: number;
@@ -75,27 +77,32 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         if (usersError) {
             console.error("Error fetching users for pending members:", usersError);
         } else {
-             const { data: sealsData } = await supabaseService
-                .from('seals')
-                .select('user_id', { count: 'exact' })
-                .in('user_id', userIds);
-
-             const { data: submissionsData } = await supabaseService
-                .from('submissions')
-                .select('user_id', { count: 'exact' })
-                .in('user_id', userIds)
-                .eq('status', 'Aprovado');
-
-            const sealsByUser = (sealsData ?? []).reduce((acc: Record<string, number>, { user_id }) => {
-                if (user_id) acc[user_id] = (acc[user_id] || 0) + 1;
+             // Fetch all required counts in parallel
+            const [
+                { data: sealsData },
+                { data: submissionsData }
+            ] = await Promise.all([
+                supabaseService
+                    .from('seals')
+                    .select('user_id', { count: 'exact' })
+                    .in('user_id', userIds),
+                supabaseService
+                    .from('submissions')
+                    .select('user_id', { count: 'exact' })
+                    .in('user_id', userIds)
+                    .eq('status', 'Aprovado')
+            ]);
+            
+            // Process the results into maps for efficient lookup
+            const sealsByUser = (sealsData ?? []).reduce((acc: Record<string, number>, record: any) => {
+                if (record.user_id) acc[record.user_id] = (acc[record.user_id] || 0) + 1;
                 return acc;
             }, {});
 
-            const submissionsByUser = (submissionsData ?? []).reduce((acc: Record<string, number>, { user_id }) => {
-               if (user_id) acc[user_id] = (acc[user_id] || 0) + 1;
+            const submissionsByUser = (submissionsData ?? []).reduce((acc: Record<string, number>, record: any) => {
+               if (record.user_id) acc[record.user_id] = (acc[record.user_id] || 0) + 1;
                 return acc;
             }, {});
-
 
             const usersById = new Map(users.map((u: any) => [u.id, u]));
 
@@ -334,3 +341,5 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         </div>
     );
 }
+
+    

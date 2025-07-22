@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   id: z.number().optional(), // optional for new events
@@ -169,6 +169,41 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                         </FormItem>
                     )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="is_public"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>Visibilidade do Evento</FormLabel>
+                        <FormControl>
+                            <RadioGroup
+                            onValueChange={(value) => field.onChange(value === 'true')}
+                            defaultValue={String(field.value)}
+                            className="flex flex-col space-y-1"
+                            >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="true" />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                 Público (visível a todos os visitantes)
+                                </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="false" />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                 Privado (visível apenas a membros da confraria)
+                                </FormLabel>
+                            </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
                 <FormField
                     control={form.control}
                     name="image"
@@ -191,28 +226,6 @@ export function EventForm({ confrariaId, event = null, onSuccess }: EventFormPro
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="is_public"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
-                            <FormControl>
-                                <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                Evento Público
-                                </FormLabel>
-                                <FormDescription>
-                                Se marcado, este evento será visível a todos os visitantes do site. Se não, apenas para membros da confraria.
-                                </FormDescription>
-                            </div>
-                        </FormItem>
-                    )}
-                    />
 
 
                 <Button type="submit" size="lg" disabled={loading} className="w-full">

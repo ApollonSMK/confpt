@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Users, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@supabase/supabase-js';
+import { getUserRank, type UserRankInfo } from '@/lib/data';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -21,23 +22,52 @@ async function checkAdmin() {
   }
 }
 
-async function getAllUsers(): Promise<User[]> {
+type UserWithRank = User & {
+    rank: UserRankInfo;
+}
+
+async function getAllUsersWithRanks(): Promise<UserWithRank[]> {
   const supabaseService = createServiceRoleClient();
-  const { data, error } = await supabaseService.auth.admin.listUsers({
+  const { data: usersData, error: usersError } = await supabaseService.auth.admin.listUsers({
       page: 1,
       perPage: 1000,
   });
 
-  if (error) {
-    console.error('Error fetching users for admin list:', error);
+  if (usersError) {
+    console.error('Error fetching users for admin list:', usersError);
     return [];
   }
-  return data.users;
+  
+  const users = usersData.users;
+  const userIds = users.map(u => u.id);
+
+  // Fetch all data needed for ranks in parallel
+  const [sealsRes, submissionsRes] = await Promise.all([
+      supabaseService.from('seals').select('user_id', { count: 'exact' }),
+      supabaseService.from('submissions').select('user_id', { count: 'exact' }).eq('status', 'Aprovado')
+  ]);
+
+  const sealsByUser = (sealsRes.data ?? []).reduce((acc: Record<string, number>, record: any) => {
+      if (record.user_id) acc[record.user_id] = (acc[record.user_id] || 0) + 1;
+      return acc;
+  }, {});
+
+  const submissionsByUser = (submissionsRes.data ?? []).reduce((acc: Record<string, number>, record: any) => {
+      if (record.user_id) acc[record.user_id] = (acc[record.user_id] || 0) + 1;
+      return acc;
+  }, {});
+
+  return users.map(user => {
+      const sealedDiscoveriesCount = sealsByUser[user.id] || 0;
+      const approvedSubmissionsCount = submissionsByUser[user.id] || 0;
+      const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
+      return { ...user, rank };
+  });
 }
 
 export default async function AdminUsersPage() {
   await checkAdmin();
-  const users = await getAllUsers();
+  const users = await getAllUsersWithRanks();
 
   return (
     <Card>
@@ -58,8 +88,8 @@ export default async function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Nome</TableHead>
+                <TableHead>Utilizador</TableHead>
+                <TableHead>Nível</TableHead>
                 <TableHead>Data de Registo</TableHead>
                 <TableHead>Último Acesso</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -69,15 +99,21 @@ export default async function AdminUsersPage() {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {user.email}
-                    {user.email === process.env.ADMIN_EMAIL && <Badge className="ml-2">Admin</Badge>}
+                    <div>{user.user_metadata?.full_name ?? 'N/A'}</div>
+                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                    {user.email === process.env.ADMIN_EMAIL && <Badge className="ml-2 mt-1" variant="destructive">Admin</Badge>}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{user.user_metadata?.full_name ?? 'N/A'}</TableCell>
+                  <TableCell>
+                      <Badge variant="secondary" className="flex items-center gap-2 w-fit">
+                          <user.rank.rankIcon className="h-4 w-4 text-primary" />
+                          <span>{user.rank.rankName}</span>
+                      </Badge>
+                  </TableCell>
                   <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Nunca'}</TableCell>
                   <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm" disabled>
-                      <Link href={`#`}>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/admin/users/${user.id}/edit`}>
                         <Pencil className="mr-2 h-4 w-4" /> Editar
                       </Link>
                     </Button>

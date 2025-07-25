@@ -48,12 +48,12 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
         } else {
             params.delete('search');
         }
-        if (region) {
+        if (region && region !== 'all') {
             params.set('region', region);
         } else {
             params.delete('region');
         }
-        if (type) {
+        if (type && type !== 'all') {
             params.set('type', type);
         } else {
             params.delete('type');
@@ -118,7 +118,7 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
                     <SelectValue placeholder="Todas as regiões" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="">Todas as regiões</SelectItem>
+                    <SelectItem value="all">Todas as regiões</SelectItem>
                     {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                     </SelectContent>
                 </Select>
@@ -130,7 +130,7 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
                     <SelectValue placeholder="Todos os tipos" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="">Todos os tipos</SelectItem>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
                     {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
                 </Select>

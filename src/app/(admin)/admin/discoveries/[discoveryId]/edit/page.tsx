@@ -55,4 +55,3 @@ export default async function EditDiscoveryPage({ params }: { params: { discover
         <EditDiscoveryForm discovery={discoveryData} confrarias={confrarias} />
     );
 }
-

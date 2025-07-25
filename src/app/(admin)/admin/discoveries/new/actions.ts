@@ -15,12 +15,11 @@ async function checkAdmin() {
   } = await supabase.auth.getUser();
 
   if (!user || user.email !== process.env.ADMIN_EMAIL) {
-    throw new Error('Not authorized');
+    redirect('/login');
   }
 }
 
 const formSchema = z.object({
-  id: z.number(),
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
@@ -34,7 +33,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
 });
 
-export async function updateDiscovery(values: z.infer<typeof formSchema>) {
+export async function createDiscovery(values: z.infer<typeof formSchema>) {
     await checkAdmin();
 
     const parsedData = formSchema.safeParse(values);
@@ -43,8 +42,8 @@ export async function updateDiscovery(values: z.infer<typeof formSchema>) {
         console.error("Validation errors:", parsedData.error.errors);
         return { error: "Dados inválidos." };
     }
-    
-    const { id, title, confraria_id, ...rest } = parsedData.data;
+
+    const { title, confraria_id, ...rest } = parsedData.data;
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
@@ -52,39 +51,20 @@ export async function updateDiscovery(values: z.infer<typeof formSchema>) {
 
     const { error } = await supabase
         .from('discoveries')
-        .update({
+        .insert({
             title,
             slug,
             confraria_id: confraria_id && confraria_id !== 'null' ? parseInt(confraria_id, 10) : null,
             ...rest
-        })
-        .eq('id', id);
+        });
 
     if (error) {
-        console.error("Error updating discovery:", error);
-        return { error: `Erro ao atualizar descoberta: ${error.message}` };
-    }
-
-    revalidatePath('/admin/dashboard');
-    revalidatePath(`/discoveries/${slug}`);
-    
-    redirect('/admin/dashboard');
-}
-
-export async function deleteDiscovery(id: number) {
-    await checkAdmin();
-
-    const supabase = createServiceRoleClient();
-    const { error } = await supabase.from('discoveries').delete().eq('id', id);
-
-    if (error) {
-        console.error('Error deleting discovery:', error);
-        return { error: 'Ocorreu um erro ao apagar a descoberta.' };
+        console.error("Error creating discovery:", error);
+        return { error: `Erro ao criar descoberta: ${error.message}` };
     }
 
     revalidatePath('/admin/dashboard');
     revalidatePath('/discoveries');
-
-    return { success: true };
+    
+    redirect('/admin/dashboard');
 }
-

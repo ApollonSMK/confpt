@@ -6,7 +6,6 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -17,15 +16,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, discoveryTypes, Confraria } from '@/lib/data';
+import { regions, discoveryTypes, Confraria, Discovery } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { createDiscovery } from './actions';
-import { useState, useEffect } from 'react';
+import { Loader2, Trash2 } from 'lucide-react';
+import { deleteDiscovery, updateDiscovery } from './actions';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
+  id: z.number(),
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
@@ -39,56 +40,68 @@ const formSchema = z.object({
   phone: z.string().optional(),
 });
 
+
 type FormValues = z.infer<typeof formSchema>;
 
+interface EditDiscoveryFormProps {
+    discovery: Discovery;
+    confrarias: Confraria[];
+}
 
-export default function NewDiscoveryPage() {
+export function EditDiscoveryForm({ discovery, confrarias }: EditDiscoveryFormProps) {
     const { toast } = useToast();
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [confrarias, setConfrarias] = useState<Confraria[]>([]);
-
-    useEffect(() => {
-        const supabase = createClient();
-        async function fetchConfrarias() {
-            const { data } = await supabase.from('confrarias').select('*').order('name');
-            setConfrarias(data || []);
-        }
-        fetchConfrarias();
-    }, []);
+    const [deleting, setDeleting] = useState(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            title: '',
-            description: '',
-            editorial: '',
-            region: undefined,
-            type: undefined,
-            confraria_id: undefined,
-            image_url: 'https://placehold.co/600x400.png',
-            image_hint: 'placeholder',
-            address: '',
-            website: '',
-            phone: '',
+            id: discovery.id,
+            title: discovery.title,
+            description: discovery.description,
+            editorial: discovery.editorial,
+            region: discovery.region,
+            type: discovery.type,
+            confraria_id: discovery.confraria_id?.toString() ?? undefined,
+            image_url: discovery.image_url ?? '',
+            image_hint: discovery.image_hint ?? '',
+            address: discovery.address ?? '',
+            website: discovery.website ?? '',
+            phone: discovery.phone ?? '',
         },
     });
 
     async function onSubmit(values: FormValues) {
         setLoading(true);
-        const result = await createDiscovery(values);
+        const result = await updateDiscovery(values);
 
         if (result && result.error) {
             toast({
-                title: "Erro ao Criar Descoberta",
+                title: "Erro ao Atualizar Descoberta",
                 description: result.error,
                 variant: "destructive"
             });
-            setLoading(false);
-        } else {
-             toast({
-                title: "Descoberta Criada!",
-                description: "A nova descoberta foi adicionada com sucesso.",
+        }
+        setLoading(false);
+    }
+    
+    async function handleDelete() {
+        setDeleting(true);
+        const result = await deleteDiscovery(discovery.id);
+        if (result && result.error) {
+            toast({
+                title: "Erro ao Apagar Descoberta",
+                description: result.error,
+                variant: "destructive"
             });
+            setDeleting(false);
+        } else {
+            toast({
+                title: "Descoberta Apagada!",
+                description: "A descoberta foi removida com sucesso.",
+            });
+            router.push('/admin/dashboard');
         }
     }
 
@@ -96,11 +109,33 @@ export default function NewDiscoveryPage() {
         <div className="container mx-auto px-4 py-8 md:py-16">
             <div className="max-w-2xl mx-auto">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl">Adicionar Nova Descoberta</CardTitle>
-                        <CardDescription>
-                            Preencha os detalhes da nova descoberta para a publicar diretamente.
-                        </CardDescription>
+                    <CardHeader className="flex flex-row justify-between items-start">
+                        <div>
+                            <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
+                            <CardDescription>
+                               Atualize os detalhes da descoberta.
+                            </CardDescription>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isto irá apagar permanentemente a descoberta e todos os seus dados associados.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Sim, apagar descoberta
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardHeader>
                     <CardContent>
                         <FormProvider {...form}>
@@ -123,7 +158,7 @@ export default function NewDiscoveryPage() {
                                 )}/>
                                 </div>
                                 <FormField control={form.control} name="confraria_id" render={({ field }) => (
-                                    <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <div className="grid grid-cols-2 gap-4">
                                 <FormField control={form.control} name="image_url" render={({ field }) => (
@@ -145,7 +180,7 @@ export default function NewDiscoveryPage() {
                                 
                                 <Button type="submit" size="lg" disabled={loading} className="w-full">
                                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Criar Descoberta
+                                    Guardar Alterações
                                 </Button>
                             </form>
                         </FormProvider>
@@ -155,4 +190,3 @@ export default function NewDiscoveryPage() {
         </div>
     );
 }
-

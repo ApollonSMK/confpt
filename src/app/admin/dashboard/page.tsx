@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import type { Submission, Confraria } from '@/lib/data';
+import type { Submission, Confraria, Discovery } from '@/lib/data';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 
@@ -92,12 +92,27 @@ async function getConfrarias(): Promise<Confraria[]> {
     return data as Confraria[];
 }
 
+async function getAllDiscoveries(): Promise<Discovery[]> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select('*, confrarias(name)')
+        .order('title');
+
+    if (error) {
+        console.error('Error fetching discoveries for admin:', error);
+        return [];
+    }
+    return data as Discovery[];
+}
+
 
 export default async function AdminDashboardPage() {
   const user = await checkAdmin();
-  const [pendingSubmissions, confrarias] = await Promise.all([
+  const [pendingSubmissions, confrarias, discoveries] = await Promise.all([
     getSubmissionsByStatus('Pendente'),
-    getConfrarias()
+    getConfrarias(),
+    getAllDiscoveries()
   ]);
 
   return (
@@ -200,6 +215,56 @@ export default async function AdminDashboardPage() {
              {confrarias.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <p>Nenhuma confraria encontrada.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Gestor de Descobertas</CardTitle>
+              <CardDescription>
+                Adicione, edite ou remova as descobertas publicadas.
+              </CardDescription>
+            </div>
+             <Button asChild>
+                <Link href="/admin/discoveries/new">
+                    <PlusCircle />
+                    Adicionar Nova
+                </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Título da Descoberta</TableHead>
+                        <TableHead>Confraria</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {discoveries.map((discovery) => (
+                        <TableRow key={discovery.id}>
+                            <TableCell className="font-medium">{discovery.title}</TableCell>
+                            <TableCell>{(discovery.confrarias as any)?.name || 'Comunitário'}</TableCell>
+                            <TableCell>{discovery.type}</TableCell>
+                            <TableCell className="text-right">
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={`/admin/discoveries/${discovery.id}/edit`}>
+                                    Editar
+                                  </Link>
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+             {discoveries.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Nenhuma descoberta encontrada.</p>
               </div>
             )}
           </CardContent>

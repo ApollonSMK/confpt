@@ -11,6 +11,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { type Discovery } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
+import { cn } from '@/lib/utils';
 
 interface DiscoveryFilterProps {
   regions: readonly string[];
@@ -24,16 +25,16 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
   const searchParams = useSearchParams();
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [region, setRegion] = useState(searchParams.get('region') || '');
-  const [type, setType] = useState(searchParams.get('type') || '');
+  const [region, setRegion] = useState(searchParams.get('region') || 'all');
+  const [type, setType] = useState(searchParams.get('type') || 'all');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     // When params change in URL, update the state
     setSearchTerm(searchParams.get('search') || '');
-    setRegion(searchParams.get('region') || '');
-    setType(searchParams.get('type') || '');
+    setRegion(searchParams.get('region') || 'all');
+    setType(searchParams.get('type') || 'all');
   }, [searchParams]);
 
   useEffect(() => {
@@ -70,8 +71,8 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
 
   const handleClear = () => {
     setSearchTerm('');
-    setRegion('');
-    setType('');
+    setRegion('all');
+    setType('all');
     router.push(pathname);
   };
 
@@ -123,17 +124,31 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
                     </SelectContent>
                 </Select>
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo</label>
-                <Select value={type} onValueChange={setType}>
-                    <SelectTrigger>
-                    <SelectValue placeholder="Todos os tipos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <div className="flex flex-col space-y-1 text-sm text-muted-foreground">
+                    <button
+                        onClick={() => setType('all')}
+                        className={cn(
+                            'w-full text-left px-3 py-2 rounded-md transition-colors font-medium',
+                            type === 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-accent/50'
+                        )}
+                    >
+                        Todos os tipos
+                    </button>
+                    {discoveryTypes.map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setType(t)}
+                            className={cn(
+                                'w-full text-left px-3 py-2 rounded-md transition-colors font-medium',
+                                type === t ? 'bg-primary/10 text-primary' : 'hover:bg-accent/50'
+                            )}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                </div>
             </div>
             <Separator/>
             <div className="space-y-2">

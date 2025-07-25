@@ -10,6 +10,7 @@ import { Users, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@supabase/supabase-js';
 import { getUserRank, type UserRankInfo } from '@/lib/data';
+import { cn } from '@/lib/utils';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -104,7 +105,11 @@ export default async function AdminUsersPage() {
                     {user.email === process.env.ADMIN_EMAIL && <Badge className="ml-2 mt-1" variant="destructive">Admin</Badge>}
                   </TableCell>
                   <TableCell>
-                      <Badge variant={user.user_metadata.rank_override ? "destructive" : "secondary"} className="flex items-center gap-2 w-fit">
+                      <Badge 
+                        variant={user.user_metadata.rank_override ? "default" : "secondary"} 
+                        className={cn("flex items-center gap-2 w-fit", {
+                            'bg-[#c28a51] text-[#471F23] hover:bg-[#c28a51]/90': user.user_metadata.rank_override,
+                        })}>
                           <user.rank.rankIcon className="h-4 w-4" />
                           <span>{user.rank.rankName}</span>
                       </Badge>

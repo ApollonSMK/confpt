@@ -29,6 +29,8 @@ const formSchema = z.object({
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   seal_url: z.string().url('Por favor, insira um URL válido. Use placehold.co se não tiver uma.'),
   seal_hint: z.string().min(2, 'O hint deve ter pelo menos 2 caracteres. Ex: "golden key"'),
+  history: z.string().optional(),
+  founders: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,6 +48,8 @@ export default function NewConfrariaPage() {
             region: undefined,
             seal_url: 'https://placehold.co/100x100.png',
             seal_hint: 'placeholder',
+            history: '',
+            founders: '',
         },
     });
 
@@ -129,6 +133,34 @@ export default function NewConfrariaPage() {
                                         </Select>
                                         <FormMessage />
                                     </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="history"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>A Nossa História (Opcional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea rows={5} placeholder="Conte a história, as origens e a missão da sua confraria..." {...field} />
+                                            </FormControl>
+                                            <FormDescription>Este texto aparecerá na página pública.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="founders"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Fundadores (Opcional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea rows={3} placeholder="Liste os nomes dos membros fundadores..." {...field} />
+                                            </FormControl>
+                                            <FormDescription>Reconheça quem deu início a esta irmandade.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}
                                 />
                                 <FormField

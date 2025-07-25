@@ -25,6 +25,8 @@ const confrariaSchema = z.object({
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   seal_url: z.string().url('Por favor, insira um URL válido para o selo.'),
   seal_hint: z.string().min(2, 'O hint deve ter pelo menos 2 caracteres.'),
+  history: z.string().optional(),
+  founders: z.string().optional(),
 });
 
 export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
@@ -37,7 +39,7 @@ export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
         return { error: "Dados inválidos." };
     }
 
-    const { name, motto, region, seal_url, seal_hint } = parsedData.data;
+    const { name, motto, region, seal_url, seal_hint, history, founders } = parsedData.data;
 
     const supabase = createServiceRoleClient();
 
@@ -49,6 +51,8 @@ export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
             region,
             seal_url,
             seal_hint,
+            history: history || null,
+            founders: founders || null,
         });
 
     if (error) {

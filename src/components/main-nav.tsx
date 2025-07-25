@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, Building2, ShieldQuestion, Calendar } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, ShieldQuestion, Calendar } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
@@ -170,24 +170,6 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                                     </Link>
                                 </DropdownMenuItem>
                             )}
-                           {isAdmin && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuLabel>Administração</DropdownMenuLabel>
-                              <DropdownMenuItem asChild className="cursor-pointer">
-                                  <Link href="/admin/dashboard">
-                                      <ShieldCheck className="mr-2 h-4 w-4" />
-                                      <span>Aprovações</span>
-                                  </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild className="cursor-pointer">
-                                  <Link href="/admin/dashboard">
-                                      <Building2 className="mr-2 h-4 w-4" />
-                                      <span>Confrarias</span>
-                                  </Link>
-                              </DropdownMenuItem>
-                            </>
-                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                             <LogOut className="mr-2 h-4 w-4" />

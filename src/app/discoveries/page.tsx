@@ -1,7 +1,12 @@
+
 import { regions, discoveryTypes, type Discovery } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { createServerClient } from '@/lib/supabase/server';
+import { Button } from '@/components/ui/button';
+import { Filter } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 
 async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     const supabase = createServerClient();
@@ -79,25 +84,61 @@ export default async function DiscoveriesPage({
     filteredDiscoveries = filteredDiscoveries.filter(d => d.type === type);
   }
 
+  const FilterComponent = () => (
+    <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveries} />
+  );
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4 text-center">Explorar Descobertas</h1>
-      <p className="text-lg text-muted-foreground text-center mb-10 max-w-2xl mx-auto">
-        Filtre por região, tipo ou palavra-chave para encontrar os tesouros escondidos de Portugal.
-      </p>
-
-      <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveries} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredDiscoveries.map(discovery => (
-          <DiscoveryCard key={discovery.id} discovery={discovery} />
-        ))}
+      <div className="text-center mb-10">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Explorar Descobertas</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Use os filtros para encontrar os tesouros escondidos de Portugal.
+        </p>
       </div>
-      {filteredDiscoveries.length === 0 && (
-        <div className="text-center col-span-full py-16">
-            <p className="text-muted-foreground text-lg">Nenhuma descoberta encontrada. Tente alargar os seus critérios de pesquisa.</p>
-        </div>
-      )}
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
+        {/* Sidebar para desktop */}
+        <aside className="hidden lg:block lg:col-span-1">
+          <div className="sticky top-24">
+            <FilterComponent />
+          </div>
+        </aside>
+
+        {/* Conteúdo principal */}
+        <main className="lg:col-span-3">
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-sm text-muted-foreground">
+              {filteredDiscoveries.length} {filteredDiscoveries.length === 1 ? 'descoberta encontrada' : 'descobertas encontradas'}
+            </span>
+            {/* Botão para mobile */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="lg:hidden">
+                  <Filter className="mr-2 h-4 w-4" /> Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <FilterComponent />
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {filteredDiscoveries.map(discovery => (
+              <DiscoveryCard key={discovery.id} discovery={discovery} />
+            ))}
+          </div>
+
+          {filteredDiscoveries.length === 0 && (
+            <div className="text-center col-span-full py-16 bg-card rounded-lg">
+                <p className="text-muted-foreground text-lg font-semibold">Nenhuma descoberta encontrada.</p>
+                <p className="text-muted-foreground mt-2">Tente alargar os seus critérios de pesquisa.</p>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
+

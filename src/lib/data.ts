@@ -93,7 +93,7 @@ export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Aç
 export const discoveryTypes = ['Produto', 'Lugar', 'Pessoa'] as const;
 
 // Sistema de Ranks de Gamificação
-const ranks = [
+export const ranks = [
   { name: 'Noviço', seals: 0, submissions: 0, icon: ShieldHalf },
   { name: 'Confrade', seals: 1, submissions: 1, icon: Shield },
   { name: 'Mestre de Prova', seals: 10, submissions: 2, icon: ShieldCheck },
@@ -101,7 +101,20 @@ const ranks = [
   { name: 'Grão-Mestre', seals: 50, submissions: 10, icon: Gem },
 ];
 
-export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number) {
+export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number, rankOverride?: string) {
+  
+  if (rankOverride) {
+    const overriddenRank = ranks.find(r => r.name === rankOverride);
+    if (overriddenRank) {
+      return {
+        rankName: overriddenRank.name,
+        rankIcon: overriddenRank.icon,
+        nextRankName: null,
+        progress: 100,
+      };
+    }
+  }
+  
   let currentRank = ranks[0];
 
   for (const rank of ranks) {

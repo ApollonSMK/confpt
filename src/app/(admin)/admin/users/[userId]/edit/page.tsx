@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { EditUserForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
+import type { Discovery } from '@/lib/data';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -28,6 +29,33 @@ async function getUser(id: string): Promise<User> {
     return data.user;
 }
 
+async function getSealedDiscoveries(userId: string): Promise<Pick<Discovery, 'id' | 'title' | 'region'>[]> {
+    const supabase = createServiceRoleClient();
+
+    const { data: seals, error: sealsError } = await supabase
+        .from('seals')
+        .select('discovery_id')
+        .eq('user_id', userId);
+
+    if (sealsError || !seals || seals.length === 0) {
+        return [];
+    }
+
+    const discoveryIds = seals.map(s => s.discovery_id);
+
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select('id, title, region')
+        .in('id', discoveryIds);
+
+     if (error) {
+        console.error('Error fetching sealed discoveries for admin user edit:', error);
+        return [];
+    }
+
+    return data;
+}
+
 
 export default async function EditUserPage({ params }: { params: { userId: string } }) {
     await checkAdmin();
@@ -36,9 +64,13 @@ export default async function EditUserPage({ params }: { params: { userId: strin
         notFound();
     }
     
-    const userData = await getUser(userId);
+    const [userData, sealedDiscoveries] = await Promise.all([
+        getUser(userId),
+        getSealedDiscoveries(userId)
+    ]);
+
 
     return (
-        <EditUserForm userData={userData} />
+        <EditUserForm userData={userData} sealedDiscoveries={sealedDiscoveries} />
     );
 }

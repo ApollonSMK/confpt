@@ -60,9 +60,9 @@ async function getAllUsersWithRanks(): Promise<UserWithRank[]> {
   return users.map(user => {
       const sealedDiscoveriesCount = sealsByUser[user.id] || 0;
       const approvedSubmissionsCount = submissionsByUser[user.id] || 0;
-      const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount);
+      const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, user.user_metadata.rank_override);
       return { ...user, rank };
-  });
+  }).sort((a,b) => (a.created_at < b.created_at) ? 1 : -1);
 }
 
 export default async function AdminUsersPage() {
@@ -104,8 +104,8 @@ export default async function AdminUsersPage() {
                     {user.email === process.env.ADMIN_EMAIL && <Badge className="ml-2 mt-1" variant="destructive">Admin</Badge>}
                   </TableCell>
                   <TableCell>
-                      <Badge variant="secondary" className="flex items-center gap-2 w-fit">
-                          <user.rank.rankIcon className="h-4 w-4 text-primary" />
+                      <Badge variant={user.user_metadata.rank_override ? "destructive" : "secondary"} className="flex items-center gap-2 w-fit">
+                          <user.rank.rankIcon className="h-4 w-4" />
                           <span>{user.rank.rankName}</span>
                       </Badge>
                   </TableCell>

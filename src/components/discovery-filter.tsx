@@ -24,8 +24,8 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
   const searchParams = useSearchParams();
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [region, setRegion] = useState(search_params => search_params.get('region') || '');
-  const [type, setType] = useState(search_params => search_params.get('type') || '');
+  const [region, setRegion] = useState(searchParams.get('region') || '');
+  const [type, setType] = useState(searchParams.get('type') || '');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, region, type, router, pathname, isMounted]);
+  }, [searchTerm, region, type, router, pathname, isMounted, searchParams]);
 
   const handleClear = () => {
     setSearchTerm('');
@@ -149,4 +149,3 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
     </Card>
   );
 }
-

@@ -31,6 +31,8 @@ const formSchema = z.object({
   address: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
 });
 
 export async function createDiscovery(values: z.infer<typeof formSchema>) {
@@ -66,6 +68,7 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
 
     revalidatePath('/admin/dashboard');
     revalidatePath('/discoveries');
+    revalidatePath('/map');
     
     redirect('/admin/discoveries');
 }

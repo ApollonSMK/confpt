@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, ShieldQuestion, Calendar } from 'lucide-react';
+import { Grape, Menu, LogOut, UserRound, Home, BookOpen, Handshake, PlusCircle, ShieldCheck, UserCog, ShieldQuestion, Calendar, Map } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
@@ -32,6 +32,7 @@ const navLinks = [
   { href: '/discoveries', label: 'Descobertas', icon: BookOpen },
   { href: '/confrarias', label: 'Confrarias', icon: Handshake },
   { href: '/events', label: 'Eventos', icon: Calendar },
+  { href: '/map', label: 'Mapa', icon: Map },
 ];
 
 interface MainNavProps {

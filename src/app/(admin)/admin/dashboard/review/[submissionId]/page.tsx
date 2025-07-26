@@ -28,7 +28,7 @@ async function checkAdmin() {
   }
 }
 
-async function getSubmission(id: string): Promise<(Submission & { confrariaName?: string }) | null> {
+async function getSubmission(id: string): Promise<(Submission & { confrariaName?: string, typeName?: string }) | null> {
     const supabase = createServiceRoleClient();
     const { data: submission, error } = await supabase
         .from('submissions')
@@ -61,11 +61,11 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
 
     return {
         ...(submission as any),
-        type: (submission as any).discovery_types.name,
+        typeName: (submission as any).discovery_types.name,
         discoveryTitle: submission.discovery_title,
         users: { email: user && user.length > 0 ? user[0].email : 'Utilizador Desconhecido' },
         confrariaName,
-    } as Submission & { confrariaName?: string };
+    } as Submission & { confrariaName?: string, typeName?: string };
 }
 
 
@@ -85,13 +85,6 @@ export async function approveSubmission(formData: FormData) {
     // 1. Create slug from title
     const slug = submission.discoveryTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-    // Find the type ID from the type name
-    const { data: typeData } = await supabase.from('discovery_types').select('id').eq('name', submission.type).single();
-    if (!typeData) {
-      console.error(`Type "${submission.type}" not found`);
-      return;
-    }
-
     // 2. Insert into discoveries table
     const { error: insertError } = await supabase
         .from('discoveries')
@@ -100,7 +93,7 @@ export async function approveSubmission(formData: FormData) {
             description: submission.editorial.substring(0, 100) + '...', // Automatic short description
             editorial: submission.editorial,
             region: submission.region,
-            type: typeData.id,
+            type_id: submission.type,
             confraria_id: submission.confraria_id,
             slug: slug,
             // Defaults for new discoveries
@@ -193,7 +186,7 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
                             </div>
                              <div className="space-y-1">
                                 <h3 className="font-semibold">Tipo</h3>
-                                <div><Badge variant="secondary">{submission.type}</Badge></div>
+                                <div><Badge variant="secondary">{submission.typeName}</Badge></div>
                             </div>
                         </div>
                          {submission.confrariaName && (

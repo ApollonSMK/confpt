@@ -32,7 +32,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         .order('id');
 
     if (error) {
-        console.error('Error fetching discoveries:', error);
+        console.error('Error fetching discoveries:', JSON.stringify(error, null, 2));
         return [];
     }
 

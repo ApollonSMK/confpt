@@ -12,7 +12,7 @@ export type Discovery = {
   description: string;
   editorial: string;
   region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
-  type: string;
+  type: string; 
   confraria_id: number;
   image_url: string;
   image_hint: string;
@@ -53,7 +53,7 @@ export type Submission = {
   discovery_title: string;
   editorial: string;
   region: string;
-  type: string;
+  type: number; // Agora é um ID
   confraria_id?: number | null;
   links?: string | null;
   date: string;

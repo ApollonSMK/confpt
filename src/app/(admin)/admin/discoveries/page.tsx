@@ -1,4 +1,5 @@
 
+
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
@@ -26,7 +27,7 @@ async function getAllDiscoveries(): Promise<Discovery[]> {
   const supabaseService = createServiceRoleClient();
   const { data, error } = await supabaseService.from('discoveries').select('*, confrarias(name), discovery_types(name)').order('title');
   if (error) {
-    console.error('Error fetching discoveries for admin list:', error);
+    console.error('Error fetching discoveries for admin list:', JSON.stringify(error, null, 2));
     return [];
   }
   return data.map((d: any) => ({

@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         `);
 
     if (error) {
-        console.error('Error fetching discoveries:', error);
+        console.error('Error fetching discoveries:', JSON.stringify(error, null, 2));
         return [];
     }
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,19 +41,23 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
             ),
             discovery_seal_counts (
                 seal_count
+            ),
+            discovery_types (
+                name
             )
         `)
         .in('id', discoveryIds);
 
      if (error) {
-        console.error('Error fetching sealed discoveries:', error);
+        console.error('Error fetching sealed discoveries:', JSON.stringify(error, null, 2));
         return [];
     }
 
     const userSeals = new Set(discoveryIds);
     
-    return data.map(d => ({
+    return data.map((d: any) => ({
         ...d,
+        type: d.discovery_types.name,
         confrariaId: d.confraria_id,
         imageUrl: d.image_url,
         imageHint: d.image_hint,
@@ -62,7 +67,7 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
             phone: d.phone
         },
         confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-        seal_count: d.discovery_seal_counts.length > 0 ? d.discovery_seal_counts[0].seal_count : 0,
+        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
         user_has_sealed: userSeals.has(d.id),
     })) as unknown as Discovery[];
 }
@@ -71,16 +76,17 @@ async function getSubmissionsForUser(supabase: any, userId: string): Promise<Sub
     if (!userId) {
         return [];
     }
-    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('submissions').select('*, discovery_types(name)').eq('user_id', userId).order('date', { ascending: false });
     
     if (error) {
-        console.error('Error fetching submissions for user:', error);
+        console.error('Error fetching submissions for user:', JSON.stringify(error, null, 2));
         return [];
     }
 
-    return data.map(s => ({
+    return data.map((s: any) => ({
         ...s,
         discoveryTitle: s.discovery_title,
+        type: s.discovery_types?.name || 'Tipo Desconhecido',
     })) as Submission[];
 }
 

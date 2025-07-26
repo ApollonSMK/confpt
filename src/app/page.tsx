@@ -21,12 +21,15 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
             ),
             discovery_seal_counts (
                 seal_count
+            ),
+            discovery_types (
+                name
             )
         `)
         .order('id');
 
     if (error) {
-        console.error('Error fetching discoveries:', error);
+        console.error('Error fetching discoveries:', JSON.stringify(error, null, 2));
         return [];
     }
 
@@ -38,8 +41,9 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         }
     }
     
-    return data.map(d => ({
+    return data.map((d: any) => ({
         ...d,
+        type: d.discovery_types.name,
         confrariaId: d.confraria_id,
         imageUrl: d.image_url,
         imageHint: d.image_hint,

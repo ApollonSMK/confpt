@@ -343,5 +343,3 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
         </div>
     );
 }
-
-    

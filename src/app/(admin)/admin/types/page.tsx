@@ -3,10 +3,10 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tag } from 'lucide-react';
 import type { DiscoveryType } from '@/lib/data';
 import { AddTypeForm } from './add-type-form';
+import { TypesList } from './types-list';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -47,29 +47,7 @@ export default async function AdminTypesPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {types.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Nome</TableHead>
-                        {/* Ações could be here */}
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {types.map((type) => (
-                        <TableRow key={type.id}>
-                        <TableCell className="font-medium">
-                            {type.name}
-                        </TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-                ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                    <p className="font-semibold text-lg">Nenhum tipo encontrado.</p>
-                </div>
-                )}
+                <TypesList types={types} />
             </CardContent>
             </Card>
         </div>

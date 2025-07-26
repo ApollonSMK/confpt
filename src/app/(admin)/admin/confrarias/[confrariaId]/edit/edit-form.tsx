@@ -22,7 +22,6 @@ import { deleteConfraria, updateConfraria } from './actions';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   id: z.number(),
@@ -42,7 +41,6 @@ interface EditConfrariaFormProps {
 
 export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
     const { toast } = useToast();
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
@@ -67,7 +65,10 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
     
     async function handleDelete() {
         setDeleting(true);
+        
+        // This function now handles the redirect on the server, so no need for router.push
         const result = await deleteConfraria(confraria.id);
+        
         if (result && result.error) {
             toast({
                 title: "Erro ao Apagar Confraria",
@@ -76,11 +77,11 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
             });
             setDeleting(false);
         } else {
-            toast({
+            // The redirect happens on the server, but we can still show a toast
+             toast({
                 title: "Confraria Apagada!",
                 description: "A confraria foi removida com sucesso.",
             });
-            router.push('/admin/dashboard');
         }
     }
 

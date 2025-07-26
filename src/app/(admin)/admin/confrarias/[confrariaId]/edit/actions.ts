@@ -73,9 +73,10 @@ export async function updateConfraria(values: z.infer<typeof formSchema>) {
     }
 
     revalidatePath('/admin/dashboard');
+    revalidatePath('/admin/confrarias');
     revalidatePath(`/confrarias/${id}`);
     
-    redirect('/admin/dashboard');
+    redirect('/admin/confrarias');
 }
 
 export async function deleteConfraria(id: number) {
@@ -90,7 +91,9 @@ export async function deleteConfraria(id: number) {
     }
 
     revalidatePath('/admin/dashboard');
+    revalidatePath('/admin/confrarias');
     revalidatePath('/confrarias');
 
-    return { success: true };
+    // This was the missing piece. We must redirect after deletion.
+    redirect('/admin/confrarias');
 }

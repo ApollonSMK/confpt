@@ -111,19 +111,18 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
           </div>
         </div>
         <div className="lg:col-span-2">
+           <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
           <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.region}</Badge>
               <Badge variant="secondary" className="text-sm flex items-center gap-1"><Tag className="h-3 w-3" />{discovery.type}</Badge>
+               {discovery.seal_count > 0 && (
+                <Badge variant="outline" className="text-sm flex items-center gap-1 text-primary border-primary/50">
+                    <Award className="h-3 w-3" />
+                    <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo de Confrade' : 'Selos de Confrade'}</span>
+                </Badge>
+              )}
           </div>
-          <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
           
-           {discovery.seal_count > 0 && (
-            <div className="flex items-center gap-2 mb-6 text-lg font-semibold text-primary">
-                <Award className="h-6 w-6"/>
-                <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo de Confrade' : 'Selos de Confrade'}</span>
-            </div>
-          )}
-
           {confraria && (
             <Link href={`/confrarias/${confraria.id}`} className="inline-block w-full">
                 <Card className="mb-6 hover:bg-accent/50 transition-colors">

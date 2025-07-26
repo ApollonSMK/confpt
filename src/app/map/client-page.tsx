@@ -18,7 +18,9 @@ interface ClientMapPageProps {
 }
 
 export function ClientMapPage({ discoveries }: ClientMapPageProps) {
-    return (
+    const map = useMemo(() => (
         <InteractiveMap discoveries={discoveries} />
-    );
+    ), [discoveries]);
+
+    return map;
 }

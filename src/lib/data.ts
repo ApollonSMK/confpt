@@ -12,7 +12,7 @@ export type Discovery = {
   description: string;
   editorial: string;
   region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
-  type: 'Produto' | 'Lugar' | 'Pessoa';
+  type: string; // Changed from enum to string
   confraria_id: number;
   image_url: string;
   image_hint: string;
@@ -87,10 +87,16 @@ export type UserRankInfo = {
   progress: number;
 };
 
+export type DiscoveryType = {
+    id: number;
+    name: string;
+};
+
 
 // Dados estáticos para filtros, que não precisam estar no banco por enquanto
 export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira'] as const;
-export const discoveryTypes = ['Produto', 'Lugar', 'Pessoa'] as const;
+// This is now fetched from the database
+// export const discoveryTypes = ['Produto', 'Lugar', 'Pessoa'] as const;
 
 // Sistema de Ranks de Gamificação
 export const ranks = [

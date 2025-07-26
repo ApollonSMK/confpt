@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, discoveryTypes, type Confraria } from '@/lib/data';
+import { regions, type Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
@@ -26,7 +26,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.enum(discoveryTypes, { required_error: 'Por favor, selecione um tipo.'}),
+  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
   image: z.any().optional(),
@@ -36,9 +36,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface SubmissionFormProps {
   confrarias: Confraria[];
+  discoveryTypes: DiscoveryType[];
 }
 
-export function SubmissionForm({ confrarias }: SubmissionFormProps) {
+export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -142,7 +143,7 @@ export function SubmissionForm({ confrarias }: SubmissionFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {discoveryTypes.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />

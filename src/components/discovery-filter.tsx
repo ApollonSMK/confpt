@@ -8,14 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Shuffle, X, Filter as FilterIcon } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { type Discovery } from '@/lib/data';
+import { type Discovery, type DiscoveryType } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
 
 interface DiscoveryFilterProps {
   regions: readonly string[];
-  discoveryTypes: readonly string[];
+  discoveryTypes: DiscoveryType[];
   allDiscoveries: Discovery[];
 }
 
@@ -138,14 +138,14 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
                     </button>
                     {discoveryTypes.map(t => (
                         <button
-                            key={t}
-                            onClick={() => setType(t)}
+                            key={t.name}
+                            onClick={() => setType(t.name)}
                             className={cn(
                                 'w-full text-left px-3 py-2 rounded-md transition-colors font-medium',
-                                type === t ? 'bg-primary/10 text-primary' : 'hover:bg-accent/50'
+                                type === t.name ? 'bg-primary/10 text-primary' : 'hover:bg-accent/50'
                             )}
                         >
-                            {t}
+                            {t.name}
                         </button>
                     ))}
                 </div>

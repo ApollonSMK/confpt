@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, discoveryTypes, Confraria, Discovery } from '@/lib/data';
+import { regions, Confraria, Discovery, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { deleteDiscovery, updateDiscovery } from './actions';
@@ -31,7 +31,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.enum(discoveryTypes, { required_error: 'Por favor, selecione um tipo.'}),
+  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
   image_hint: z.string().optional(),
@@ -46,9 +46,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface EditDiscoveryFormProps {
     discovery: Discovery;
     confrarias: Confraria[];
+    discoveryTypes: DiscoveryType[];
 }
 
-export function EditDiscoveryForm({ discovery, confrarias }: EditDiscoveryFormProps) {
+export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: EditDiscoveryFormProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -154,7 +155,7 @@ export function EditDiscoveryForm({ discovery, confrarias }: EditDiscoveryFormPr
                                     <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="type" render={({ field }) => (
-                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 </div>
                                 <FormField control={form.control} name="confraria_id" render={({ field }) => (

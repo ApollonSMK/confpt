@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubmissionForm } from '@/components/submission-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -6,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import type { Submission, Confraria } from '@/lib/data';
+import type { Submission, Confraria, DiscoveryType } from '@/lib/data';
+import { createServiceRoleClient } from '@/lib/supabase/service';
 
 async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
     if (!userId) {
@@ -52,6 +54,16 @@ async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })
     })) as (Confraria & { discoveryCount: number })[];
 }
 
+async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.from('discovery_types').select('*').order('name');
+    if (error) {
+        console.error("Error fetching discovery types for submit form:", error);
+        return [];
+    }
+    return data as DiscoveryType[];
+}
+
 export default async function SubmitPage() {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -60,9 +72,10 @@ export default async function SubmitPage() {
     redirect('/login');
   }
 
-  const [userSubmissions, confrarias] = await Promise.all([
+  const [userSubmissions, confrarias, discoveryTypes] = await Promise.all([
     getSubmissionsForUser(user.id),
-    getConfrarias()
+    getConfrarias(),
+    getDiscoveryTypes()
   ]);
 
   return (
@@ -87,7 +100,7 @@ export default async function SubmitPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SubmissionForm confrarias={confrarias} />
+                <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
               </CardContent>
             </Card>
           </TabsContent>

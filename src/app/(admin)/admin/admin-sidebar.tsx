@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Grape, LayoutDashboard, FileCheck, Shield, BookOpen, Home, Users } from 'lucide-react';
+import { Grape, LayoutDashboard, FileCheck, Shield, BookOpen, Home, Users, Tag } from 'lucide-react';
 
 const adminNavLinks = [
   { href: '/admin/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const adminNavLinks = [
   { href: '/admin/confrarias', label: 'Confrarias', icon: Shield },
   { href: '/admin/discoveries', label: 'Descobertas', icon: BookOpen },
   { href: '/admin/users', label: 'Utilizadores', icon: Users },
+  { href: '/admin/types', label: 'Tipos', icon: Tag },
 ];
 
 export function AdminSidebar() {

@@ -3,7 +3,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { EditDiscoveryForm } from './edit-form';
-import type { Confraria, Discovery } from '@/lib/data';
+import type { Confraria, Discovery, DiscoveryType } from '@/lib/data';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -38,6 +38,16 @@ async function getConfrarias(): Promise<Confraria[]> {
     return data as Confraria[];
 }
 
+async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.from('discovery_types').select('*').order('name');
+    if (error) {
+        console.error("Error fetching discovery types for edit form", error);
+        return [];
+    }
+    return data as DiscoveryType[];
+}
+
 
 export default async function EditDiscoveryPage({ params }: { params: { discoveryId: string } }) {
     await checkAdmin();
@@ -46,12 +56,13 @@ export default async function EditDiscoveryPage({ params }: { params: { discover
         notFound();
     }
     
-    const [discoveryData, confrarias] = await Promise.all([
+    const [discoveryData, confrarias, discoveryTypes] = await Promise.all([
         getDiscovery(discoveryId),
-        getConfrarias()
+        getConfrarias(),
+        getDiscoveryTypes(),
     ]);
 
     return (
-        <EditDiscoveryForm discovery={discoveryData} confrarias={confrarias} />
+        <EditDiscoveryForm discovery={discoveryData} confrarias={confrarias} discoveryTypes={discoveryTypes} />
     );
 }

@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { regions, discoveryTypes } from '@/lib/data';
+import { regions } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -24,7 +24,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions),
-  type: z.enum(discoveryTypes),
+  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url().optional().or(z.literal('')),
   image_hint: z.string().optional(),

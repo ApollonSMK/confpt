@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, discoveryTypes, Confraria } from '@/lib/data';
+import { regions, Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { createDiscovery } from './actions';
@@ -30,7 +30,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.enum(discoveryTypes, { required_error: 'Por favor, selecione um tipo.'}),
+  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
   image_hint: z.string().optional(),
@@ -46,6 +46,7 @@ export default function NewDiscoveryPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [confrarias, setConfrarias] = useState<Confraria[]>([]);
+    const [discoveryTypes, setDiscoveryTypes] = useState<DiscoveryType[]>([]);
 
     useEffect(() => {
         const supabase = createClient();
@@ -53,7 +54,12 @@ export default function NewDiscoveryPage() {
             const { data } = await supabase.from('confrarias').select('*').order('name');
             setConfrarias(data || []);
         }
+        async function fetchDiscoveryTypes() {
+            const { data } = await supabase.from('discovery_types').select('*').order('name');
+            setDiscoveryTypes(data || []);
+        }
         fetchConfrarias();
+        fetchDiscoveryTypes();
     }, []);
 
     const form = useForm<FormValues>({
@@ -119,7 +125,7 @@ export default function NewDiscoveryPage() {
                                     <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="type" render={({ field }) => (
-                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 </div>
                                 <FormField control={form.control} name="confraria_id" render={({ field }) => (

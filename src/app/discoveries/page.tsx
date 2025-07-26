@@ -1,11 +1,13 @@
 
-import { regions, discoveryTypes, type Discovery } from '@/lib/data';
+
+import { regions, type Discovery, DiscoveryType } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { createServerClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { Filter } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { createServiceRoleClient } from '@/lib/supabase/service';
 
 
 async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
@@ -55,6 +57,16 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     })) as unknown as Discovery[];
 }
 
+async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
+    const supabase = createServiceRoleClient(); // Use service role to bypass RLS for this internal data
+    const { data, error } = await supabase.from('discovery_types').select('*').order('name');
+    if (error) {
+        console.error("Error fetching discovery types for filter:", error);
+        return [];
+    }
+    return data as DiscoveryType[];
+}
+
 
 export default async function DiscoveriesPage({
   searchParams,
@@ -63,7 +75,10 @@ export default async function DiscoveriesPage({
 }) {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const allDiscoveries = await getDiscoveries(user?.id);
+  const [allDiscoveries, discoveryTypes] = await Promise.all([
+    getDiscoveries(user?.id),
+    getDiscoveryTypes()
+  ]);
   
   const searchTerm = searchParams?.search as string || '';
   const region = searchParams?.region as string || '';
@@ -141,4 +156,3 @@ export default async function DiscoveriesPage({
     </div>
   );
 }
-

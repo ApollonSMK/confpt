@@ -90,7 +90,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
       <input type="hidden" name="slug" value={discovery.slug} />
       <Button type="submit" variant={discovery.user_has_sealed ? 'secondary' : 'default'} size="lg">
         <Award className="mr-2 h-5 w-5" />
-        {discovery.user_has_sealed ? 'Remover Selo de Confrade' : 'Conceder Selo de Confrade'}
+        {discovery.user_has_sealed ? 'Remover Selo' : 'Conceder Selo'}
       </Button>
     </form>
   );
@@ -118,7 +118,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                {discovery.seal_count > 0 && (
                 <Badge variant="outline" className="text-sm flex items-center gap-1 text-primary border-primary/50">
                     <Award className="h-3 w-3" />
-                    <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo de Confrade' : 'Selos de Confrade'}</span>
+                    <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}</span>
                 </Badge>
               )}
           </div>

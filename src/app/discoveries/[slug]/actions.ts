@@ -35,7 +35,7 @@ export async function toggleSeal(formData: FormData) {
     // Adicionar o selo
     const { error } = await supabase
       .from('seals')
-      .insert({ user_id: user.id, discovery_id: discoveryId });
+      .insert({ user_id: user.id, discovery_id: Number(discoveryId) });
 
     if (error) {
       console.error('Error adding seal:', error);
@@ -44,4 +44,5 @@ export async function toggleSeal(formData: FormData) {
 
   revalidatePath(`/discoveries/${slug}`);
   revalidatePath('/discoveries');
+  revalidatePath('/profile');
 }

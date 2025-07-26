@@ -2,7 +2,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import type { Discovery } from '@/lib/data';
 import { Map as MapIcon } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import { ClientMapPage } from './client-page';
 
 async function getDiscoveriesWithCoordinates(): Promise<Pick<Discovery, 'id' | 'title' | 'slug' | 'latitude' | 'longitude'>[]> {
     const supabase = createServerClient();
@@ -20,13 +20,6 @@ async function getDiscoveriesWithCoordinates(): Promise<Pick<Discovery, 'id' | '
     return data;
 }
 
-// Dynamically import the map component to avoid SSR issues with Leaflet
-const InteractiveMap = dynamic(() => import('@/components/interactive-map'), { 
-    ssr: false,
-    loading: () => <div className="h-[calc(100vh-10rem)] w-full bg-muted animate-pulse rounded-lg flex items-center justify-center"><p>A carregar mapa...</p></div>
-});
-
-
 export default async function MapPage() {
     const discoveries = await getDiscoveriesWithCoordinates();
 
@@ -42,7 +35,7 @@ export default async function MapPage() {
                 </div>
             </div>
             <div className="flex-grow">
-                <InteractiveMap discoveries={discoveries} />
+                <ClientMapPage discoveries={discoveries} />
             </div>
         </div>
     );

@@ -44,7 +44,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface EditDiscoveryFormProps {
-    discovery: Discovery;
+    discovery: Discovery & { type: any }; // type is an object with id and name
     confrarias: Confraria[];
     discoveryTypes: DiscoveryType[];
 }
@@ -63,7 +63,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             description: discovery.description,
             editorial: discovery.editorial,
             region: discovery.region,
-            type: discovery.type,
+            type: String(discovery.type),
             confraria_id: discovery.confraria_id?.toString() ?? undefined,
             image_url: discovery.image_url ?? '',
             image_hint: discovery.image_hint ?? '',
@@ -155,7 +155,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                     <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="type" render={({ field }) => (
-                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 </div>
                                 <FormField control={form.control} name="confraria_id" render={({ field }) => (

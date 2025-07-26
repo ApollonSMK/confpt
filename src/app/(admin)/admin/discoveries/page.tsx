@@ -24,12 +24,16 @@ async function checkAdmin() {
 
 async function getAllDiscoveries(): Promise<Discovery[]> {
   const supabaseService = createServiceRoleClient();
-  const { data, error } = await supabaseService.from('discoveries').select('*, confrarias(name)').order('title');
+  const { data, error } = await supabaseService.from('discoveries').select('*, confrarias(name), discovery_types(name)').order('title');
   if (error) {
     console.error('Error fetching discoveries for admin list:', error);
     return [];
   }
-  return data.map(d => ({...d, confrarias: d.confrarias || undefined })) as Discovery[];
+  return data.map((d: any) => ({
+      ...d, 
+      type: d.discovery_types.name, 
+      confrarias: d.confrarias || undefined 
+    })) as Discovery[];
 }
 
 export default async function AdminDiscoveriesPage() {
@@ -94,4 +98,3 @@ export default async function AdminDiscoveriesPage() {
     </Card>
   );
 }
-

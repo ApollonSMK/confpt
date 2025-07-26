@@ -18,14 +18,21 @@ async function checkAdmin() {
 
 async function getDiscovery(id: number): Promise<Discovery> {
     const supabase = createServiceRoleClient();
-    const { data, error } = await supabase.from('discoveries').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select('*, discovery_types(id, name)')
+        .eq('id', id)
+        .single();
 
     if (error || !data) {
         console.error("Error fetching discovery for edit", error);
         notFound();
     }
     
-    return data as Discovery;
+    return {
+        ...data,
+        type: (data.discovery_types as any).name
+    } as Discovery;
 }
 
 async function getConfrarias(): Promise<Confraria[]> {

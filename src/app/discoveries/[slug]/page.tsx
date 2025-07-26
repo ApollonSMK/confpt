@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,9 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
             ),
             discovery_seal_counts (
                 seal_count
+            ),
+            discovery_types (
+                name
             )
         `);
 
@@ -47,8 +51,9 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         }
     }
     
-    return data.map(d => ({
+    return data.map((d: any) => ({
         ...d,
+        type: d.discovery_types.name, // Extract the name from the related table
         confrariaId: d.confraria_id,
         imageUrl: d.image_url,
         imageHint: d.image_hint,

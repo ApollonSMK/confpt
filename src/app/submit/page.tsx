@@ -16,7 +16,7 @@ async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
         return [];
     }
     const supabase = createServerClient();
-    const { data, error } = await supabase.from('submissions').select('*').eq('user_id', userId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('submissions').select('*, discovery_types(name)').eq('user_id', userId).order('date', { ascending: false });
     
     if (error) {
         console.error('Error fetching submissions for user:', error);
@@ -25,6 +25,7 @@ async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
 
     return data.map(s => ({
         ...s,
+        type: (s as any).discovery_types.name,
         discoveryTitle: s.discovery_title,
     })) as Submission[];
 }

@@ -32,7 +32,7 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
     const supabase = createServiceRoleClient();
     const { data: submission, error } = await supabase
         .from('submissions')
-        .select('*')
+        .select('*, discovery_types(name)')
         .eq('id', id)
         .single();
     
@@ -60,7 +60,8 @@ async function getSubmission(id: string): Promise<(Submission & { confrariaName?
     }
 
     return {
-        ...submission,
+        ...(submission as any),
+        type: (submission as any).discovery_types.name,
         discoveryTitle: submission.discovery_title,
         users: { email: user && user.length > 0 ? user[0].email : 'Utilizador Desconhecido' },
         confrariaName,
@@ -84,6 +85,13 @@ export async function approveSubmission(formData: FormData) {
     // 1. Create slug from title
     const slug = submission.discoveryTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
+    // Find the type ID from the type name
+    const { data: typeData } = await supabase.from('discovery_types').select('id').eq('name', submission.type).single();
+    if (!typeData) {
+      console.error(`Type "${submission.type}" not found`);
+      return;
+    }
+
     // 2. Insert into discoveries table
     const { error: insertError } = await supabase
         .from('discoveries')
@@ -92,7 +100,7 @@ export async function approveSubmission(formData: FormData) {
             description: submission.editorial.substring(0, 100) + '...', // Automatic short description
             editorial: submission.editorial,
             region: submission.region,
-            type: submission.type,
+            type: typeData.id,
             confraria_id: submission.confraria_id,
             slug: slug,
             // Defaults for new discoveries

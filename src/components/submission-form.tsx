@@ -143,7 +143,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {discoveryTypes.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
+                    {discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />

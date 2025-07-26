@@ -43,7 +43,7 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
         return { error: "Dados inválidos." };
     }
 
-    const { title, confraria_id, ...rest } = parsedData.data;
+    const { title, confraria_id, type, ...rest } = parsedData.data;
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
@@ -54,6 +54,7 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
         .insert({
             title,
             slug,
+            type: parseInt(type, 10),
             confraria_id: confraria_id && confraria_id !== 'null' ? parseInt(confraria_id, 10) : null,
             ...rest
         });

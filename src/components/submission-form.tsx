@@ -26,7 +26,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
   image: z.any().optional(),
@@ -49,7 +49,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       title: '',
       editorial: '',
       region: undefined,
-      type: undefined,
+      type_id: undefined,
       confrariaId: '',
       links: '',
     },
@@ -132,7 +132,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
           />
           <FormField
             control={form.control}
-            name="type"
+            name="type_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo</FormLabel>
@@ -164,6 +164,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
                     {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -31,7 +31,8 @@ async function getDiscovery(id: number): Promise<Discovery> {
     
     return {
         ...data,
-        type: (data.discovery_types as any).name
+        type: (data.discovery_types as any).name,
+        type_id: (data.discovery_types as any).id,
     } as Discovery;
 }
 

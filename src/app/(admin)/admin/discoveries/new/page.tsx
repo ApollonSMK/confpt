@@ -30,7 +30,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
   image_hint: z.string().optional(),
@@ -69,7 +69,7 @@ export default function NewDiscoveryPage() {
             description: '',
             editorial: '',
             region: undefined,
-            type: undefined,
+            type_id: undefined,
             confraria_id: undefined,
             image_url: 'https://placehold.co/600x400.png',
             image_hint: 'placeholder',
@@ -124,7 +124,7 @@ export default function NewDiscoveryPage() {
                                 <FormField control={form.control} name="region" render={({ field }) => (
                                     <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
-                                <FormField control={form.control} name="type" render={({ field }) => (
+                                <FormField control={form.control} name="type_id" render={({ field }) => (
                                     <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 </div>

@@ -10,7 +10,7 @@ const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions),
-  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url().optional().or(z.literal('')),
   image: z.any().optional(),
@@ -31,7 +31,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
         return { error: "Dados inválidos." };
     }
 
-    const { title, editorial, region, type, confrariaId, links } = parsedData.data;
+    const { title, editorial, region, type_id, confrariaId, links } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -44,7 +44,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
             discovery_title: title,
             editorial,
             region,
-            type: parseInt(type, 10),
+            type: parseInt(type_id, 10),
             confraria_id: confrariaId ? parseInt(confrariaId, 10) : null,
             links: links || null,
             status: 'Pendente',

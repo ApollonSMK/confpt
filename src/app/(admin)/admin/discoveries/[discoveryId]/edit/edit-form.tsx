@@ -31,7 +31,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  type: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
   image_hint: z.string().optional(),
@@ -44,7 +44,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface EditDiscoveryFormProps {
-    discovery: Discovery & { type: any }; // type is an object with id and name
+    discovery: Discovery;
     confrarias: Confraria[];
     discoveryTypes: DiscoveryType[];
 }
@@ -63,7 +63,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             description: discovery.description,
             editorial: discovery.editorial,
             region: discovery.region,
-            type: String(discovery.type),
+            type_id: String(discovery.type_id),
             confraria_id: discovery.confraria_id?.toString() ?? undefined,
             image_url: discovery.image_url ?? '',
             image_hint: discovery.image_hint ?? '',
@@ -83,8 +83,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 description: result.error,
                 variant: "destructive"
             });
+            setLoading(false);
         }
-        setLoading(false);
     }
     
     async function handleDelete() {
@@ -102,7 +102,6 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 title: "Descoberta Apagada!",
                 description: "A descoberta foi removida com sucesso.",
             });
-            router.push('/admin/dashboard');
         }
     }
 
@@ -154,7 +153,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                 <FormField control={form.control} name="region" render={({ field }) => (
                                     <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
-                                <FormField control={form.control} name="type" render={({ field }) => (
+                                <FormField control={form.control} name="type_id" render={({ field }) => (
                                     <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 </div>

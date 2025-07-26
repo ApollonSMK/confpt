@@ -13,6 +13,7 @@ export type Discovery = {
   editorial: string;
   region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
   type: string; 
+  type_id: number;
   confraria_id: number;
   image_url: string;
   image_hint: string;

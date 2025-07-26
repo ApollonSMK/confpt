@@ -43,8 +43,8 @@ export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
             {discovery.type}
           </Badge>
           {discovery.seal_count > 0 && (
-            <Badge variant="outline" className="flex items-center gap-1">
-                <Award className="h-3 w-3 text-primary" />
+            <Badge variant="outline" className="flex items-center gap-1 text-primary border-primary/50">
+                <Award className="h-3 w-3" />
                 {discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}
             </Badge>
           )}

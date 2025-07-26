@@ -7,18 +7,10 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2 } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2, Calendar } from 'lucide-react';
 import { getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { cn } from '@/lib/utils';
 import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
@@ -284,34 +276,31 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                      {userSubmissions.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                <TableHead>Descoberta</TableHead>
-                                <TableHead>Data</TableHead>
-                                <TableHead className="text-right">Estado</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {userSubmissions.map((submission) => (
-                                <TableRow key={submission.id}>
-                                    <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
-                                    <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                    <Badge
-                                        className={cn({
-                                        'bg-green-700 text-white': submission.status === 'Aprovado',
-                                        'bg-red-700 text-white': submission.status === 'Rejeitado',
-                                        })}
-                                        variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
-                                    >
-                                        {submission.status}
-                                    </Badge>
-                                    </TableCell>
-                                </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {userSubmissions.map((submission) => (
+                                <Card key={submission.id} className="flex flex-col justify-between">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">{submission.discoveryTitle}</CardTitle>
+                                        <CardDescription className="flex items-center gap-2 pt-1">
+                                            <Calendar className="h-4 w-4" />
+                                            {new Date(submission.date).toLocaleDateString()}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Badge
+                                            className={cn('w-fit', {
+                                                'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
+                                                'bg-red-100 text-red-800 border-red-300': submission.status === 'Rejeitado',
+                                                'bg-yellow-100 text-yellow-800 border-yellow-300': submission.status === 'Pendente',
+                                            })}
+                                            variant="outline"
+                                        >
+                                            {submission.status}
+                                        </Badge>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                      ) : (
                          <p className="text-muted-foreground">Você ainda não fez nenhuma submissão. Tem um tesouro para <Link href="/submit" className="text-primary hover:underline">partilhar</Link>?</p>
                      )}

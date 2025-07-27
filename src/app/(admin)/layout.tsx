@@ -13,7 +13,6 @@ export default function AdminRootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <>
         {children}

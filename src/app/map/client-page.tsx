@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
-// The key is to do this inside a client component.
+// This is the correct and final approach to solve both "window is not defined" and "map already initialized" errors.
 const InteractiveMap = dynamic(() => import('@/components/interactive-map'), { 
     ssr: false,
     loading: () => <div className="h-[calc(100vh-10rem)] w-full bg-muted animate-pulse rounded-lg flex items-center justify-center"><p>A carregar mapa...</p></div>
@@ -18,9 +18,5 @@ interface ClientMapPageProps {
 }
 
 export function ClientMapPage({ discoveries }: ClientMapPageProps) {
-    const map = useMemo(() => (
-        <InteractiveMap discoveries={discoveries} />
-    ), [discoveries]);
-
-    return map;
+    return <InteractiveMap discoveries={discoveries} />;
 }

@@ -1,4 +1,6 @@
 
+'use client';
+
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
@@ -12,7 +14,6 @@ interface InteractiveMapProps {
 }
 
 export default function InteractiveMap({ discoveries }: InteractiveMapProps) {
-  // Default center of the map (Portugal)
   const position: [number, number] = [39.557191, -8.5253693];
 
   return (

@@ -1,27 +1,41 @@
 
-import { createServerClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { createClient } from '@/lib/supabase/client';
 import type { Discovery } from '@/lib/data';
 import { Map as MapIcon } from 'lucide-react';
-import { ClientMapPage } from './client-page';
+import { Skeleton } from '@/components/ui/skeleton';
 
-async function getDiscoveriesWithCoordinates(): Promise<Pick<Discovery, 'id' | 'title' | 'slug' | 'latitude' | 'longitude'>[]> {
-    const supabase = createServerClient();
-    const { data, error } = await supabase
-        .from('discoveries')
-        .select('id, title, slug, latitude, longitude')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+export default function MapPage() {
+    const [discoveries, setDiscoveries] = useState<Pick<Discovery, 'id' | 'title' | 'slug' | 'latitude' | 'longitude'>[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (error) {
-        console.error('Error fetching discoveries for map:', error);
-        return [];
-    }
+    useEffect(() => {
+        const supabase = createClient();
+        async function getDiscoveriesWithCoordinates() {
+            const { data, error } = await supabase
+                .from('discoveries')
+                .select('id, title, slug, latitude, longitude')
+                .not('latitude', 'is', null)
+                .not('longitude', 'is', null);
 
-    return data;
-}
+            if (error) {
+                console.error('Error fetching discoveries for map:', error);
+            } else {
+                setDiscoveries(data);
+            }
+            setLoading(false);
+        }
+        getDiscoveriesWithCoordinates();
+    }, []);
 
-export default async function MapPage() {
-    const discoveries = await getDiscoveriesWithCoordinates();
+    const InteractiveMap = useMemo(() => dynamic(() => import('@/components/interactive-map'), {
+        ssr: false,
+        loading: () => <Skeleton className="h-full w-full" />
+    }), []);
+
 
     return (
         <div className="flex flex-col h-[calc(100vh-5rem)]">
@@ -35,7 +49,7 @@ export default async function MapPage() {
                 </div>
             </div>
             <div className="flex-grow">
-                <ClientMapPage discoveries={discoveries} />
+                {loading ? <Skeleton className="h-full w-full" /> : <InteractiveMap discoveries={discoveries} />}
             </div>
         </div>
     );

@@ -38,8 +38,6 @@ const formSchema = z.object({
   address: z.string().optional(),
   website: z.string().url("URL do website inválido.").optional().or(z.literal('')),
   phone: z.string().optional(),
-  latitude: z.coerce.number().optional(),
-  longitude: z.coerce.number().optional(),
 });
 
 
@@ -72,8 +70,6 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             address: discovery.address ?? '',
             website: discovery.website ?? '',
             phone: discovery.phone ?? '',
-            latitude: discovery.latitude ?? undefined,
-            longitude: discovery.longitude ?? undefined,
         },
     });
 
@@ -175,14 +171,6 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                 <FormField control={form.control} name="address" render={({ field }) => (
                                     <FormItem><FormLabel>Morada (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
-                                <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="latitude" render={({ field }) => (
-                                    <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="longitude" render={({ field }) => (
-                                    <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                </div>
                                 <FormField control={form.control} name="website" render={({ field }) => (
                                     <FormItem><FormLabel>Website (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>

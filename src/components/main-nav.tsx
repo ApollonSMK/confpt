@@ -32,7 +32,6 @@ const navLinks = [
   { href: '/discoveries', label: 'Descobertas', icon: BookOpen },
   { href: '/confrarias', label: 'Confrarias', icon: Handshake },
   { href: '/events', label: 'Eventos', icon: Calendar },
-  { href: '/map', label: 'Mapa', icon: Map },
 ];
 
 interface MainNavProps {

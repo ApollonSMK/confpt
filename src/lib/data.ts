@@ -20,8 +20,6 @@ export type Discovery = {
   address?: string | null;
   website?: string | null;
   phone?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
   confrarias?: Confraria; // Relação opcional
   confrariaId: number; // Para compatibilidade com componentes existentes
   imageUrl: string;

@@ -45,7 +45,7 @@ export async function createSubmission(values: z.infer<typeof submissionSchema>)
             editorial,
             region,
             type: parseInt(type_id, 10),
-            confraria_id: confrariaId ? parseInt(confrariaId, 10) : null,
+            confraria_id: confrariaId && confrariaId !== 'null' ? parseInt(confrariaId, 10) : null,
             links: links || null,
             status: 'Pendente',
             date: formattedDate,

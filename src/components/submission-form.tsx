@@ -164,7 +164,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
+                    <SelectItem value="null">Nenhuma</SelectItem>
                     {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

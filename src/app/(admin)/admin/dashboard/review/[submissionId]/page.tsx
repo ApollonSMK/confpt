@@ -8,8 +8,9 @@ import type { Submission } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X } from 'lucide-react';
+import { Check, X, Image as ImageIcon } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
+import Image from 'next/image';
 
 type ReviewPageProps = {
   params: {
@@ -96,8 +97,7 @@ export async function approveSubmission(formData: FormData) {
             type_id: submission.type,
             confraria_id: submission.confraria_id,
             slug: slug,
-            // Defaults for new discoveries
-            image_url: 'https://placehold.co/600x400.png',
+            image_url: submission.image_url ?? 'https://placehold.co/600x400.png',
             image_hint: 'placeholder',
             website: submission.links,
         });
@@ -167,6 +167,14 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        {submission.image_url && (
+                             <div className="space-y-2">
+                                <h3 className="font-semibold flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Submetida</h3>
+                                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                                    <Image src={submission.image_url} alt={`Imagem para ${submission.discoveryTitle}`} fill className="object-cover" />
+                                </div>
+                            </div>
+                        )}
                         <div className="space-y-1">
                             <h3 className="font-semibold">Título</h3>
                             <p>{submission.discoveryTitle}</p>

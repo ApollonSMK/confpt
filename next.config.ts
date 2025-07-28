@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1],
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
   experimental: {

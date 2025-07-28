@@ -62,6 +62,7 @@ export type Submission = {
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
   discoveryTitle: string; // Para compatibilidade
   users?: { email: string | undefined }; // Relação opcional
+  image_url?: string | null;
 };
 
 export type Event = {

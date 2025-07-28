@@ -20,8 +20,11 @@ import { regions, type Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_IMAGE_SIZE = 5; // In MB
 
 const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
@@ -30,7 +33,9 @@ const formSchema = z.object({
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
-  image: z.any().optional(),
+  image: z.any()
+    .refine((file) => !file || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
+    .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,6 +49,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,6 +60,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       type_id: undefined,
       confrariaId: 'null',
       links: '',
+      image: undefined,
     },
   });
 
@@ -66,9 +73,13 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       }
   }
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setLoading(true);
-    const result = await createSubmission(values);
+
+    const formData = new FormData(event.currentTarget);
+    const result = await createSubmission(formData);
+    
     setLoading(false);
 
     if (result.error) {
@@ -89,7 +100,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
         
         {step === 1 && (
             <Card>
@@ -232,23 +243,19 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                      <FormField
                         control={form.control}
                         name="image"
-                        render={({ field }) => (
+                        render={({ field: { onChange, value, ...rest } }) => (
                             <FormItem>
-                            <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (funcionalidade futura)</FormLabel>
-                            <FormControl>
-                                <div className="relative flex items-center justify-center w-full">
-                                    <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-not-allowed bg-muted/50 hover:bg-muted/80 transition-colors">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
-                                            <Upload className="w-8 h-8 mb-2"/>
-                                            <p className="mb-2 text-sm">Carregar uma imagem</p>
-                                            <p className="text-xs ">(Funcionalidade em desenvolvimento)</p>
-                                        </div>
-                                        <Input type="file" disabled className="hidden" {...field} />
-                                    </div>
-                                </div>
-                            </FormControl>
-                            <FormDescription>Uma boa imagem faz toda a diferença.</FormDescription>
-                            <FormMessage />
+                                <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="file" 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
+                                        {...rest}
+                                    />
+                                </FormControl>
+                                <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
+                                <FormMessage />
                             </FormItem>
                         )}
                         />

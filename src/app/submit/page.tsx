@@ -9,6 +9,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import type { Submission, Confraria, DiscoveryType } from '@/lib/data';
 import { createServiceRoleClient } from '@/lib/supabase/service';
+import Link from 'next/link';
 
 async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
     if (!userId) {
@@ -70,7 +71,7 @@ export default async function SubmitPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/login?redirect=/submit');
   }
 
   const [userSubmissions, confrarias, discoveryTypes] = await Promise.all([
@@ -82,30 +83,23 @@ export default async function SubmitPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="max-w-4xl mx-auto">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4 text-center">Partilhe uma Descoberta</h1>
-        <p className="text-lg text-muted-foreground text-center mb-10">
-          Ajude a enriquecer o nosso mapa de tesouros. Sugira um produto, lugar ou pessoa que mereça ser conhecido.
-        </p>
+        <div className="text-center mb-10">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Partilhe uma Descoberta</h1>
+            <p className="text-lg text-muted-foreground">
+                Ajude a enriquecer o nosso mapa de tesouros. Sugira um produto, lugar ou pessoa que mereça ser conhecido.
+            </p>
+        </div>
+
 
         <Tabs defaultValue="suggest" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="suggest">Sugerir Descoberta</TabsTrigger>
-            <TabsTrigger value="submissions">Minhas Submissões</TabsTrigger>
+            <TabsTrigger value="submissions">Minhas Submissões ({userSubmissions.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="suggest">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Nova Sugestão</CardTitle>
-                <CardDescription>
-                  Preencha os detalhes abaixo. A sua sugestão será revista pela nossa equipa.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
-              </CardContent>
-            </Card>
+          <TabsContent value="suggest" className="mt-6">
+            <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
           </TabsContent>
-          <TabsContent value="submissions">
+          <TabsContent value="submissions" className="mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">Histórico de Submissões</CardTitle>
@@ -131,10 +125,11 @@ export default async function SubmitPage() {
                           <TableCell className="text-right">
                             <Badge
                               className={cn({
-                                'bg-green-700 text-white': submission.status === 'Aprovado',
-                                'bg-red-700 text-white': submission.status === 'Rejeitado',
+                                'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
+                                'bg-red-100 text-red-800 border-red-300': submission.status === 'Rejeitado',
+                                'bg-yellow-100 text-yellow-800 border-yellow-300': submission.status === 'Pendente',
                               })}
-                              variant={submission.status === 'Aprovado' ? 'default' : submission.status === 'Rejeitado' ? 'destructive' : 'secondary'}
+                              variant="outline"
                             >
                               {submission.status}
                             </Badge>
@@ -145,7 +140,7 @@ export default async function SubmitPage() {
                   </Table>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">
-                    Você ainda não fez nenhuma submissão. Tem um tesouro para <Link href="/submit" className="text-primary hover:underline">partilhar</Link>?
+                    Você ainda não fez nenhuma submissão. Tem um tesouro para partilhar?
                   </p>
                 )}
                 

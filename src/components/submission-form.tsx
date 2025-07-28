@@ -210,7 +210,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                                     {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
-                            <FormDescription>Se aplicável, qual a confraria que melhor representa esta descoberta?</FormDescription>
+                            <FormDescription>Se esta descoberta tem uma ligação especial com alguma confraria, indique-a aqui. Isto ajuda os nossos curadores a organizar o conteúdo.</FormDescription>
                             <FormMessage />
                             </FormItem>
                         )}

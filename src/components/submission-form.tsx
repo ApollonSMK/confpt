@@ -198,7 +198,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         name="confrariaId"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Confraria Sugerida (Opcional)</FormLabel>
+                            <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Relevante para a Confraria (Opcional)</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                     <SelectTrigger>

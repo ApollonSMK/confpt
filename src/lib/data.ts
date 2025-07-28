@@ -1,4 +1,5 @@
 
+
 import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -92,6 +93,22 @@ export type DiscoveryType = {
     id: number;
     name: string;
 };
+
+export type Testimonial = {
+    id: number;
+    content: string;
+    created_at: string;
+    user_id: string;
+    discovery_id: number;
+}
+
+export type TestimonialWithUser = Testimonial & {
+    user: {
+        id: string;
+        full_name: string;
+        avatar_url: string | null;
+    }
+}
 
 
 // Dados estáticos para filtros, que não precisam estar no banco por enquanto

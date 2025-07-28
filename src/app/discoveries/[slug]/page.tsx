@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
 import { Button } from '@/components/ui/button';
-import type { Discovery } from '@/lib/data';
+import type { Discovery, TestimonialWithUser } from '@/lib/data';
+import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
 
 type DiscoveryPageProps = {
   params: {
@@ -69,6 +70,39 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     })) as unknown as Discovery[];
 }
 
+async function getTestimonials(discoveryId: number) {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+        .from('testimonials')
+        .select(`
+            id,
+            content,
+            created_at,
+            user_id,
+            users (
+                id,
+                raw_user_meta_data
+            )
+        `)
+        .eq('discovery_id', discoveryId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching testimonials:', error);
+        return [];
+    }
+
+    return data.map((t: any) => ({
+        ...t,
+        user: {
+            id: t.users.id,
+            full_name: t.users.raw_user_meta_data?.full_name ?? 'Anónimo',
+            avatar_url: t.users.raw_user_meta_data?.avatar_url,
+        }
+    })) as TestimonialWithUser[];
+}
+
+
 export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -80,8 +114,12 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     notFound();
   }
   
+  const [testimonials, relatedDiscoveries] = await Promise.all([
+    getTestimonials(discovery.id),
+    discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5)
+  ]);
+
   const confraria = discovery.confrarias;
-  const relatedDiscoveries = discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5);
 
   const SealButton = () => (
     <form action={toggleSeal}>
@@ -163,6 +201,18 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
           <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
           <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
       </div>
+
+       <section className="mt-16 md:mt-24">
+            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3">
+                <MessageSquareQuote className="h-8 w-8 text-primary/80" />
+                Testemunhos dos Confrades
+            </h2>
+            <DiscoveryTestimonials
+                discoveryId={discovery.id}
+                user={user}
+                initialTestimonials={testimonials}
+            />
+        </section>
 
       {relatedDiscoveries.length > 0 && (
         <section className="mt-16 md:mt-24">

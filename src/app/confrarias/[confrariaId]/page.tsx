@@ -51,6 +51,28 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                 </p>
                 {isLongText && (
                     <Dialog open={open} onOpenChange={setOpen}>
+                        <style>
+                            {`
+                                .parchment-scroll::-webkit-scrollbar {
+                                    width: 8px;
+                                }
+
+                                .parchment-scroll::-webkit-scrollbar-track {
+                                    background: transparent;
+                                }
+
+                                .parchment-scroll::-webkit-scrollbar-thumb {
+                                    background-color: hsl(var(--primary) / 0.5);
+                                    border-radius: 10px;
+                                    border: 2px solid transparent;
+                                    background-clip: content-box;
+                                }
+
+                                .parchment-scroll::-webkit-scrollbar-thumb:hover {
+                                     background-color: hsl(var(--primary) / 0.7);
+                                }
+                            `}
+                        </style>
                         <DialogTrigger asChild>
                             <Button variant="secondary">Ver Mais</Button>
                         </DialogTrigger>
@@ -65,7 +87,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                                     className="object-contain"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center p-[15%]">
-                                    <div className="w-full h-full overflow-y-auto pr-4 text-center">
+                                    <div className="parchment-scroll w-full h-full overflow-y-auto pr-4 text-center">
                                          <h2 className="font-headline text-3xl text-primary/90 mb-4">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                             {history}

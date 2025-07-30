@@ -44,7 +44,7 @@ export async function toggleMembershipRequest(formData: FormData) {
     if (error) {
       console.error('Error creating membership request:', error);
       if (error.code === '23505') { // unique_violation
-          return { error: 'Você já tem um pedido de adesão para esta confraria.' };
+          return { error: 'Você já tem um pedido de adesão ou já é membro desta confraria.' };
       }
       return { error: 'Ocorreu um erro ao solicitar a adesão.' };
     }

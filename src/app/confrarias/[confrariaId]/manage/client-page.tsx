@@ -7,7 +7,7 @@ import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2 } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 import { handleMembershipAction, removeMember } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 
 type Member = {
@@ -51,22 +52,22 @@ export type ManageConfrariaPageProps = {
 export function ClientManagePage({ confrariaData, pendingMembers, approvedMembers, events, user }: ManageConfrariaPageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [isDialogOpen, setDialogOpen] = useState(false);
+    const [isEventDialogOpen, setEventDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [isRemovingMember, setIsRemovingMember] = useState<number | null>(null);
 
-    const handleEditClick = (event: Event) => {
+    const handleEditEventClick = (event: Event) => {
         setSelectedEvent(event);
-        setDialogOpen(true);
+        setEventDialogOpen(true);
     };
 
-    const handleAddNewClick = () => {
+    const handleAddNewEventClick = () => {
         setSelectedEvent(null);
-        setDialogOpen(true);
+        setEventDialogOpen(true);
     };
 
-    const handleFormSuccess = () => {
-        setDialogOpen(false);
+    const handleEventFormSuccess = () => {
+        setEventDialogOpen(false);
         router.refresh(); 
     };
     
@@ -89,6 +90,12 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
+            <Button variant="ghost" asChild className="-ml-4">
+                <Link href={`/confrarias/${confrariaData.id}`}>
+                    <ArrowLeft />
+                    Voltar à Página da Confraria
+                </Link>
+            </Button>
             <div>
                  <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">Painel da {confrariaData.name}</h1>
                 <p className="text-lg text-muted-foreground">
@@ -96,7 +103,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                 </p>
             </div>
             
-             <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+             <Dialog open={isEventDialogOpen} onOpenChange={setEventDialogOpen}>
                 <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
@@ -251,7 +258,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                             description="Crie e gira os eventos e encontros da sua confraria." 
                             icon={Calendar}
                             actions={
-                                <Button onClick={handleAddNewClick}><PlusCircle/> Adicionar Evento</Button>
+                                <Button onClick={handleAddNewEventClick}><PlusCircle/> Adicionar Evento</Button>
                             }>
                             {events.length > 0 ? (
                                 <div className="space-y-4">
@@ -263,7 +270,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                                 <p className="text-sm text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> {new Date(event.event_date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                                                 <p className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {event.location || 'Local a confirmar'}</p>
                                             </div>
-                                            <Button variant="outline" size="icon" onClick={() => handleEditClick(event)}><Edit className="h-4 w-4"/></Button>
+                                            <Button variant="outline" size="icon" onClick={() => handleEditEventClick(event)}><Edit className="h-4 w-4"/></Button>
                                         </Card>
                                     ))}
                                 </div>
@@ -278,16 +285,13 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                 </Tabs>
                 <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
-                        <DialogTitle>{selectedEvent ? 'Editar Evento' : 'Adicionar Novo Evento'}</DialogTitle>
-                        <DialogDescription>
-                            {selectedEvent ? 'Atualize os detalhes do seu evento.' : 'Preencha os detalhes do seu evento. Clique em guardar quando terminar.'}
-                        </DialogDescription>
+                        <DialogTitle className="font-headline text-2xl">{selectedEvent ? 'Editar Evento' : 'Adicionar Novo Evento'}</DialogTitle>
                     </DialogHeader>
                     <EventForm 
                         confrariaId={confrariaData.id} 
                         confrariaRegion={confrariaData.region} 
                         event={selectedEvent} 
-                        onSuccess={handleFormSuccess}
+                        onSuccess={handleEventFormSuccess}
                     />
                 </DialogContent>
             </Dialog>

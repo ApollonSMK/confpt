@@ -4,21 +4,10 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin } from 'lucide-react';
-import { handleMembershipAction } from './actions';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { getUserRank, type UserRankInfo, regions } from '@/lib/data';
-import { EventForm } from './event-form';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { getUserRank, type UserRankInfo } from '@/lib/data';
 import type { Event } from '@/lib/data';
-import Image from 'next/image';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClientManagePage, type ManageConfrariaPageProps } from './client-page';
 
 

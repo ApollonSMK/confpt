@@ -57,10 +57,6 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                         </DialogTrigger>
                         <DialogContent 
                             className="sm:max-w-2xl" 
-                            style={{ 
-                                backgroundImage: 'linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)',
-                                backgroundSize: '2px 2px',
-                             }}
                         >
                             <DialogHeader>
                                 <DialogTitle className="font-headline text-3xl">A História da {confrariaName}</DialogTitle>
@@ -413,4 +409,5 @@ export default function ConfrariaPage() {
             </div>
         </div>
     );
-}
+
+    

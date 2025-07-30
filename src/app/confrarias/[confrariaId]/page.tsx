@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
@@ -54,6 +55,8 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                             <Button variant="secondary">Ver Mais</Button>
                         </DialogTrigger>
                         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+                             <DialogTitle className="sr-only">História da {confrariaName}</DialogTitle>
+                             <DialogDescription className="sr-only">A história completa da confraria {confrariaName}.</DialogDescription>
                             <div className="relative w-full h-auto aspect-[3/4]">
                                 <Image
                                     src="/images/pergaminho.png"

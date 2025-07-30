@@ -1,10 +1,12 @@
 
 
+'use client';
+
 import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery, Event } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,8 @@ import { toggleMembershipRequest } from './actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 type ConfrariaPageProps = {
   params: {
@@ -26,97 +30,141 @@ type ConfrariaDetails = Confraria & {
   member_count: number;
   membership_status: 'member' | 'pending' | 'none';
   is_responsible: boolean;
+  history: string;
+  founders: string;
 };
 
-async function getConfrariaDetails(id: string, user: User | null): Promise<ConfrariaDetails | null> {
-    const supabase = createServerClient();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+// We need a client component to handle the state of the history modal
+function HistoryCard({ history, confrariaName }: { history: string; confrariaName: string }) {
+    const [open, setOpen] = useState(false);
+    const MAX_LENGTH = 300; // Character limit before showing "Ver Mais"
+    const isLongText = history.length > MAX_LENGTH;
 
-    // The RLS policies on 'events' will handle filtering public vs private events
-    // automatically based on the user's session.
-    const { data: confraria, error } = await supabase
-        .from('confrarias')
-        .select(`
-            *,
-            discoveries (
-                *,
-                confrarias (
-                    id,
-                    name,
-                    seal_url,
-                    seal_hint
-                ),
-                discovery_seal_counts (
-                    seal_count
-                )
-            ),
-            confraria_members (
-                id,
-                status
-            ),
-            events (
-                *
-            )
-        `)
-        .eq('id', id)
-        .single();
-    
-    if (error || !confraria) {
-        console.error(`Error fetching confraria with id ${id}:`, error);
-        return null;
-    }
-
-    let membership_status: 'member' | 'pending' | 'none' = 'none';
-    if(user) {
-        const { data: userMembership } = await supabase
-            .from('confraria_members')
-            .select('status')
-            .eq('user_id', user.id)
-            .eq('confraria_id', confraria.id)
-            .single();
-
-        if (userMembership) {
-            if (userMembership.status === 'approved') {
-                membership_status = 'member';
-            } else if (userMembership.status === 'pending') {
-                membership_status = 'pending';
-            }
-        }
-    }
-
-    const discoveries = confraria.discoveries.map((d: any) => ({
-        ...d,
-        confrariaId: d.confraria_id,
-        imageUrl: d.image_url,
-        imageHint: d.image_hint,
-        contextualData: {
-            address: d.address,
-            website: d.website,
-            phone: d.phone
-        },
-        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-        user_has_sealed: false, 
-    })) as unknown as Discovery[];
-
-    const isAdmin = currentUser?.email === process.env.ADMIN_EMAIL;
-
-    return {
-        ...confraria,
-        sealUrl: confraria.seal_url,
-        sealHint: confraria.seal_hint,
-        discoveries,
-        events: confraria.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-        member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
-        membership_status,
-        is_responsible: user?.id === confraria.responsible_user_id || isAdmin,
-    } as ConfrariaDetails;
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                    <History className="h-6 w-6 text-primary/80"/>
+                    A Nossa História
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap space-y-4">
+                <p>
+                    {isLongText ? `${history.substring(0, MAX_LENGTH)}...` : history}
+                </p>
+                {isLongText && (
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="secondary">Ver Mais</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-3xl">A História da {confrariaName}</DialogTitle>
+                            </DialogHeader>
+                            <div className="max-h-[70vh] overflow-y-auto pr-4">
+                                <p className="font-body text-foreground/90 whitespace-pre-wrap py-4">
+                                    {history}
+                                </p>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+            </CardContent>
+        </Card>
+    )
 }
 
-
+// The page itself remains a server component for data fetching
 export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
+    
+    // Fetching logic remains the same
+    async function getConfrariaDetails(id: string, user: User | null): Promise<ConfrariaDetails | null> {
+        const supabase = createServerClient();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+        const { data: confraria, error } = await supabase
+            .from('confrarias')
+            .select(`
+                *,
+                discoveries (
+                    *,
+                    confrarias (
+                        id,
+                        name,
+                        seal_url,
+                        seal_hint
+                    ),
+                    discovery_seal_counts (
+                        seal_count
+                    )
+                ),
+                confraria_members (
+                    id,
+                    status
+                ),
+                events (
+                    *
+                )
+            `)
+            .eq('id', id)
+            .single();
+        
+        if (error || !confraria) {
+            console.error(`Error fetching confraria with id ${id}:`, error);
+            return null;
+        }
+
+        let membership_status: 'member' | 'pending' | 'none' = 'none';
+        if(user) {
+            const { data: userMembership } = await supabase
+                .from('confraria_members')
+                .select('status')
+                .eq('user_id', user.id)
+                .eq('confraria_id', confraria.id)
+                .single();
+
+            if (userMembership) {
+                if (userMembership.status === 'approved') {
+                    membership_status = 'member';
+                } else if (userMembership.status === 'pending') {
+                    membership_status = 'pending';
+                }
+            }
+        }
+
+        const discoveries = confraria.discoveries.map((d: any) => ({
+            ...d,
+            confrariaId: d.confraria_id,
+            imageUrl: d.image_url,
+            imageHint: d.image_hint,
+            contextualData: {
+                address: d.address,
+                website: d.website,
+                phone: d.phone
+            },
+            confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+            seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+            user_has_sealed: false, 
+        })) as unknown as Discovery[];
+
+        const isAdmin = currentUser?.email === process.env.ADMIN_EMAIL;
+
+        return {
+            ...confraria,
+            sealUrl: confraria.seal_url,
+            sealHint: confraria.seal_hint,
+            discoveries,
+            events: confraria.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+            member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
+            membership_status,
+            is_responsible: user?.id === confraria.responsible_user_id || isAdmin,
+            history: confraria.history || 'A história desta confraria ainda não foi contada.',
+            founders: confraria.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
+        } as ConfrariaDetails;
+    }
+
     const confraria = await getConfrariaDetails(params.confrariaId, user);
 
     if (!confraria) {
@@ -328,17 +376,7 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                     </div>
 
                     <aside className="space-y-8 lg:mt-[92px]">
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                                    <Feather className="h-6 w-6 text-primary/80"/>
-                                    A Nossa História
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
-                                {confraria.history || 'A história desta confraria ainda não foi contada. Seja o primeiro a escrevê-la!'}
-                            </CardContent>
-                        </Card>
+                         <HistoryCard history={confraria.history} confrariaName={confraria.name} />
                          <Card>
                             <CardHeader>
                                 <CardTitle className="font-headline text-2xl flex items-center gap-3">
@@ -347,7 +385,7 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
-                                {confraria.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.'}
+                                {confraria.founders}
                             </CardContent>
                         </Card>
                     </aside>

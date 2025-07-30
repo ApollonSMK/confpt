@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import type { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
@@ -54,7 +55,13 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                         <DialogTrigger asChild>
                             <Button variant="secondary">Ver Mais</Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl">
+                        <DialogContent 
+                            className="sm:max-w-2xl" 
+                            style={{ 
+                                backgroundImage: 'linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)',
+                                backgroundSize: '2px 2px',
+                             }}
+                        >
                             <DialogHeader>
                                 <DialogTitle className="font-headline text-3xl">A História da {confrariaName}</DialogTitle>
                             </DialogHeader>
@@ -155,7 +162,29 @@ export default function ConfrariaPage() {
 
 
     if (loading) {
-        return <div>A carregar...</div>; // TODO: Add Skeleton loader
+        return (
+             <div className="container mx-auto px-4 py-8 md:py-16">
+                <Skeleton className="h-8 w-48 mb-12" />
+                <Skeleton className="h-64 w-full mb-[-4rem] md:mb-[-6rem]" />
+                 <div className="relative">
+                    <section className="bg-card border rounded-lg p-6 md:p-8 mb-12 shadow-lg">
+                        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                            <Skeleton className="h-[150px] w-[150px] rounded-full -mt-16 md:-ml-16 md:-mt-24" />
+                            <div className="text-center md:text-left flex-grow space-y-3">
+                                <Skeleton className="h-12 w-3/4" />
+                                <Skeleton className="h-8 w-1/2" />
+                                <div className="flex justify-center md:justify-start gap-2">
+                                    <Skeleton className="h-6 w-24 rounded-full" />
+                                    <Skeleton className="h-6 w-24 rounded-full" />
+                                    <Skeleton className="h-6 w-24 rounded-full" />
+                                </div>
+                            </div>
+                            <Skeleton className="h-12 w-40 shrink-0" />
+                        </div>
+                    </section>
+                </div>
+            </div>
+        );
     }
     
     if (!confraria) {

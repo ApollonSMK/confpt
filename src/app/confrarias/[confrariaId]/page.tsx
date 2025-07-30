@@ -34,6 +34,9 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     const MAX_LENGTH = 300; // Character limit before showing "Ver Mais"
     const isLongText = history.length > MAX_LENGTH;
 
+    const visibleText = isLongText ? history.substring(0, MAX_LENGTH) : history;
+    const hiddenText = isLongText ? history.substring(MAX_LENGTH) : '';
+
     return (
         <Card>
             <CardHeader>
@@ -44,7 +47,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
             </CardHeader>
             <CardContent className="font-body text-foreground/90 whitespace-pre-wrap space-y-4">
                 <p>
-                    {isLongText ? `${history.substring(0, MAX_LENGTH)}...` : history}
+                    {visibleText}{isLongText && '...'}
                 </p>
                 {isLongText && (
                     <Dialog open={open} onOpenChange={setOpen}>
@@ -57,7 +60,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                             </DialogHeader>
                             <div className="max-h-[70vh] overflow-y-auto pr-4">
                                 <p className="font-body text-foreground/90 whitespace-pre-wrap py-4">
-                                    {history}
+                                    <mark className="bg-secondary/30 text-foreground px-1 rounded-sm">{visibleText}</mark>{hiddenText}
                                 </p>
                             </div>
                         </DialogContent>

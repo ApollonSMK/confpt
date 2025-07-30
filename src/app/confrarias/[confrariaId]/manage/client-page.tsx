@@ -11,7 +11,7 @@ import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCi
 import { handleMembershipAction, removeMember } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { getUserRank, type UserRankInfo, regions } from '@/lib/data';
+import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
 import { EventForm } from './event-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { Event } from '@/lib/data';
@@ -148,7 +148,9 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {pendingMembers.map((member) => (
+                                        {pendingMembers.map((member) => {
+                                            const RankIcon = rankIcons[member.rank.rankIconName];
+                                            return (
                                             <TableRow key={member.id}>
                                                 <TableCell className="font-medium">
                                                     <div className="font-bold">{member.user_full_name || 'Nome não definido'}</div>
@@ -156,7 +158,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary" className="flex items-center gap-2 w-fit">
-                                                        <member.rank.rankIcon className="h-4 w-4 text-primary" />
+                                                        <RankIcon className="h-4 w-4 text-primary" />
                                                         <span>{member.rank.rankName}</span>
                                                     </Badge>
                                                 </TableCell>
@@ -164,7 +166,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                                     <ActionButtons member={member} confrariaId={confrariaData.id} />
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        )})}
                                     </TableBody>
                                 </Table>
                             ) : (
@@ -193,7 +195,9 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {approvedMembers.map((member) => (
+                                        {approvedMembers.map((member) => {
+                                             const RankIcon = rankIcons[member.rank.rankIconName];
+                                             return (
                                             <TableRow key={member.id}>
                                                 <TableCell className="font-medium">
                                                     <div className="font-bold">{member.user_full_name || 'Nome não definido'}</div>
@@ -201,7 +205,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary" className="flex items-center gap-2 w-fit">
-                                                        <member.rank.rankIcon className="h-4 w-4 text-primary" />
+                                                        <RankIcon className="h-4 w-4 text-primary" />
                                                         <span>{member.rank.rankName}</span>
                                                     </Badge>
                                                 </TableCell>
@@ -229,7 +233,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                                                     </AlertDialog>
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        )})}
                                     </TableBody>
                                 </Table>
                             ) : (

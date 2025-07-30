@@ -85,7 +85,7 @@ export type Event = {
 
 export type UserRankInfo = {
   rankName: string;
-  rankIcon: LucideIcon;
+  rankIconName: keyof typeof rankIcons; // Pass the name, not the component
   nextRankName: string | null;
   progress: number;
 };
@@ -117,12 +117,21 @@ export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Aç
 
 
 // Sistema de Ranks de Gamificação
+
+export const rankIcons = {
+    ShieldHalf,
+    Shield,
+    ShieldCheck,
+    Star,
+    Gem,
+};
+
 export const ranks = [
-  { name: 'Noviço', seals: 0, submissions: 0, icon: ShieldHalf },
-  { name: 'Confrade', seals: 1, submissions: 1, icon: Shield },
-  { name: 'Mestre de Prova', seals: 10, submissions: 2, icon: ShieldCheck },
-  { name: 'Guardião da Tradição', seals: 25, submissions: 5, icon: Star },
-  { name: 'Grão-Mestre', seals: 50, submissions: 10, icon: Gem },
+  { name: 'Noviço', seals: 0, submissions: 0, iconName: 'ShieldHalf' as keyof typeof rankIcons },
+  { name: 'Confrade', seals: 1, submissions: 1, iconName: 'Shield' as keyof typeof rankIcons },
+  { name: 'Mestre de Prova', seals: 10, submissions: 2, iconName: 'ShieldCheck' as keyof typeof rankIcons },
+  { name: 'Guardião da Tradição', seals: 25, submissions: 5, iconName: 'Star' as keyof typeof rankIcons },
+  { name: 'Grão-Mestre', seals: 50, submissions: 10, iconName: 'Gem' as keyof typeof rankIcons },
 ];
 
 export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number, rankOverride?: string) {
@@ -132,7 +141,7 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
     if (overriddenRank) {
       return {
         rankName: overriddenRank.name,
-        rankIcon: overriddenRank.icon,
+        rankIconName: overriddenRank.iconName,
         nextRankName: null,
         progress: 100,
       };
@@ -163,7 +172,7 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
   
   return {
     rankName: currentRank.name,
-    rankIcon: currentRank.icon,
+    rankIconName: currentRank.iconName,
     nextRankName: nextRank ? nextRank.name : null,
     progress: progress,
   };

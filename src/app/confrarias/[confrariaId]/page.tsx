@@ -4,7 +4,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import type { Confraria, Discovery, Event } from '@/lib/data';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -17,12 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import type { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
-type ConfrariaPageProps = {
-  params: {
-    confrariaId: string;
-  };
-};
 
 type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
@@ -75,15 +69,18 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
 }
 
 // The page itself remains a server component for data fetching
-export default function ConfrariaPage({ params }: ConfrariaPageProps) {
+export default function ConfrariaPage() {
     const [confraria, setConfraria] = useState<ConfrariaDetails | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
     const supabase = createClient();
-    const { confrariaId } = params;
+    const params = useParams();
+    const confrariaId = params.confrariaId as string;
 
     useEffect(() => {
+        if (!confrariaId) return;
+
         async function getConfrariaDetails() {
             const { data: { user: currentUser } } = await supabase.auth.getUser();
             setUser(currentUser);
@@ -308,7 +305,7 @@ export default function ConfrariaPage({ params }: ConfrariaPageProps) {
                                     {confraria.events.map(event => (
                                          <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
                                             <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
-                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} layout="fill" className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
+                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} fill className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
                                             </div>
                                             <CardHeader className="flex-grow">
                                                 <CardTitle className="font-headline text-2xl flex items-center justify-between">

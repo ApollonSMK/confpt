@@ -81,6 +81,7 @@ export default function ConfrariaPage({ params }: ConfrariaPageProps) {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
     const supabase = createClient();
+    const { confrariaId } = params;
 
     useEffect(() => {
         async function getConfrariaDetails() {
@@ -100,11 +101,11 @@ export default function ConfrariaPage({ params }: ConfrariaPageProps) {
                     confraria_members ( id, status ),
                     events ( * )
                 `)
-                .eq('id', params.confrariaId)
+                .eq('id', confrariaId)
                 .single();
             
             if (error || !confrariaData) {
-                console.error(`Error fetching confraria with id ${params.confrariaId}:`, error);
+                console.error(`Error fetching confraria with id ${confrariaId}:`, error);
                 return notFound();
             }
 
@@ -150,7 +151,7 @@ export default function ConfrariaPage({ params }: ConfrariaPageProps) {
         }
 
         getConfrariaDetails();
-    }, [params.confrariaId, supabase]);
+    }, [confrariaId, supabase]);
 
 
     if (loading) {

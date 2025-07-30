@@ -36,7 +36,6 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     const isLongText = history.length > MAX_LENGTH;
 
     const visibleText = isLongText ? history.substring(0, MAX_LENGTH) : history;
-    const hiddenText = isLongText ? history.substring(MAX_LENGTH) : '';
 
     return (
         <Card>
@@ -56,14 +55,14 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                             <Button variant="secondary">Ver Mais</Button>
                         </DialogTrigger>
                         <DialogContent 
-                            className="sm:max-w-2xl" 
+                            className="sm:max-w-2xl bg-card"
                         >
                             <DialogHeader>
                                 <DialogTitle className="font-headline text-3xl">A História da {confrariaName}</DialogTitle>
                             </DialogHeader>
                             <div className="max-h-[70vh] overflow-y-auto pr-4">
                                 <p className="font-body text-foreground/90 whitespace-pre-wrap py-4">
-                                    <mark className="bg-secondary/30 text-foreground px-1 rounded-sm">{visibleText}</mark>{hiddenText}
+                                    {history}
                                 </p>
                             </div>
                         </DialogContent>

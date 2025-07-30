@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -16,6 +17,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname,
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
   // This is required to allow the Next.js dev server to be accessed from
@@ -27,3 +34,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

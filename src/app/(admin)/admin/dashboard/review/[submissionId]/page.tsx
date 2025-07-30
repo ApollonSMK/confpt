@@ -98,7 +98,7 @@ export async function approveSubmission(formData: FormData) {
             confraria_id: submission.confraria_id,
             slug: slug,
             image_url: submission.image_url ?? 'https://placehold.co/600x400.png',
-            image_hint: 'placeholder',
+            image_hint: submission.image_url ? 'user submission' : 'placeholder',
             website: submission.links,
         });
 
@@ -231,3 +231,4 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
         </div>
     );
 }
+

@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery, Event } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
@@ -246,6 +246,19 @@ export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div className="lg:col-span-2 space-y-12">
+
+                         <section>
+                             <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                <Newspaper className="h-8 w-8 text-primary/80"/>
+                                Publicações
+                            </h2>
+                            <Card className="border-l-4 border-primary">
+                                <CardContent className="p-6 text-center text-muted-foreground">
+                                    Em breve, as confrarias poderão partilhar as suas novidades e artigos aqui.
+                                </CardContent>
+                            </Card>
+                        </section>
+
                         <section>
                             <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
                                 <Calendar className="h-8 w-8 text-primary/80"/>

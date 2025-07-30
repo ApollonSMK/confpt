@@ -55,7 +55,7 @@ export async function createSubmission(formData: FormData) {
         const fileName = `${nanoid()}.${fileExtension}`;
         
         const { error: uploadError } = await supabaseService.storage
-            .from('discovery_images')
+            .from('discovery-images')
             .upload(fileName, image);
 
         if (uploadError) {
@@ -64,7 +64,7 @@ export async function createSubmission(formData: FormData) {
         }
 
         const { data: publicUrlData } = supabaseService.storage
-            .from('discovery_images')
+            .from('discovery-images')
             .getPublicUrl(fileName);
 
         imageUrl = publicUrlData.publicUrl;

@@ -6,6 +6,7 @@ import { LoginForm } from './login-form';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Grape, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -13,16 +14,16 @@ export default function LoginPage() {
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-14rem)] items-center justify-center px-4 py-8 md:py-16">
       <div className="w-full max-w-md">
-        <Card className="p-4 md:p-6 transition-all duration-300">
+        <Card className={cn("p-2 md:p-4 transition-all duration-300", isSignUp && "md:p-6")}>
             <CardHeader className="text-center">
                 <div className="mx-auto mb-4 inline-block rounded-full bg-primary/10 p-3">
                     {isSignUp ? <UserPlus className="h-8 w-8 text-primary" /> : <Grape className="h-8 w-8 text-primary" />}
                 </div>
                 <CardTitle className="font-headline text-3xl">
-                    {isSignUp ? 'Criar Conta' : 'Bem-vindo de volta'}
+                    {isSignUp ? 'Criar Conta de Confrade' : 'Bem-vindo de volta'}
                 </CardTitle>
                 <CardDescription>
-                    {isSignUp ? 'Junte-se à nossa comunidade de confrades.' : 'Entre na sua conta para continuar a sua jornada.'}
+                    {isSignUp ? 'Junte-se à nossa comunidade para descobrir e partilhar tesouros.' : 'Entre na sua conta para continuar a sua jornada.'}
                 </CardDescription>
             </CardHeader>
             <LoginForm isSignUp={isSignUp} />
@@ -38,7 +39,7 @@ export default function LoginPage() {
                     </div>
                 </div>
                  <Button variant="outline" className="w-full" onClick={() => setIsSignUp(!isSignUp)}>
-                    {isSignUp ? 'Entrar' : 'Aderir'}
+                    {isSignUp ? 'Entrar com Conta Existente' : 'Aderir à Comunidade'}
                 </Button>
             </CardFooter>
         </Card>
@@ -46,5 +47,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

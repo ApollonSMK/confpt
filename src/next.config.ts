@@ -1,6 +1,10 @@
 
 import type {NextConfig} from 'next';
 
+const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+  : '';
+
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -17,12 +21,13 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
+      // Only add the Supabase remote pattern if the hostname is available
+      ...(supabaseHostname ? [{
         protocol: 'https',
-        hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname,
+        hostname: supabaseHostname,
         port: '',
         pathname: '/**',
-      }
+      }] : []),
     ],
   },
   // This is required to allow the Next.js dev server to be accessed from
@@ -34,4 +39,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-

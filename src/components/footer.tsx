@@ -40,7 +40,7 @@ export async function Footer() {
                 <Grape className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h3 className="font-headline text-xl font-bold text-primary-foreground">Confrarias Gastronómicas</h3>
+                <h3 className="font-headline text-xl font-bold text-primary-foreground">Confrarias Portugal</h3>
                 <p className="text-sm text-primary-foreground/80">Tradição e Sabor</p>
               </div>
             </div>
@@ -54,7 +54,7 @@ export async function Footer() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4"/>
-                    <a href="mailto:contacto@confrarias.pt" className="hover:text-primary-foreground transition-colors">contacto@confrarias.pt</a>
+                    <a href="mailto:geral@confrariasportugal.pt" className="hover:text-primary-foreground transition-colors">geral@confrariasportugal.pt</a>
                 </div>
             </div>
           </div>

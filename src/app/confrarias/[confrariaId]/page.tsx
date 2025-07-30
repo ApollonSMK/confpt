@@ -54,16 +54,22 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                         <DialogTrigger asChild>
                             <Button variant="secondary">Ver Mais</Button>
                         </DialogTrigger>
-                        <DialogContent 
-                            className="sm:max-w-2xl bg-card"
-                        >
-                            <DialogHeader>
-                                <DialogTitle className="font-headline text-3xl">A História da {confrariaName}</DialogTitle>
-                            </DialogHeader>
-                            <div className="max-h-[70vh] overflow-y-auto pr-4">
-                                <p className="font-body text-foreground/90 whitespace-pre-wrap py-4">
-                                    {history}
-                                </p>
+                        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+                            <div className="relative w-full h-auto aspect-[3/4]">
+                                <Image
+                                    src="/images/pergaminho.png"
+                                    alt="Pergaminho com a história da confraria"
+                                    fill
+                                    className="object-contain"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center p-[15%]">
+                                    <div className="w-full h-full overflow-y-auto pr-4 text-center">
+                                         <h2 className="font-headline text-3xl text-primary/90 mb-4">{confrariaName}</h2>
+                                        <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                                            {history}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -408,5 +414,6 @@ export default function ConfrariaPage() {
             </div>
         </div>
     );
+}
 
-    
+```

@@ -2,9 +2,9 @@
 
 'use client';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import type { Confraria, Discovery, Event } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { toggleMembershipRequest } from './actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 type ConfrariaPageProps = {
@@ -75,100 +75,90 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
 }
 
 // The page itself remains a server component for data fetching
-export default async function ConfrariaPage({ params }: ConfrariaPageProps) {
-    const supabase = createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Fetching logic remains the same
-    async function getConfrariaDetails(id: string, user: User | null): Promise<ConfrariaDetails | null> {
-        const supabase = createServerClient();
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
+export default function ConfrariaPage({ params }: ConfrariaPageProps) {
+    const [confraria, setConfraria] = useState<ConfrariaDetails | null>(null);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
+    const supabase = createClient();
 
-        const { data: confraria, error } = await supabase
-            .from('confrarias')
-            .select(`
-                *,
-                discoveries (
+    useEffect(() => {
+        async function getConfrariaDetails() {
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            setUser(currentUser);
+
+            const { data: confrariaData, error } = await supabase
+                .from('confrarias')
+                .select(`
                     *,
-                    confrarias (
-                        id,
-                        name,
-                        seal_url,
-                        seal_hint
+                    discoveries (
+                        *,
+                        confrarias ( id, name, seal_url, seal_hint ),
+                        discovery_seal_counts ( seal_count ),
+                        discovery_types ( name )
                     ),
-                    discovery_seal_counts (
-                        seal_count
-                    )
-                ),
-                confraria_members (
-                    id,
-                    status
-                ),
-                events (
-                    *
-                )
-            `)
-            .eq('id', id)
-            .single();
-        
-        if (error || !confraria) {
-            console.error(`Error fetching confraria with id ${id}:`, error);
-            return null;
-        }
-
-        let membership_status: 'member' | 'pending' | 'none' = 'none';
-        if(user) {
-            const { data: userMembership } = await supabase
-                .from('confraria_members')
-                .select('status')
-                .eq('user_id', user.id)
-                .eq('confraria_id', confraria.id)
+                    confraria_members ( id, status ),
+                    events ( * )
+                `)
+                .eq('id', params.confrariaId)
                 .single();
+            
+            if (error || !confrariaData) {
+                console.error(`Error fetching confraria with id ${params.confrariaId}:`, error);
+                return notFound();
+            }
 
-            if (userMembership) {
-                if (userMembership.status === 'approved') {
-                    membership_status = 'member';
-                } else if (userMembership.status === 'pending') {
-                    membership_status = 'pending';
+            let membership_status: 'member' | 'pending' | 'none' = 'none';
+            if(currentUser) {
+                const { data: userMembership } = await supabase
+                    .from('confraria_members')
+                    .select('status')
+                    .eq('user_id', currentUser.id)
+                    .eq('confraria_id', confrariaData.id)
+                    .single();
+
+                if (userMembership) {
+                    membership_status = userMembership.status as 'member' | 'pending';
                 }
             }
+
+            const discoveries = confrariaData.discoveries.map((d: any) => ({
+                ...d,
+                type: d.discovery_types.name,
+                confrariaId: d.confraria_id,
+                imageUrl: d.image_url,
+                imageHint: d.image_hint,
+                confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+                seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+            })) as Discovery[];
+
+            const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+            
+            setConfraria({
+                ...confrariaData,
+                sealUrl: confrariaData.seal_url,
+                sealHint: confrariaData.seal_hint,
+                discoveries,
+                events: confrariaData.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+                member_count: confrariaData.confraria_members.filter((m: any) => m.status === 'approved').length,
+                membership_status,
+                is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
+                history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
+                founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
+            } as ConfrariaDetails);
+            setLoading(false);
         }
 
-        const discoveries = confraria.discoveries.map((d: any) => ({
-            ...d,
-            confrariaId: d.confraria_id,
-            imageUrl: d.image_url,
-            imageHint: d.image_hint,
-            contextualData: {
-                address: d.address,
-                website: d.website,
-                phone: d.phone
-            },
-            confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-            seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-            user_has_sealed: false, 
-        })) as unknown as Discovery[];
+        getConfrariaDetails();
+    }, [params.confrariaId, supabase]);
 
-        const isAdmin = currentUser?.email === process.env.ADMIN_EMAIL;
 
-        return {
-            ...confraria,
-            sealUrl: confraria.seal_url,
-            sealHint: confraria.seal_hint,
-            discoveries,
-            events: confraria.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-            member_count: confraria.confraria_members.filter((m: any) => m.status === 'approved').length,
-            membership_status,
-            is_responsible: user?.id === confraria.responsible_user_id || isAdmin,
-            history: confraria.history || 'A história desta confraria ainda não foi contada.',
-            founders: confraria.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
-        } as ConfrariaDetails;
+    if (loading) {
+        return <div>A carregar...</div>; // TODO: Add Skeleton loader
     }
-
-    const confraria = await getConfrariaDetails(params.confrariaId, user);
-
+    
     if (!confraria) {
-        notFound();
+        return notFound();
     }
     
     const MembershipButton = () => {

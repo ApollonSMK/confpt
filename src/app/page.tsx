@@ -47,7 +47,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     }
     
     return data.map((d: any) => {
-        const images = d.discovery_images.map((img: any) => ({
+        const images = (d.discovery_images || []).map((img: any) => ({
             imageUrl: img.image_url,
             imageHint: img.image_hint,
         }));

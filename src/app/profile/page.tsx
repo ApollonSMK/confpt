@@ -57,7 +57,7 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
     const userSeals = new Set(discoveryIds);
     
     return data.map((d: any) => {
-       const images = d.discovery_images.map((img: any) => ({
+       const images = (d.discovery_images || []).map((img: any) => ({
             imageUrl: img.image_url,
             imageHint: img.image_hint,
         }));

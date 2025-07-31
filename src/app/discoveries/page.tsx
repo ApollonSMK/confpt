@@ -29,7 +29,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 name
             )
         `)
-        .order('id');
+        .order('id', { ascending: false });
 
     if (error) {
         console.error('Error fetching discoveries:', JSON.stringify(error, null, 2));

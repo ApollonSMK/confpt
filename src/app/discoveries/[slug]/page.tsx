@@ -13,6 +13,7 @@ import { toggleSeal } from './actions';
 import { Button } from '@/components/ui/button';
 import type { Discovery, TestimonialWithUser } from '@/lib/data';
 import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
+import { createServiceRoleClient } from '@/lib/supabase/service';
 
 type DiscoveryPageProps = {
   params: {
@@ -71,7 +72,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
 }
 
 async function getTestimonials(discoveryId: number) {
-    const supabase = createServerClient();
+    const supabase = createServiceRoleClient(); // Use service client to bypass RLS for public data
     const { data, error } = await supabase
         .from('testimonials')
         .select(`

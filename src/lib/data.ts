@@ -6,6 +6,11 @@ import type { LucideIcon } from 'lucide-react';
 
 // Tipos principais baseados no esquema do Supabase
 
+export type DiscoveryImage = {
+  imageUrl: string;
+  imageHint?: string;
+};
+
 export type Discovery = {
   id: number;
   slug: string;
@@ -16,15 +21,14 @@ export type Discovery = {
   type: string; 
   type_id: number;
   confraria_id: number;
-  image_url: string;
-  image_hint: string;
+  images: DiscoveryImage[]; // Array de imagens
   address?: string | null;
   website?: string | null;
   phone?: string | null;
   confrarias?: Confraria; // Relação opcional
   confrariaId: number; // Para compatibilidade com componentes existentes
-  imageUrl: string;
-  imageHint: string;
+  imageUrl: string; // Para compatibilidade - será a primeira imagem da galeria
+  imageHint: string; // Para compatibilidade
   contextualData?: {
     address?: string | null;
     website?: string | null;

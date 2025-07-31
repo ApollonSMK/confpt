@@ -33,8 +33,6 @@ const formSchema = z.object({
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
-  image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
-  image_hint: z.string().optional(),
   address: z.string().optional(),
   website: z.string().url("URL do website inválido.").optional().or(z.literal('')),
   phone: z.string().optional(),
@@ -65,8 +63,6 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             region: discovery.region,
             type_id: String(discovery.type_id),
             confraria_id: discovery.confraria_id?.toString() ?? undefined,
-            image_url: discovery.image_url ?? '',
-            image_hint: discovery.image_hint ?? '',
             address: discovery.address ?? '',
             website: discovery.website ?? '',
             phone: discovery.phone ?? '',
@@ -113,7 +109,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                         <div>
                             <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
                             <CardDescription>
-                               Atualize os detalhes da descoberta.
+                               Atualize os detalhes da descoberta. A gestão da galeria de imagens será adicionada em breve.
                             </CardDescription>
                         </div>
                         <AlertDialog>
@@ -160,14 +156,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                 <FormField control={form.control} name="confraria_id" render={({ field }) => (
                                     <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
-                                <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="image_url" render={({ field }) => (
-                                    <FormItem><FormLabel>URL da Imagem</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="image_hint" render={({ field }) => (
-                                    <FormItem><FormLabel>Dica da Imagem (IA)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                </div>
+                                
                                 <FormField control={form.control} name="address" render={({ field }) => (
                                     <FormItem><FormLabel>Morada (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
@@ -190,3 +179,4 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
         </div>
     );
 }
+

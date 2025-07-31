@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -105,7 +106,7 @@ export default function NewDiscoveryPage() {
                     <CardHeader>
                         <CardTitle className="font-headline text-3xl">Adicionar Nova Descoberta</CardTitle>
                         <CardDescription>
-                            Preencha os detalhes da nova descoberta para a publicar diretamente.
+                            Preencha os detalhes da nova descoberta para a publicar diretamente. A primeira imagem será a capa da galeria.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -133,7 +134,7 @@ export default function NewDiscoveryPage() {
                                 )}/>
                                 <div className="grid grid-cols-2 gap-4">
                                 <FormField control={form.control} name="image_url" render={({ field }) => (
-                                    <FormItem><FormLabel>URL da Imagem</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>URL da Imagem de Capa</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="image_hint" render={({ field }) => (
                                     <FormItem><FormLabel>Dica da Imagem (IA)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>

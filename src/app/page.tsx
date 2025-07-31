@@ -1,4 +1,5 @@
 
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, Grape } from 'lucide-react';
@@ -18,6 +19,10 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 name,
                 seal_url,
                 seal_hint
+            ),
+            discovery_images (
+                image_url,
+                image_hint
             ),
             discovery_seal_counts (
                 seal_count
@@ -41,21 +46,29 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         }
     }
     
-    return data.map((d: any) => ({
-        ...d,
-        type: d.discovery_types.name,
-        confrariaId: d.confraria_id,
-        imageUrl: d.image_url,
-        imageHint: d.image_hint,
-        contextualData: {
-            address: d.address,
-            website: d.website,
-            phone: d.phone
-        },
-        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-        user_has_sealed: userSeals.has(d.id),
-    })) as unknown as Discovery[];
+    return data.map((d: any) => {
+        const images = d.discovery_images.map((img: any) => ({
+            imageUrl: img.image_url,
+            imageHint: img.image_hint,
+        }));
+        
+        return {
+            ...d,
+            type: d.discovery_types.name,
+            confrariaId: d.confraria_id,
+            imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+            imageHint: images[0]?.imageHint || 'placeholder',
+            images: images,
+            contextualData: {
+                address: d.address,
+                website: d.website,
+                phone: d.phone
+            },
+            confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+            seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+            user_has_sealed: userSeals.has(d.id),
+        };
+    }) as unknown as Discovery[];
 }
 
 

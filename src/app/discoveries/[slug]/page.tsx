@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
 import { Button } from '@/components/ui/button';
-import type { Discovery, TestimonialWithUser } from '@/lib/data';
+import type { Discovery, TestimonialWithUser, DiscoveryImage } from '@/lib/data';
 import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 
@@ -33,13 +33,19 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 seal_url,
                 seal_hint
             ),
+            discovery_images (
+                image_url,
+                image_hint
+            ),
             discovery_seal_counts (
                 seal_count
             ),
             discovery_types (
                 name
             )
-        `);
+        `)
+        .order('sort_order', { referencedTable: 'discovery_images', ascending: true });
+
 
     if (error) {
         console.error('Error fetching discoveries:', JSON.stringify(error, null, 2));
@@ -54,21 +60,30 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
         }
     }
     
-    return data.map((d: any) => ({
-        ...d,
-        type: d.discovery_types.name, // Extract the name from the related table
-        confrariaId: d.confraria_id,
-        imageUrl: d.image_url,
-        imageHint: d.image_hint,
-        contextualData: {
-            address: d.address,
-            website: d.website,
-            phone: d.phone
-        },
-        confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-        seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-        user_has_sealed: userSeals.has(d.id),
-    })) as unknown as Discovery[];
+    return data.map((d: any) => {
+        const images = d.discovery_images.map((img: any) => ({
+            imageUrl: img.image_url,
+            imageHint: img.image_hint,
+        }));
+        
+        return {
+            ...d,
+            type: d.discovery_types.name,
+            confrariaId: d.confraria_id,
+            // Compatibility for DiscoveryCard
+            imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+            imageHint: images[0]?.imageHint || 'placeholder',
+            images: images,
+            contextualData: {
+                address: d.address,
+                website: d.website,
+                phone: d.phone
+            },
+            confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+            seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+            user_has_sealed: userSeals.has(d.id),
+        };
+    }) as unknown as Discovery[];
 }
 
 async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser[]> {
@@ -156,16 +171,42 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
         <div className="lg:col-span-3">
-          <div className="aspect-video relative w-full overflow-hidden rounded-lg shadow-lg mb-6">
-            <Image
-              src={discovery.imageUrl}
-              alt={discovery.title}
-              fill
-              className="object-cover"
-              data-ai-hint={discovery.imageHint}
-              priority
-            />
-          </div>
+          {discovery.images && discovery.images.length > 0 ? (
+            <Carousel className="w-full shadow-lg rounded-lg overflow-hidden">
+                <CarouselContent>
+                    {discovery.images.map((image, index) => (
+                        <CarouselItem key={index}>
+                            <div className="aspect-video relative w-full">
+                                <Image
+                                    src={image.imageUrl}
+                                    alt={`${discovery.title} - Imagem ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                    data-ai-hint={image.imageHint}
+                                    priority={index === 0}
+                                />
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                {discovery.images.length > 1 && (
+                    <>
+                        <CarouselPrevious className="left-4" />
+                        <CarouselNext className="right-4" />
+                    </>
+                )}
+            </Carousel>
+          ) : (
+            <div className="aspect-video relative w-full overflow-hidden rounded-lg shadow-lg mb-6 bg-muted">
+                 <Image
+                    src="https://placehold.co/600x400.png"
+                    alt="Placeholder image"
+                    fill
+                    className="object-cover"
+                    data-ai-hint="placeholder"
+                 />
+            </div>
+          )}
         </div>
         <div className="lg:col-span-2">
            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
@@ -256,3 +297,4 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     </div>
   );
 }
+

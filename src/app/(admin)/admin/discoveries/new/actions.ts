@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -26,7 +27,7 @@ const formSchema = z.object({
   region: z.enum(regions),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
-  image_url: z.string().url().optional().or(z.literal('')),
+  image_url: z.string().url("A URL da imagem é inválida.").optional().or(z.literal('')),
   image_hint: z.string().optional(),
   address: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
@@ -43,13 +44,14 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
         return { error: "Dados inválidos." };
     }
 
-    const { title, confraria_id, type_id, ...rest } = parsedData.data;
+    const { title, confraria_id, type_id, image_url, image_hint, ...rest } = parsedData.data;
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
     const supabase = createServiceRoleClient();
 
-    const { error } = await supabase
+    // Insert into discoveries table first
+    const { data: discoveryData, error: discoveryError } = await supabase
         .from('discoveries')
         .insert({
             title,
@@ -57,12 +59,33 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
             type_id: parseInt(type_id, 10),
             confraria_id: confraria_id && confraria_id !== 'null' ? parseInt(confraria_id, 10) : null,
             ...rest
-        });
+        })
+        .select('id')
+        .single();
 
-    if (error) {
-        console.error("Error creating discovery:", error);
-        return { error: `Erro ao criar descoberta: ${error.message}` };
+    if (discoveryError) {
+        console.error("Error creating discovery:", discoveryError);
+        return { error: `Erro ao criar descoberta: ${discoveryError.message}` };
     }
+
+    // Now, insert the image into the new discovery_images table
+    if (image_url) {
+        const { error: imageError } = await supabase
+            .from('discovery_images')
+            .insert({
+                discovery_id: discoveryData.id,
+                image_url: image_url,
+                image_hint: image_hint,
+                sort_order: 0,
+            });
+        
+        if (imageError) {
+            console.error("Error adding discovery image:", imageError);
+            // Optionally, we could delete the discovery here for consistency, but for now we'll just log it.
+            return { error: `Descoberta criada, mas falha ao adicionar imagem: ${imageError.message}` };
+        }
+    }
+
 
     revalidatePath('/admin/dashboard');
     revalidatePath('/discoveries');

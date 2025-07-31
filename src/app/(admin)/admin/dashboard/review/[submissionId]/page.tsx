@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createServiceRoleClient } from '@/lib/supabase/service';
@@ -87,7 +88,7 @@ export async function approveSubmission(formData: FormData) {
     const slug = submission.discoveryTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
     // 2. Insert into discoveries table
-    const { error: insertError } = await supabase
+    const { data: discoveryData, error: insertError } = await supabase
         .from('discoveries')
         .insert({
             title: submission.discoveryTitle,
@@ -97,18 +98,35 @@ export async function approveSubmission(formData: FormData) {
             type_id: submission.type,
             confraria_id: submission.confraria_id,
             slug: slug,
-            image_url: submission.image_url ?? 'https://placehold.co/600x400.png',
-            image_hint: submission.image_url ? 'user submission' : 'placeholder',
             website: submission.links,
-        });
+        }).select('id').single();
 
     if (insertError) {
         console.error("Error creating discovery from submission:", insertError);
         // Maybe show an error to the user
         return;
     }
+    
+    // 3. Insert image into discovery_images
+    const imageUrl = submission.image_url ?? 'https://placehold.co/600x400.png';
+    const imageHint = submission.image_url ? 'user submission' : 'placeholder';
 
-    // 3. Update submission status to 'Aprovado'
+    const { error: imageError } = await supabase
+        .from('discovery_images')
+        .insert({
+            discovery_id: discoveryData.id,
+            image_url: imageUrl,
+            image_hint: imageHint,
+            sort_order: 0,
+        });
+
+    if (imageError) {
+        console.error("Error adding image for approved submission:", imageError);
+        // We can continue, as the discovery was created, but log the error
+    }
+
+
+    // 4. Update submission status to 'Aprovado'
     const { error: updateError } = await supabase
         .from('submissions')
         .update({ status: 'Aprovado' })

@@ -1,4 +1,5 @@
 
+
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
@@ -20,7 +21,11 @@ async function getDiscovery(id: number): Promise<Discovery> {
     const supabase = createServiceRoleClient();
     const { data, error } = await supabase
         .from('discoveries')
-        .select('*, discovery_types(id, name)')
+        .select(`
+            *, 
+            discovery_types(id, name),
+            discovery_images(image_url, image_hint, sort_order)
+        `)
         .eq('id', id)
         .single();
 
@@ -29,10 +34,19 @@ async function getDiscovery(id: number): Promise<Discovery> {
         notFound();
     }
     
+    const images = (data.discovery_images as any[]).map(img => ({
+        imageUrl: img.image_url,
+        imageHint: img.image_hint,
+    }));
+
     return {
         ...data,
         type: (data.discovery_types as any).name,
         type_id: (data.discovery_types as any).id,
+        images: images,
+        // For compatibility
+        imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+        imageHint: images[0]?.imageHint || 'placeholder',
     } as Discovery;
 }
 

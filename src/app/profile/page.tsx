@@ -39,6 +39,7 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
                 seal_url,
                 seal_hint
             ),
+            discovery_images(image_url, image_hint),
             discovery_seal_counts (
                 seal_count
             ),
@@ -55,12 +56,18 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
 
     const userSeals = new Set(discoveryIds);
     
-    return data.map((d: any) => ({
+    return data.map((d: any) => {
+       const images = d.discovery_images.map((img: any) => ({
+            imageUrl: img.image_url,
+            imageHint: img.image_hint,
+        }));
+      return {
         ...d,
         type: d.discovery_types.name,
         confrariaId: d.confraria_id,
-        imageUrl: d.image_url,
-        imageHint: d.image_hint,
+        imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+        imageHint: images[0]?.imageHint || 'placeholder',
+        images: images,
         contextualData: {
             address: d.address,
             website: d.website,
@@ -69,7 +76,7 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
         confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
         seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
         user_has_sealed: userSeals.has(d.id),
-    })) as unknown as Discovery[];
+    }}) as unknown as Discovery[];
 }
 
 async function getSubmissionsForUser(supabase: any, userId: string): Promise<Submission[]> {
@@ -165,8 +172,10 @@ export default function ProfilePage() {
     
   const approvedSubmissionsCount = userSubmissions.filter(s => s.status === 'Aprovado').length;
   const sealedDiscoveriesCount = sealedDiscoveries.length;
-  const { rankName, rankIcon: RankIcon } = rankInfo;
-  
+  const { rankName, rankIconName } = rankInfo;
+  const RankIcon = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, user.user_metadata?.rank_override).rankIcon;
+
+
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
   const userRegion = user.user_metadata?.region || 'Região Desconhecida';
   const userInitial = userFullName.charAt(0).toUpperCase();

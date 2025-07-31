@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -28,8 +29,8 @@ const formSchema = z.object({
   region: z.enum(regions),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
-  image_url: z.string().url().optional().or(z.literal('')),
-  image_hint: z.string().optional(),
+  // image_url and image_hint are no longer direct fields.
+  // They will be handled separately if we add gallery management in the admin.
   address: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional(),
@@ -66,6 +67,9 @@ export async function updateDiscovery(values: z.infer<typeof formSchema>) {
         console.error("Error updating discovery:", error);
         return { error: `Erro ao atualizar descoberta: ${error.message}` };
     }
+    
+    // Note: Image updates would need a separate mechanism here.
+    // For now, we only update the textual data.
 
     revalidatePath('/admin/discoveries');
     revalidatePath(`/discoveries/${slug}`);

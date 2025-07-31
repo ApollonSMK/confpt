@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
@@ -52,6 +53,7 @@ export async function toggleSeal(formData: FormData) {
 const testimonialSchema = z.object({
   content: z.string().min(10, 'O testemunho deve ter pelo menos 10 caracteres.'),
   discoveryId: z.string(),
+  slug: z.string(),
 });
 
 export async function addTestimonial(formData: FormData) {
@@ -66,7 +68,7 @@ export async function addTestimonial(formData: FormData) {
     return { error: 'Tem de estar autenticado para deixar um testemunho.' };
   }
 
-  const parsedData = testimonialSchema.safeParse({ content, discoveryId });
+  const parsedData = testimonialSchema.safeParse({ content, discoveryId, slug });
   if (!parsedData.success) {
     return { error: parsedData.error.errors.map(e => e.message).join(', ') };
   }

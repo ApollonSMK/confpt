@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { TestimonialWithUser } from '@/lib/data';
 import { addTestimonial, deleteTestimonial } from '@/app/discoveries/[slug]/actions';
@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent } from './ui/card';
 import { Loader2, Send, Trash2 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 
 interface DiscoveryTestimonialsProps {
   discoveryId: number;
@@ -33,8 +33,13 @@ function SubmitButton() {
 export function DiscoveryTestimonials({ discoveryId, user, initialTestimonials }: DiscoveryTestimonialsProps) {
   const [testimonials, setTestimonials] = useState(initialTestimonials);
   const { toast } = useToast();
-  const router = useRouter();
   const params = useParams();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // This effect will run when the server component parent refreshes and passes new initialTestimonials.
+  useEffect(() => {
+    setTestimonials(initialTestimonials);
+  }, [initialTestimonials]);
 
   const userHasPosted = user && testimonials.some(t => t.user_id === user.id);
   
@@ -45,15 +50,15 @@ export function DiscoveryTestimonials({ discoveryId, user, initialTestimonials }
         return;
     }
     
+    // The server action will revalidate the path, causing the parent component to re-fetch
+    // and pass down new `initialTestimonials`, which the useEffect above will catch.
     const result = await addTestimonial(formData);
     
     if (result.error) {
         toast({ title: 'Erro ao Publicar', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'Sucesso!', description: 'O seu testemunho foi publicado.' });
-        // Optimistic update can be tricky with server-side data, revalidating is safer.
-        // For a better UX, we could add the new testimonial to the state, but it requires more data.
-        router.refresh(); 
+        formRef.current?.reset(); // Reset the form fields
     }
   };
 
@@ -67,6 +72,7 @@ export function DiscoveryTestimonials({ discoveryId, user, initialTestimonials }
         toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'Testemunho Apagado', description: 'O seu testemunho foi removido com sucesso.' });
+        // Optimistically remove from local state for instant feedback
         setTestimonials(current => current.filter(t => t.id !== testimonialId));
     }
   }
@@ -76,7 +82,7 @@ export function DiscoveryTestimonials({ discoveryId, user, initialTestimonials }
       {user && !userHasPosted && (
         <Card>
           <CardContent className="p-6">
-            <form action={handleAddTestimonial} className="space-y-4">
+            <form ref={formRef} action={handleAddTestimonial} className="space-y-4">
               <input type="hidden" name="discoveryId" value={discoveryId} />
               <input type="hidden" name="slug" value={params.slug as string} />
               <Textarea

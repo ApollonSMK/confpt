@@ -1,7 +1,6 @@
 
 
-import { Shield, ShieldCheck, ShieldHalf, Star, Gem } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldHalf, Star, Gem, LucideIcon } from 'lucide-react';
 
 
 // Tipos principais baseados no esquema do Supabase
@@ -107,7 +106,8 @@ export type Article = {
 
 export type UserRankInfo = {
   rankName: string;
-  rankIconName: keyof typeof rankIcons; // Pass the name, not the component
+  rankIconName: keyof typeof rankIcons;
+  rankIcon: LucideIcon;
   nextRankName: string | null;
   progress: number;
 };
@@ -156,7 +156,7 @@ export const ranks = [
   { name: 'Grão-Mestre', seals: 50, submissions: 10, iconName: 'Gem' as keyof typeof rankIcons },
 ];
 
-export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number, rankOverride?: string) {
+export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsCount: number, rankOverride?: string): UserRankInfo {
   
   if (rankOverride) {
     const overriddenRank = ranks.find(r => r.name === rankOverride);
@@ -164,6 +164,7 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
       return {
         rankName: overriddenRank.name,
         rankIconName: overriddenRank.iconName,
+        rankIcon: rankIcons[overriddenRank.iconName],
         nextRankName: null,
         progress: 100,
       };
@@ -195,6 +196,7 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
   return {
     rankName: currentRank.name,
     rankIconName: currentRank.iconName,
+    rankIcon: rankIcons[currentRank.iconName],
     nextRankName: nextRank ? nextRank.name : null,
     progress: progress,
   };

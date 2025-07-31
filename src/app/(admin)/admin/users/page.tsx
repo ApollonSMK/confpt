@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Users, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@supabase/supabase-js';
-import { getUserRank, type UserRankInfo } from '@/lib/data';
+import { getUserRank, type UserRankInfo, rankIcons } from '@/lib/data';
 import { cn } from '@/lib/utils';
 
 async function checkAdmin() {
@@ -97,7 +97,9 @@ export default async function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {users.map((user) => {
+                const RankIcon = rankIcons[user.rank.rankIconName];
+                return (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div>{user.user_metadata?.full_name ?? 'N/A'}</div>
@@ -110,7 +112,7 @@ export default async function AdminUsersPage() {
                         className={cn("flex items-center gap-2 w-fit", {
                             'bg-[#c28a51] text-[#471F23] hover:bg-[#c28a51]/90': user.user_metadata.rank_override,
                         })}>
-                          <user.rank.rankIcon className="h-4 w-4" />
+                          <RankIcon className="h-4 w-4" />
                           <span>{user.rank.rankName}</span>
                       </Badge>
                   </TableCell>
@@ -124,7 +126,7 @@ export default async function AdminUsersPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         ) : (

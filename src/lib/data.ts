@@ -136,7 +136,7 @@ export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Aç
 
 // Sistema de Ranks de Gamificação
 
-export const rankIcons = {
+export const rankIcons: { [key: string]: LucideIcon } = {
     ShieldHalf,
     Shield,
     ShieldCheck,

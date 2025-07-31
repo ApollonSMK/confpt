@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { regions } from '@/lib/data';
+import { nanoid } from 'nanoid';
 
 const detailsFormSchema = z.object({
   id: z.number(),
@@ -26,6 +27,16 @@ const eventFormSchema = z.object({
   image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
   image_hint: z.string().optional(),
   image: z.any().optional(), // for the file upload
+});
+
+const articleSchema = z.object({
+  id: z.number().optional(),
+  confraria_id: z.number(),
+  author_id: z.string().uuid(),
+  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+  content: z.string().min(10, 'O conteúdo deve ter pelo menos 10 caracteres.'),
+  image: z.any().optional(),
+  status: z.enum(['draft', 'published']),
 });
 
 
@@ -185,6 +196,94 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
 
     return { success: true, message: id ? "Evento atualizado!" : "Evento criado!" };
 }
+
+export async function upsertArticle(formData: FormData) {
+    'use server';
+
+    const supabase = createServerClient();
+    const supabaseService = createServiceRoleClient();
+    
+    const values = {
+        id: formData.get('id') ? Number(formData.get('id')) : undefined,
+        confraria_id: Number(formData.get('confraria_id')),
+        author_id: formData.get('author_id') as string,
+        title: formData.get('title') as string,
+        content: formData.get('content') as string,
+        image: formData.get('image') as File,
+        status: formData.get('status') as 'draft' | 'published',
+    };
+
+    const parsedData = articleSchema.safeParse(values);
+    if (!parsedData.success) {
+        console.error('Article validation error', parsedData.error);
+        return { error: 'Dados do artigo inválidos.' };
+    }
+
+    const { id, confraria_id, author_id, title, content, image, status } = parsedData.data;
+
+    await checkPermissions(confraria_id, supabase);
+
+    const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
+
+    let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
+
+    if (image && image.size > 0) {
+        const fileExtension = image.name.split('.').pop();
+        const fileName = `${nanoid()}.${fileExtension}`;
+        
+        const { error: uploadError } = await supabaseService.storage
+            .from('article-images')
+            .upload(fileName, image);
+
+        if (uploadError) {
+            console.error('Error uploading article image:', uploadError);
+            return { error: 'Não foi possível carregar a imagem.' };
+        }
+
+        const { data: publicUrlData } = supabaseService.storage
+            .from('article-images')
+            .getPublicUrl(fileName);
+
+        imageUrl = publicUrlData.publicUrl;
+    }
+
+    const articleData = {
+        confraria_id,
+        author_id,
+        title,
+        content,
+        status,
+        slug: id ? undefined : slug, // only set slug on creation
+        image_url: imageUrl,
+        image_hint: 'article cover',
+        published_at: status === 'published' ? new Date().toISOString() : null,
+    };
+
+    let error;
+    if (id) {
+        const { error: updateError } = await supabase
+            .from('articles')
+            .update(articleData)
+            .eq('id', id);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabase
+            .from('articles')
+            .insert(articleData);
+        error = insertError;
+    }
+
+    if (error) {
+        console.error("Error upserting article:", error);
+        return { error: `Erro ao guardar publicação: ${error.message}` };
+    }
+
+    revalidatePath(`/confrarias/${confraria_id}`);
+    revalidatePath(`/confrarias/${confraria_id}/manage`);
+
+    return { success: true, message: id ? 'Publicação atualizada!' : 'Publicação criada!' };
+}
+
 
 export async function removeMember(formData: FormData) {
     'use server';

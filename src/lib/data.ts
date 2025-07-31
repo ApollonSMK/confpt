@@ -44,6 +44,7 @@ export type Confraria = {
   responsible_user_id?: string | null;
   discoveries?: Discovery[]; // Relação opcional
   events?: Event[]; // Relação opcional
+  articles?: Article[]; // Relação opcional
   sealUrl: string; // Para compatibilidade
   sealHint: string; // Para compatibilidade
   discoveryCount?: number;
@@ -82,6 +83,23 @@ export type Event = {
     seal_hint: string;
   } | null;
 };
+
+export type Article = {
+  id: number;
+  created_at: string;
+  confraria_id: number;
+  author_id: string;
+  title: string;
+  slug: string;
+  content: string;
+  image_url?: string | null;
+  image_hint?: string | null;
+  status: 'draft' | 'published';
+  published_at?: string | null;
+  confrarias?: {
+      name: string;
+  }
+}
 
 export type UserRankInfo = {
   rankName: string;

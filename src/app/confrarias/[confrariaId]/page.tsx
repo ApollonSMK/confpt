@@ -3,7 +3,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import type { Confraria, Discovery, Event } from '@/lib/data';
+import type { Confraria, Discovery, Event, Article } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History } from 'lucide-react';
@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
   events: Event[];
+  articles: Article[];
   member_count: number;
   membership_status: 'member' | 'pending' | 'none';
   is_responsible: boolean;
@@ -51,8 +52,21 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                 </p>
                 {isLongText && (
                     <Dialog open={open} onOpenChange={setOpen}>
-                        <style>
+                         <style>
                             {`
+                                @keyframes unfurl {
+                                    from {
+                                        max-height: 50vh;
+                                        opacity: 0.5;
+                                    }
+                                    to {
+                                        max-height: 90vh;
+                                        opacity: 1;
+                                    }
+                                }
+                                .unfurl-animation {
+                                    animation: unfurl 0.5s ease-out forwards;
+                                }
                                 .parchment-scroll::-webkit-scrollbar {
                                     width: 8px;
                                 }
@@ -86,7 +100,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                                     fill
                                     className="object-contain"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center p-[15%]">
+                                <div className="absolute inset-0 flex items-center justify-center p-[12%] unfurl-animation">
                                     <div className="parchment-scroll w-full h-full overflow-y-auto pr-4 text-center">
                                          <h2 className="font-headline text-3xl font-bold text-primary mb-4">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
@@ -131,7 +145,8 @@ export default function ConfrariaPage() {
                         discovery_types ( name )
                     ),
                     confraria_members ( id, status ),
-                    events ( * )
+                    events ( * ),
+                    articles ( * )
                 `)
                 .eq('id', confrariaId)
                 .single();
@@ -164,6 +179,10 @@ export default function ConfrariaPage() {
                 confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
                 seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
             })) as Discovery[];
+            
+            const articles = confrariaData.articles
+                .filter((a: Article) => a.status === 'published')
+                .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
 
             const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
             
@@ -173,6 +192,7 @@ export default function ConfrariaPage() {
                 sealHint: confrariaData.seal_hint,
                 discoveries,
                 events: confrariaData.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+                articles,
                 member_count: confrariaData.confraria_members.filter((m: any) => m.status === 'approved').length,
                 membership_status,
                 is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
@@ -345,11 +365,32 @@ export default function ConfrariaPage() {
                                 <Newspaper className="h-8 w-8 text-primary/80"/>
                                 Publicações
                             </h2>
-                            <Card className="border-l-4 border-primary">
-                                <CardContent className="p-6 text-center text-muted-foreground">
-                                    Em breve, as confrarias poderão partilhar as suas novidades e artigos aqui.
-                                </CardContent>
-                            </Card>
+                            {confraria.articles && confraria.articles.length > 0 ? (
+                                <div className="space-y-6">
+                                    {confraria.articles.map(article => (
+                                         <Card key={article.id} className="border-l-4 border-primary">
+                                            <CardHeader>
+                                                <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
+                                                <CardDescription className="flex items-center gap-2 pt-2 text-sm">
+                                                    <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-base text-muted-foreground line-clamp-3">{article.content}</p>
+                                                <Button variant="link" asChild className="p-0 h-auto mt-2">
+                                                    <Link href="#">Ler Mais</Link>
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border-l-4 border-primary">
+                                    <CardContent className="p-6 text-center text-muted-foreground">
+                                        Esta confraria ainda não tem publicações.
+                                    </CardContent>
+                                </Card>
+                            )}
                         </section>
 
                         <section>

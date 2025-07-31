@@ -7,7 +7,7 @@ import { notFound, redirect } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { getUserRank, type UserRankInfo } from '@/lib/data';
-import type { Event } from '@/lib/data';
+import type { Event, Article } from '@/lib/data';
 import { ClientManagePage, type ManageConfrariaPageProps } from './client-page';
 
 
@@ -93,20 +93,15 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         redirect(`/confrarias/${id}`);
     }
     
-    const [pendingMembers, approvedMembers] = await Promise.all([
+    const [pendingMembers, approvedMembers, events, articles] = await Promise.all([
         getMembers(id, 'pending', supabaseService),
-        getMembers(id, 'approved', supabaseService)
+        getMembers(id, 'approved', supabaseService),
+        supabaseService.from('events').select('*').eq('confraria_id', id).order('event_date', { ascending: true }),
+        supabaseService.from('articles').select('*').eq('confraria_id', id).order('created_at', { ascending: false }),
     ]);
     
-    const { data: events, error: eventsError } = await supabaseService
-        .from('events')
-        .select('*')
-        .eq('confraria_id', id)
-        .order('event_date', { ascending: true });
-
-    if(eventsError) {
-        console.error("Error fetching events:", eventsError);
-    }
+    if(events.error) console.error("Error fetching events:", events.error);
+    if(articles.error) console.error("Error fetching articles:", articles.error);
 
     return { 
         confrariaData: {
@@ -119,7 +114,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         }, 
         pendingMembers,
         approvedMembers,
-        events: (events as Event[] || []) 
+        events: (events.data as Event[] || []),
+        articles: (articles.data as Article[] || []),
     };
 }
 
@@ -138,13 +134,14 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         notFound();
     }
     
-    const { confrariaData, pendingMembers, approvedMembers, events } = await getConfrariaAndRelatedData(confrariaId, user);
+    const { confrariaData, pendingMembers, approvedMembers, events, articles } = await getConfrariaAndRelatedData(confrariaId, user);
     
     const pageProps: ManageConfrariaPageProps = {
         confrariaData,
         pendingMembers,
         approvedMembers,
         events,
+        articles,
         user,
     };
 

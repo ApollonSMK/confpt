@@ -71,36 +71,54 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     })) as unknown as Discovery[];
 }
 
-async function getTestimonials(discoveryId: number) {
-    const supabase = createServiceRoleClient(); // Use service client to bypass RLS for public data
-    const { data, error } = await supabase
+async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser[]> {
+    const supabase = createServiceRoleClient(); 
+    
+    // 1. Fetch testimonials for the discovery
+    const { data: testimonialsData, error: testimonialsError } = await supabase
         .from('testimonials')
-        .select(`
-            id,
-            content,
-            created_at,
-            user_id,
-            users (
-                id,
-                raw_user_meta_data
-            )
-        `)
+        .select('id, content, created_at, user_id')
         .eq('discovery_id', discoveryId)
         .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('Error fetching testimonials:', error);
+    if (testimonialsError) {
+        console.error('Error fetching testimonials:', testimonialsError);
         return [];
     }
 
-    return data.map((t: any) => ({
-        ...t,
-        user: {
-            id: t.users.id,
-            full_name: t.users.raw_user_meta_data?.full_name ?? 'Anónimo',
-            avatar_url: t.users.raw_user_meta_data?.avatar_url,
-        }
-    })) as TestimonialWithUser[];
+    if (!testimonialsData || testimonialsData.length === 0) {
+        return [];
+    }
+
+    // 2. Extract user IDs and fetch user data using the RPC function
+    const userIds = testimonialsData.map(t => t.user_id);
+    const { data: usersData, error: usersError } = await supabase
+        .rpc('get_user_emails_by_ids', { p_user_ids: userIds });
+
+    if (usersError) {
+        console.error('Error fetching users for testimonials:', usersError);
+        // Return testimonials without user info if user fetch fails
+        return testimonialsData.map(t => ({
+            ...t,
+            user: { id: t.user_id, full_name: 'Anónimo', avatar_url: null }
+        })) as TestimonialWithUser[];
+    }
+
+    // 3. Create a map for easy lookup
+    const usersById = new Map(usersData.map((u: any) => [u.id, u]));
+
+    // 4. Combine testimonials with user data
+    return testimonialsData.map((t: any) => {
+        const user = usersById.get(t.user_id);
+        return {
+            ...t,
+            user: {
+                id: t.user_id,
+                full_name: user?.full_name ?? 'Anónimo',
+                avatar_url: user?.avatar_url ?? null,
+            }
+        };
+    }) as TestimonialWithUser[];
 }
 
 

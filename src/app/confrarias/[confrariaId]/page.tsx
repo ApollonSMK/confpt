@@ -100,9 +100,9 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                                     fill
                                     className="object-contain"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center px-24 py-16 unfurl-animation">
+                                <div className="absolute inset-0 flex items-center justify-center px-16 py-24 unfurl-animation">
                                     <div className="parchment-scroll w-full h-full overflow-y-auto pr-4 text-center">
-                                         <h2 className="font-headline text-3xl font-bold text-primary mb-4">{confrariaName}</h2>
+                                         <h2 className="font-headline text-3xl font-bold text-primary mb-4 mt-8">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                             {history}
                                         </p>

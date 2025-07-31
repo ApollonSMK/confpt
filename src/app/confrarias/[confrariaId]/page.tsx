@@ -100,7 +100,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                                     fill
                                     className="object-contain"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center p-[12%] unfurl-animation">
+                                <div className="absolute inset-0 flex items-center justify-center px-24 py-16 unfurl-animation">
                                     <div className="parchment-scroll w-full h-full overflow-y-auto pr-4 text-center">
                                          <h2 className="font-headline text-3xl font-bold text-primary mb-4">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
@@ -171,7 +171,7 @@ export default function ConfrariaPage() {
                 }
             }
 
-            const discoveries = confrariaData.discoveries.map((d: any) => {
+            const discoveries = (confrariaData.discoveries || []).map((d: any) => {
                 const images = (d.discovery_images || []).map((img: any) => ({
                     imageUrl: img.image_url,
                     imageHint: img.image_hint,
@@ -188,7 +188,7 @@ export default function ConfrariaPage() {
                 }
             }) as Discovery[];
             
-            const articles = confrariaData.articles
+            const articles = (confrariaData.articles || [])
                 .filter((a: Article) => a.status === 'published')
                 .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
 
@@ -199,9 +199,9 @@ export default function ConfrariaPage() {
                 sealUrl: confrariaData.seal_url,
                 sealHint: confrariaData.seal_hint,
                 discoveries,
-                events: confrariaData.events.sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+                events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
                 articles,
-                member_count: confrariaData.confraria_members.filter((m: any) => m.status === 'approved').length,
+                member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
                 membership_status,
                 is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
                 history: confrariaData.history || 'A história desta confraria ainda não foi contada.',

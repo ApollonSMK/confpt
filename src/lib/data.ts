@@ -133,6 +133,33 @@ export type TestimonialWithUser = Testimonial & {
     }
 }
 
+export type Recipe = {
+    id: number;
+    confraria_id: number;
+    author_id?: string | null;
+    title: string;
+    slug: string;
+    description?: string | null;
+    ingredients?: string | null;
+    instructions?: string | null;
+    prep_time_minutes?: number | null;
+    cook_time_minutes?: number | null;
+    servings?: number | null;
+    image_url?: string | null;
+    image_hint?: string | null;
+    status: 'draft' | 'published';
+    created_at: string;
+    published_at?: string | null;
+}
+
+export type ConfrariaGalleryImage = {
+    id: number;
+    confraria_id: number;
+    image_url: string;
+    description?: string | null;
+    sort_order: number;
+}
+
 
 // Dados estáticos para filtros, que não precisam estar no banco por enquanto
 export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira'] as const;

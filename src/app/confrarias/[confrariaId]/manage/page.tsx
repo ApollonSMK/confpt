@@ -7,7 +7,7 @@ import { notFound, redirect } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { getUserRank, type UserRankInfo } from '@/lib/data';
-import type { Event, Article } from '@/lib/data';
+import type { Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import { ClientManagePage, type ManageConfrariaPageProps } from './client-page';
 
 
@@ -93,15 +93,20 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         redirect(`/confrarias/${id}`);
     }
     
-    const [pendingMembers, approvedMembers, events, articles] = await Promise.all([
+    const [pendingMembers, approvedMembers, events, articles, recipes, galleryImages] = await Promise.all([
         getMembers(id, 'pending', supabaseService),
         getMembers(id, 'approved', supabaseService),
         supabaseService.from('events').select('*').eq('confraria_id', id).order('event_date', { ascending: true }),
         supabaseService.from('articles').select('*').eq('confraria_id', id).order('created_at', { ascending: false }),
+        supabaseService.from('recipes').select('*').eq('confraria_id', id).order('created_at', { ascending: false }),
+        supabaseService.from('confraria_gallery_images').select('*').eq('confraria_id', id).order('sort_order', { ascending: true }),
     ]);
     
     if(events.error) console.error("Error fetching events:", events.error);
     if(articles.error) console.error("Error fetching articles:", articles.error);
+    if(recipes.error) console.error("Error fetching recipes:", recipes.error);
+    if(galleryImages.error) console.error("Error fetching gallery images:", galleryImages.error);
+
 
     return { 
         confrariaData: {
@@ -116,6 +121,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         approvedMembers,
         events: (events.data as Event[] || []),
         articles: (articles.data as Article[] || []),
+        recipes: (recipes.data as Recipe[] || []),
+        galleryImages: (galleryImages.data as ConfrariaGalleryImage[] || []),
     };
 }
 
@@ -134,7 +141,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         notFound();
     }
     
-    const { confrariaData, pendingMembers, approvedMembers, events, articles } = await getConfrariaAndRelatedData(confrariaId, user);
+    const { confrariaData, pendingMembers, approvedMembers, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
     
     const pageProps: ManageConfrariaPageProps = {
         confrariaData,
@@ -142,6 +149,8 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         approvedMembers,
         events,
         articles,
+        recipes,
+        galleryImages,
         user,
     };
 

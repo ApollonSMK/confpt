@@ -8,7 +8,7 @@ import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper } from 'lucide-react';
+import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
 import { handleMembershipAction, removeMember } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,7 @@ import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
 import { EventForm } from './event-form';
 import { ArticleForm } from './article-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import type { Event, Article } from '@/lib/data';
+import type { Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState } from 'react';
@@ -49,11 +49,13 @@ export type ManageConfrariaPageProps = {
     approvedMembers: Member[];
     events: Event[];
     articles: Article[];
+    recipes: Recipe[];
+    galleryImages: ConfrariaGalleryImage[];
     user: User;
 }
 
 // Client component to handle state and interactions
-export function ClientManagePage({ confrariaData, pendingMembers, approvedMembers, events, articles, user }: ManageConfrariaPageProps) {
+export function ClientManagePage({ confrariaData, pendingMembers, approvedMembers, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
@@ -125,7 +127,7 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
             </div>
             
             <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-8">
                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
                     <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
                     <TabsTrigger value="requests">
@@ -147,6 +149,16 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                         <Newspaper className="mr-2 h-4 w-4"/>
                         Publicações
                         {articles.length > 0 && <Badge className="ml-2">{articles.length}</Badge>}
+                    </TabsTrigger>
+                    <TabsTrigger value="gallery">
+                        <Camera className="mr-2 h-4 w-4"/>
+                        Galeria
+                        {galleryImages.length > 0 && <Badge className="ml-2">{galleryImages.length}</Badge>}
+                    </TabsTrigger>
+                    <TabsTrigger value="recipes">
+                        <UtensilsCrossed className="mr-2 h-4 w-4"/>
+                        Receitas
+                        {recipes.length > 0 && <Badge className="ml-2">{recipes.length}</Badge>}
                     </TabsTrigger>
                 </TabsList>
 
@@ -381,6 +393,36 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                         )}
                     </TabContentCard>
                 </TabsContent>
+
+                <TabsContent value="gallery" className="mt-6">
+                    <TabContentCard 
+                        title="Gestão da Galeria" 
+                        description="Adicione ou remova imagens da galeria pública da sua confraria." 
+                        icon={Camera}
+                        actions={<Button><PlusCircle/> Adicionar Imagem</Button>}
+                    >
+                         <div className="text-center py-12 text-muted-foreground">
+                            <p className="font-semibold text-lg">Funcionalidade em construção.</p>
+                            <p>Em breve poderá adicionar e gerir as imagens da sua galeria.</p>
+                        </div>
+                    </TabContentCard>
+                </TabsContent>
+
+                <TabsContent value="recipes" className="mt-6">
+                     <TabContentCard 
+                        title="Gestão de Receitas" 
+                        description="Partilhe as receitas tradicionais e os segredos culinários da sua confraria." 
+                        icon={UtensilsCrossed}
+                        actions={<Button><PlusCircle/> Nova Receita</Button>}
+                    >
+                        <div className="text-center py-12 text-muted-foreground">
+                            <p className="font-semibold text-lg">Funcionalidade em construção.</p>
+                            <p>Em breve poderá adicionar e gerir o livro de receitas da sua confraria.</p>
+                        </div>
+                    </TabContentCard>
+                </TabsContent>
+
+
             </Tabs>
         </div>
     );
@@ -406,18 +448,22 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText, a
             <div>
                  <CardTitle className="font-headline text-3xl flex items-center gap-3">
                     <div className={cn("p-2 bg-primary/10 rounded-lg", 
-                        title === "Pedidos de Adesão" && "bg-yellow-400/10 text-yellow-600",
-                        title === "Gestão de Membros" && "bg-blue-400/10 text-blue-600",
-                        title === "Gestão de Eventos" && "bg-purple-400/10 text-purple-600",
-                        title === "Gestão de Publicações" && "bg-green-400/10 text-green-600",
-                        title === "Editar Detalhes" && "bg-orange-400/10 text-orange-600"
+                        title.includes("Pedidos") && "bg-yellow-400/10 text-yellow-600",
+                        title.includes("Membros") && "bg-blue-400/10 text-blue-600",
+                        title.includes("Eventos") && "bg-purple-400/10 text-purple-600",
+                        title.includes("Publicações") && "bg-green-400/10 text-green-600",
+                        title.includes("Detalhes") && "bg-orange-400/10 text-orange-600",
+                        title.includes("Galeria") && "bg-indigo-400/10 text-indigo-600",
+                        title.includes("Receitas") && "bg-pink-400/10 text-pink-600"
                     )}>
                         <Icon className={cn("h-7 w-7 text-primary",
-                            title === "Pedidos de Adesão" && "text-yellow-600",
-                            title === "Gestão de Membros" && "text-blue-600",
-                            title === "Gestão de Eventos" && "text-purple-600",
-                            title === "Gestão de Publicações" && "text-green-600",
-                            title === "Editar Detalhes" && "text-orange-600"
+                           title.includes("Pedidos") && "text-yellow-600",
+                           title.includes("Membros") && "text-blue-600",
+                           title.includes("Eventos") && "text-purple-600",
+                           title.includes("Publicações") && "text-green-600",
+                           title.includes("Detalhes") && "text-orange-600",
+                           title.includes("Galeria") && "text-indigo-600",
+                           title.includes("Receitas") && "text-pink-600"
                         )}/>
                     </div>
                     <div>

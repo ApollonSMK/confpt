@@ -18,6 +18,7 @@ export default {
         body: ['PT Sans', 'sans-serif'],
         headline: ['Playfair Display', 'serif'],
         code: ['monospace'],
+        parchment: ['Uncial Antiqua', 'cursive'],
       },
       colors: {
         background: 'hsl(var(--background))',

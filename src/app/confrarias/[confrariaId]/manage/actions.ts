@@ -24,8 +24,6 @@ const eventFormSchema = z.object({
   location: z.string().optional(),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
   is_public: z.boolean().default(true),
-  image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
-  image_hint: z.string().optional(),
   image: z.any().optional(), // for the file upload
 });
 
@@ -143,20 +141,60 @@ export async function handleMembershipAction(formData: FormData) {
     return { success: true };
 }
 
-export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
+export async function upsertEvent(formData: FormData) {
     const supabase = createServerClient();
+    const supabaseService = createServiceRoleClient();
+
+    const values = {
+        id: formData.get('id') ? Number(formData.get('id')) : undefined,
+        confraria_id: Number(formData.get('confraria_id')),
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        event_date: new Date(formData.get('event_date') as string),
+        location: formData.get('location') as string,
+        region: formData.get('region') as any,
+        is_public: formData.get('is_public') === 'true',
+        image: formData.get('image') as File,
+    };
+
     const parsedData = eventFormSchema.safeParse(values);
 
     if (!parsedData.success) {
-        console.error('Validation Error', parsedData.error);
+        console.error('Event validation error:', parsedData.error.flatten().fieldErrors);
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, region, image_url, image_hint, is_public } = parsedData.data;
+    const { id, confraria_id, name, description, event_date, location, region, image, is_public } = parsedData.data;
 
     // Check permissions before upserting
     await checkPermissions(confraria_id, supabase);
     
+    let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
+
+    if (image && image.size > 0) {
+        const fileExtension = image.name.split('.').pop();
+        const fileName = `events/${nanoid()}.${fileExtension}`;
+        
+        const { error: uploadError } = await supabaseService.storage
+            .from('public-images')
+            .upload(fileName, image, {
+                cacheControl: '3600',
+                upsert: true
+            });
+
+        if (uploadError) {
+            console.error('Error uploading event image:', uploadError);
+            return { error: 'Não foi possível carregar a imagem.' };
+        }
+
+        const { data: publicUrlData } = supabaseService.storage
+            .from('public-images')
+            .getPublicUrl(fileName);
+
+        imageUrl = publicUrlData.publicUrl;
+    }
+
+
     const eventData = {
         confraria_id,
         name,
@@ -164,8 +202,8 @@ export async function upsertEvent(values: z.infer<typeof eventFormSchema>) {
         event_date: event_date.toISOString(),
         location: location || null,
         region,
-        image_url: image_url || 'https://placehold.co/600x400.png',
-        image_hint: image_hint || 'event placeholder',
+        image_url: imageUrl || 'https://placehold.co/600x400.png',
+        image_hint: 'event placeholder',
         is_public,
     };
 
@@ -229,11 +267,14 @@ export async function upsertArticle(formData: FormData) {
 
     if (image && image.size > 0) {
         const fileExtension = image.name.split('.').pop();
-        const fileName = `${nanoid()}.${fileExtension}`;
+        const fileName = `articles/${nanoid()}.${fileExtension}`;
         
         const { error: uploadError } = await supabaseService.storage
-            .from('article-images')
-            .upload(fileName, image);
+            .from('public-images')
+            .upload(fileName, image, {
+                cacheControl: '3600',
+                upsert: true
+            });
 
         if (uploadError) {
             console.error('Error uploading article image:', uploadError);
@@ -241,7 +282,7 @@ export async function upsertArticle(formData: FormData) {
         }
 
         const { data: publicUrlData } = supabaseService.storage
-            .from('article-images')
+            .from('public-images')
             .getPublicUrl(fileName);
 
         imageUrl = publicUrlData.publicUrl;
@@ -256,8 +297,19 @@ export async function upsertArticle(formData: FormData) {
         slug: id ? undefined : slug, // only set slug on creation
         image_url: imageUrl,
         image_hint: 'article cover',
-        published_at: status === 'published' ? new Date().toISOString() : null,
+        published_at: status === 'published' && !id ? new Date().toISOString() : undefined, // set publish date only on first publish
     };
+    
+    // Don't overwrite published_at if article is already published and we're just saving a draft
+    if (id && status === 'published') {
+        const { data: existingArticle } = await supabase.from('articles').select('published_at').eq('id', id).single();
+        if (!existingArticle?.published_at) {
+            articleData.published_at = new Date().toISOString();
+        } else {
+             delete (articleData as any).published_at;
+        }
+    }
+
 
     let error;
     if (id) {

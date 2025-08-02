@@ -16,9 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Loader2, Upload, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon, Eye, ArrowLeft, RadioGroupIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Upload, Send, ArrowRight, PenSquare, Eye, ArrowLeft } from 'lucide-react';
 import { upsertEvent } from './actions';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Event } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { regions } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
+
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_IMAGE_SIZE = 5; // In MB
 
 const formSchema = z.object({
   id: z.number().optional(),
@@ -38,10 +43,10 @@ const formSchema = z.object({
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.'),
   region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
-  image_url: z.string().url('URL inválido.').optional().or(z.literal('')),
-  image: z.any().optional(),
-  image_hint: z.string().optional(),
   is_public: z.boolean().default(true),
+  image: z.any()
+    .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
+    .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,6 +62,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -68,9 +74,8 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
             region: event?.region || confrariaRegion,
-            image_url: event?.image_url || 'https://placehold.co/600x400.png',
-            image_hint: event?.image_hint || 'event placeholder',
             is_public: event?.is_public ?? true,
+            image: undefined,
         },
     });
 
@@ -83,9 +88,12 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
         }
     }
 
-    async function onSubmit(values: FormValues) {
+    async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
         setLoading(true);
-        const result = await upsertEvent(values);
+
+        const formData = new FormData(formRef.current!);
+        const result = await upsertEvent(formData);
 
         if (result && result.error) {
             toast({
@@ -105,7 +113,14 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
     
     return (
         <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <form ref={formRef} onSubmit={onSubmit} className="space-y-4 py-4">
+                 {/* Hidden fields that need to be in the form */}
+                <input type="hidden" {...form.register("id")} />
+                <input type="hidden" {...form.register("confraria_id")} />
+                <input type="hidden" name="event_date" value={form.getValues('event_date')?.toISOString() ?? ''} />
+                <input type="hidden" name="is_public" value={String(form.getValues('is_public'))} />
+                {event?.image_url && <input type="hidden" name="current_image_url" value={event.image_url} />}
+
                 {step === 1 && (
                      <Card className="border-none shadow-none">
                         <CardHeader>
@@ -205,21 +220,26 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                            <FormField control={form.control} name="image" render={({ field }) => (
+                            <FormField
+                                control={form.control}
+                                name="image"
+                                render={({ field: { onChange, ...rest } }) => (
                                 <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa (funcionalidade futura)</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Input type="file" disabled className="opacity-0 absolute inset-0 w-full h-full z-10 cursor-pointer" {...field} />
-                                            <Button type="button" variant="outline" className="w-full" disabled>
-                                                <div className='flex items-center justify-center gap-2'>
-                                                    <Upload className="h-4 w-4" />
-                                                    <span>Carregar Imagem</span>
-                                                </div>
-                                            </Button>
+                                    <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
+                                     {event?.image_url && (
+                                        <div className="relative h-40 w-full rounded-md overflow-hidden border">
+                                            <Image src={event.image_url} alt="Imagem de capa atual" layout="fill" objectFit="cover" />
                                         </div>
+                                    )}
+                                    <FormControl>
+                                        <Input 
+                                            type="file" 
+                                            accept="image/png, image/jpeg, image/webp" 
+                                            onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
+                                            {...rest}
+                                        />
                                     </FormControl>
-                                    <FormDescription>Uma boa imagem promove melhor o seu evento.</FormDescription>
+                                    <FormDescription>Uma boa imagem promove melhor o seu evento. Tamanho máximo: {MAX_IMAGE_SIZE}MB.</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}/>

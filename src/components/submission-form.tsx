@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regions, type Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
@@ -34,8 +35,8 @@ const formSchema = z.object({
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
   image: z.any()
-    .refine((file) => !file || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
-    .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
+    .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
+    .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,10 +51,9 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const formRef = useRef<HTMLFormElement>(null);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
+  
+  // State to hold all form data across steps
+  const [formData, setFormData] = useState<Partial<FormValues>>({
       title: '',
       editorial: '',
       region: undefined,
@@ -61,14 +61,20 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       confrariaId: 'null',
       links: '',
       image: undefined,
-    },
   });
 
-  const { trigger } = form;
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: formData,
+  });
+
+  const { trigger, getValues } = form;
 
   const handleNextStep = async () => {
       const isValid = await trigger(["title", "editorial"]);
       if (isValid) {
+          // Save step 1 data to our state
+          setFormData(prev => ({ ...prev, ...getValues() }));
           setStep(2);
       }
   }
@@ -77,8 +83,12 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
     event.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(event.currentTarget);
-    const result = await createSubmission(formData);
+    const submissionFormData = new FormData(event.currentTarget);
+    // Manually add the data from step 1 (stored in our state) to the FormData
+    submissionFormData.append('title', formData.title || '');
+    submissionFormData.append('editorial', formData.editorial || '');
+
+    const result = await createSubmission(submissionFormData);
     
     setLoading(false);
 
@@ -94,6 +104,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
             description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
         });
         form.reset();
+        setFormData({}); // Clear the state
         setStep(1);
     }
   }
@@ -265,7 +276,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         Voltar
                     </Button>
                     <Button type="submit" size="lg" disabled={loading}>
-                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2" />}
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                         Enviar para Revisão
                     </Button>
                 </CardFooter>

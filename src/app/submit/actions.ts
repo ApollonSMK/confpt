@@ -9,13 +9,14 @@ import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
 
+// Updated schema to handle FormData which returns strings for all fields.
 const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions),
+  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
-  links: z.string().url().optional().or(z.literal('')),
+  links: z.string().url('URL inválido').optional().or(z.literal('')),
   image: z.instanceof(File).optional(),
 });
 
@@ -36,12 +37,13 @@ export async function createSubmission(formData: FormData) {
         links: formData.get('links'),
         image: formData.get('image'),
     };
-
+    
+    // Server-side validation
     const parsedData = submissionSchema.safeParse(values);
 
     if (!parsedData.success) {
         console.error("Validation errors:", parsedData.error.flatten().fieldErrors);
-        return { error: "Dados inválidos." };
+        return { error: "Dados inválidos. Por favor, verifique todos os campos." };
     }
 
     const { title, editorial, region, type_id, confrariaId, links, image } = parsedData.data;

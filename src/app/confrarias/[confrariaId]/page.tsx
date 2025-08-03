@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Confraria, Discovery, Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera, Shield, NotebookText, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import type { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
@@ -377,187 +379,206 @@ export default function ConfrariaPage() {
                         </div>
                     </div>
                 </section>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 space-y-12">
-                         <section>
-                             <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                <Newspaper className="h-8 w-8 text-primary/80"/>
-                                Publicações
-                            </h2>
-                            {confraria.articles && confraria.articles.length > 0 ? (
-                                <div className="space-y-6">
-                                    {confraria.articles.map(article => (
-                                         <Card key={article.id} className="border-l-4 border-primary">
-                                            <CardHeader>
-                                                <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
-                                                <CardDescription className="flex items-center gap-2 pt-2 text-sm">
-                                                    <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <p className="text-base text-muted-foreground line-clamp-3">{article.content}</p>
-                                                <Button variant="link" asChild className="p-0 h-auto mt-2">
-                                                    <Link href="#">Ler Mais</Link>
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="border-l-4 border-primary">
-                                    <CardContent className="p-6 text-center text-muted-foreground">
-                                        Esta confraria ainda não tem publicações.
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </section>
-
-                        <section>
-                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                <Camera className="h-8 w-8 text-primary/80"/>
-                                Galeria
-                            </h2>
-                             {confraria.galleryImages && confraria.galleryImages.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {confraria.galleryImages.map(image => (
-                                        <Dialog key={image.id}>
-                                            <DialogTrigger asChild>
-                                                <Card className="overflow-hidden cursor-pointer group">
-                                                    <div className="aspect-square relative">
-                                                        <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
-                                                    </div>
-                                                </Card>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-3xl">
-                                                <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
-                                                {image.description && <DialogDescription className="text-center mt-2">{image.description}</DialogDescription>}
-                                            </DialogContent>
-                                        </Dialog>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="border-l-4 border-primary">
-                                    <CardContent className="p-6 text-center text-muted-foreground">
-                                        Esta confraria ainda não partilhou nenhum momento na sua galeria.
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </section>
-
-                        <section>
-                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                <UtensilsCrossed className="h-8 w-8 text-primary/80"/>
-                                Receitas
-                            </h2>
-                            {confraria.recipes && confraria.recipes.length > 0 ? (
-                                <div className="space-y-6">
-                                    {confraria.recipes.map(recipe => (
-                                        <Card key={recipe.id} className="border-l-4 border-primary">
-                                            <CardHeader>
-                                                <CardTitle className="font-headline text-2xl">{recipe.title}</CardTitle>
-                                                {recipe.description && <CardDescription>{recipe.description}</CardDescription>}
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Button variant="link" asChild className="p-0 h-auto">
-                                                    <Link href="#">Ver Receita Completa</Link>
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="border-l-4 border-primary">
-                                    <CardContent className="p-6 text-center text-muted-foreground">
-                                        O livro de receitas desta confraria ainda é um segredo.
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </section>
-
-                        <section>
-                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                <Calendar className="h-8 w-8 text-primary/80"/>
-                                Próximos Eventos
-                            </h2>
-                             {confraria.events && confraria.events.length > 0 ? (
-                                <div className="space-y-4">
-                                    {confraria.events.map(event => (
-                                         <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
-                                            <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
-                                                <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} fill className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
-                                            </div>
-                                            <CardHeader className="flex-grow">
-                                                <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                                                    {event.name}
-                                                    {!event.is_public && (
-                                                         <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger>
-                                                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                                                        <EyeOff className="h-3 w-3" /> Privado
-                                                                    </Badge>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <p>Este evento é visível apenas para membros.</p>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    )}
-                                                </CardTitle>
-                                                <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
-                                                <CardContent className="p-0 pt-2">
-                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
-                                                    <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>
-                                                </CardContent>
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="border-l-4 border-primary">
-                                    <CardContent className="p-6 text-center text-muted-foreground">
-                                        De momento, não existem eventos agendados.
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </section>
                 
-                        <section>
-                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                <BookOpen className="h-8 w-8 text-primary/80"/>
-                                Descobertas Recomendadas
-                            </h2>
-                            {confraria.discoveries && confraria.discoveries.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {confraria.discoveries.map((discovery) => (
-                                    <DiscoveryCard key={discovery.id} discovery={discovery} />
-                                    ))}
+                <Tabs defaultValue="inicio" className="w-full">
+                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+                        <TabsTrigger value="inicio"><Newspaper className="mr-2 h-4 w-4"/>Início</TabsTrigger>
+                        <TabsTrigger value="gallery"><Camera className="mr-2 h-4 w-4"/>Galeria</TabsTrigger>
+                        <TabsTrigger value="recipes"><UtensilsCrossed className="mr-2 h-4 w-4"/>Receitas</TabsTrigger>
+                        <TabsTrigger value="discoveries"><Star className="mr-2 h-4 w-4"/>Descobertas</TabsTrigger>
+                    </TabsList>
+                    
+                    <div className="mt-6">
+                        <TabsContent value="inicio">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                                <div className="lg:col-span-2 space-y-12">
+                                    <section>
+                                        <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                            <Newspaper className="h-8 w-8 text-primary/80"/>
+                                            Publicações
+                                        </h2>
+                                        {confraria.articles && confraria.articles.length > 0 ? (
+                                            <div className="space-y-6">
+                                                {confraria.articles.map(article => (
+                                                    <Card key={article.id} className="border-l-4 border-primary">
+                                                        <CardHeader>
+                                                            <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
+                                                            <CardDescription className="flex items-center gap-2 pt-2 text-sm">
+                                                                <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                            </CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <p className="text-base text-muted-foreground line-clamp-3">{article.content}</p>
+                                                            <Button variant="link" asChild className="p-0 h-auto mt-2">
+                                                                <Link href="#">Ler Mais</Link>
+                                                            </Button>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <Card className="border-l-4 border-primary">
+                                                <CardContent className="p-6 text-center text-muted-foreground">
+                                                    Esta confraria ainda não tem publicações.
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </section>
+                                     <section>
+                                        <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                            <Calendar className="h-8 w-8 text-primary/80"/>
+                                            Próximos Eventos
+                                        </h2>
+                                        {confraria.events && confraria.events.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {confraria.events.map(event => (
+                                                    <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
+                                                        <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
+                                                            <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} fill className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
+                                                        </div>
+                                                        <CardHeader className="flex-grow">
+                                                            <CardTitle className="font-headline text-2xl flex items-center justify-between">
+                                                                {event.name}
+                                                                {!event.is_public && (
+                                                                    <TooltipProvider>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger>
+                                                                                <Badge variant="secondary" className="flex items-center gap-1">
+                                                                                    <EyeOff className="h-3 w-3" /> Privado
+                                                                                </Badge>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <p>Este evento é visível apenas para membros.</p>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
+                                                                )}
+                                                            </CardTitle>
+                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
+                                                            <CardContent className="p-0 pt-2">
+                                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+                                                                <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>
+                                                            </CardContent>
+                                                        </CardHeader>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <Card className="border-l-4 border-primary">
+                                                <CardContent className="p-6 text-center text-muted-foreground">
+                                                    De momento, não existem eventos agendados.
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </section>
                                 </div>
-                            ) : (
-                                <div className="text-center py-12 text-muted-foreground bg-card border rounded-lg">
-                                    <p className="font-semibold text-lg">Nenhuma descoberta por aqui... ainda.</p>
-                                    <p>Esta confraria ainda não partilhou os seus segredos.</p>
-                                </div>
-                            )}
-                        </section>
-                    </div>
+                                 <aside className="space-y-8">
+                                    <HistoryCard history={confraria.history} confrariaName={confraria.name} />
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                                                <Users className="h-6 w-6 text-primary/80"/>
+                                                Fundadores
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
+                                            {confraria.founders}
+                                        </CardContent>
+                                    </Card>
+                                </aside>
+                            </div>
+                        </TabsContent>
 
-                    <aside className="space-y-8 lg:mt-[92px]">
-                         <HistoryCard history={confraria.history} confrariaName={confraria.name} />
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                                    <Users className="h-6 w-6 text-primary/80"/>
-                                    Fundadores
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
-                                {confraria.founders}
-                            </CardContent>
-                        </Card>
-                    </aside>
-                </div>
+                        <TabsContent value="gallery">
+                             <section>
+                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                    <Camera className="h-8 w-8 text-primary/80"/>
+                                    Galeria
+                                </h2>
+                                {confraria.galleryImages && confraria.galleryImages.length > 0 ? (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {confraria.galleryImages.map(image => (
+                                            <Dialog key={image.id}>
+                                                <DialogTrigger asChild>
+                                                    <Card className="overflow-hidden cursor-pointer group">
+                                                        <div className="aspect-square relative">
+                                                            <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
+                                                        </div>
+                                                    </Card>
+                                                </DialogTrigger>
+                                                <DialogContent className="max-w-3xl">
+                                                    <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
+                                                    {image.description && <DialogDescription className="text-center mt-2">{image.description}</DialogDescription>}
+                                                </DialogContent>
+                                            </Dialog>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card>
+                                        <CardContent className="p-6 text-center text-muted-foreground">
+                                            Esta confraria ainda não partilhou nenhum momento na sua galeria.
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </section>
+                        </TabsContent>
+
+                        <TabsContent value="recipes">
+                             <section>
+                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                    <UtensilsCrossed className="h-8 w-8 text-primary/80"/>
+                                    Receitas
+                                </h2>
+                                {confraria.recipes && confraria.recipes.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {confraria.recipes.map(recipe => (
+                                            <Card key={recipe.id} className="border-l-4 border-primary">
+                                                <CardHeader>
+                                                    <CardTitle className="font-headline text-2xl">{recipe.title}</CardTitle>
+                                                    {recipe.description && <CardDescription>{recipe.description}</CardDescription>}
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Button variant="link" asChild className="p-0 h-auto">
+                                                        <Link href="#">Ver Receita Completa</Link>
+                                                    </Button>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card>
+                                        <CardContent className="p-6 text-center text-muted-foreground">
+                                            O livro de receitas desta confraria ainda é um segredo.
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </section>
+                        </TabsContent>
+                        
+                        <TabsContent value="discoveries">
+                            <section>
+                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                    <Star className="h-8 w-8 text-primary/80"/>
+                                    Descobertas Recomendadas
+                                </h2>
+                                {confraria.discoveries && confraria.discoveries.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {confraria.discoveries.map((discovery) => (
+                                        <DiscoveryCard key={discovery.id} discovery={discovery} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card>
+                                        <CardContent className="p-6 text-center text-muted-foreground">
+                                            <p className="font-semibold text-lg">Nenhuma descoberta por aqui... ainda.</p>
+                                            <p>Esta confraria ainda não partilhou os seus segredos.</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </section>
+                        </TabsContent>
+                    </div>
+                </Tabs>
             </div>
         </div>
     );

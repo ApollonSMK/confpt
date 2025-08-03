@@ -108,7 +108,7 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
     
     return (
         <FormProvider {...form}>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 py-4">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                  {/* Hidden fields */}
                 <input type="hidden" {...form.register("id")} />
                 <input type="hidden" {...form.register("confraria_id")} />
@@ -123,7 +123,7 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
                             </CardTitle>
                             <CardDescription>Comece por dar um nome e uma pequena história à sua receita.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
+                        <CardContent className="space-y-6">
                             <FormField control={form.control} name="title" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/>Título da Receita</FormLabel>
@@ -156,7 +156,7 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
                             </CardTitle>
                             <CardDescription>Liste os ingredientes necessários e os passos para a preparação.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
+                        <CardContent className="space-y-6">
                             <FormField control={form.control} name="ingredients" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="flex items-center gap-2"><ListOrdered className="h-4 w-4"/>Ingredientes</FormLabel>
@@ -194,7 +194,7 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
                             </CardTitle>
                             <CardDescription>Adicione uma foto do prato finalizado para abrir o apetite e publique a sua obra-prima.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
+                        <CardContent className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="image"

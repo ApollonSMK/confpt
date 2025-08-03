@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
@@ -15,6 +15,8 @@ import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 type DiscoveryPageProps = {
   params: {
@@ -229,53 +231,61 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
               <SealButton />
             </div>
           )}
-
         </div>
       </div>
-
-       <div className="mt-12 lg:col-span-5 prose max-w-none">
-          <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
-          <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
-      </div>
-
-        {discovery.images && discovery.images.length > 0 && (
-             <section className="mt-16 md:mt-24">
-                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3">
-                    <Camera className="h-8 w-8 text-primary/80"/>
-                    Galeria
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {discovery.images.map((image, index) => (
-                        <Dialog key={index}>
-                            <DialogTrigger asChild>
-                                <Card className="overflow-hidden cursor-pointer group">
-                                    <div className="aspect-square relative">
-                                        <Image src={image.imageUrl} alt={`${discovery.title} - Imagem ${index + 1}`} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
-                                    </div>
-                                </Card>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                                <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
-                                <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
-                                {image.imageHint && <DialogDescription className="text-center mt-2 sr-only">{image.imageHint}</DialogDescription>}
-                            </DialogContent>
-                        </Dialog>
-                    ))}
+      
+      <div className="mt-12">
+          <Tabs defaultValue="discovery" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="discovery"><NotebookText className="mr-2 h-4 w-4"/>A Descoberta</TabsTrigger>
+                    <TabsTrigger value="gallery"><Camera className="mr-2 h-4 w-4"/>Galeria</TabsTrigger>
+                    <TabsTrigger value="testimonials"><MessageSquareQuote className="mr-2 h-4 w-4"/>Testemunhos</TabsTrigger>
+                </TabsList>
+              <TabsContent value="discovery" className="mt-6">
+                <div className="prose max-w-none">
+                    <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
+                    <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
                 </div>
-            </section>
-        )}
-
-       <section className="mt-16 md:mt-24">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3">
-                <MessageSquareQuote className="h-8 w-8 text-primary/80" />
-                Testemunhos dos Confrades
-            </h2>
-            <DiscoveryTestimonials
-                discoveryId={discovery.id}
-                user={user}
-                initialTestimonials={testimonials}
-            />
-        </section>
+              </TabsContent>
+               <TabsContent value="gallery" className="mt-6">
+                 {discovery.images && discovery.images.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {discovery.images.map((image, index) => (
+                            <Dialog key={index}>
+                                <DialogTrigger asChild>
+                                    <Card className="overflow-hidden cursor-pointer group">
+                                        <div className="aspect-square relative">
+                                            <Image src={image.imageUrl} alt={`${discovery.title} - Imagem ${index + 1}`} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
+                                        </div>
+                                    </Card>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-3xl">
+                                    <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
+                                    <DialogDescription className="sr-only">
+                                        {image.imageHint ? `${image.imageHint} - Imagem da galeria para ${discovery.title}` : `Imagem da galeria para ${discovery.title}`}
+                                    </DialogDescription>
+                                    <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
+                                </DialogContent>
+                            </Dialog>
+                        ))}
+                    </div>
+                ) : (
+                    <Card>
+                        <CardContent className="p-6 text-center text-muted-foreground">
+                            Ainda não foram adicionadas imagens a esta descoberta.
+                        </CardContent>
+                    </Card>
+                )}
+              </TabsContent>
+              <TabsContent value="testimonials" className="mt-6">
+                <DiscoveryTestimonials
+                    discoveryId={discovery.id}
+                    user={user}
+                    initialTestimonials={testimonials}
+                />
+              </TabsContent>
+          </Tabs>
+      </div>
 
       {relatedDiscoveries.length > 0 && (
         <section className="mt-16 md:mt-24">
@@ -300,3 +310,4 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     </div>
   );
 }
+

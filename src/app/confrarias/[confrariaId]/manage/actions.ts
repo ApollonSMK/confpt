@@ -43,6 +43,9 @@ const recipeSchema = z.object({
     author_id: z.string().uuid(),
     title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
     description: z.string().optional(),
+    prep_time_minutes: z.coerce.number().optional(),
+    cook_time_minutes: z.coerce.number().optional(),
+    servings: z.coerce.number().optional(),
     ingredients: z.string().min(10, 'Os ingredientes devem ter pelo menos 10 caracteres.'),
     instructions: z.string().min(10, 'As instruções devem ter pelo menos 10 caracteres.'),
     image: z.any().optional(),
@@ -399,6 +402,9 @@ export async function upsertRecipe(formData: FormData) {
         author_id: formData.get('author_id') as string,
         title: formData.get('title') as string,
         description: formData.get('description') as string,
+        prep_time_minutes: formData.get('prep_time_minutes'),
+        cook_time_minutes: formData.get('cook_time_minutes'),
+        servings: formData.get('servings'),
         ingredients: formData.get('ingredients') as string,
         instructions: formData.get('instructions') as string,
         image: formData.get('image') as File,
@@ -411,7 +417,7 @@ export async function upsertRecipe(formData: FormData) {
         return { error: 'Dados da receita inválidos.' };
     }
     
-    const { id, confraria_id, author_id, title, description, ingredients, instructions, image, status } = parsedData.data;
+    const { id, confraria_id, author_id, title, description, ingredients, instructions, image, status, prep_time_minutes, cook_time_minutes, servings } = parsedData.data;
     
     await checkPermissions(confraria_id, supabase);
     
@@ -439,6 +445,9 @@ export async function upsertRecipe(formData: FormData) {
         ingredients: ingredients || null,
         instructions: instructions || null,
         status,
+        prep_time_minutes: prep_time_minutes || null,
+        cook_time_minutes: cook_time_minutes || null,
+        servings: servings || null,
         slug: id ? undefined : slug,
         image_url: imageUrl,
         image_hint: 'recipe photo',
@@ -457,7 +466,7 @@ export async function upsertRecipe(formData: FormData) {
     if (error) return { error: `Erro ao guardar receita: ${error.message}` };
     
     revalidatePath(`/confrarias/${confraria_id}`);
-    revalidatePath(`/confrarias/${confraria_id}/manage`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
     
     return { success: true, message: id ? 'Receita atualizada!' : 'Receita criada!' };
 }

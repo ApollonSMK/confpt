@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, Save, BookText, Image as ImageIcon, Utensils, ListOrdered, ChefHat, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, Send, Save, BookText, Image as ImageIcon, Utensils, ListOrdered, ChefHat, ArrowRight, ArrowLeft, Clock, Users as UsersIcon } from 'lucide-react';
 import { upsertRecipe } from './actions';
 import { useState, useRef } from 'react';
 import type { Recipe } from '@/lib/data';
@@ -32,6 +32,9 @@ const formSchema = z.object({
   author_id: z.string().uuid(),
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().optional(),
+  prep_time_minutes: z.coerce.number().optional(),
+  cook_time_minutes: z.coerce.number().optional(),
+  servings: z.coerce.number().optional(),
   ingredients: z.string().min(10, 'Os ingredientes devem ter pelo menos 10 caracteres.'),
   instructions: z.string().min(10, 'As instruções devem ter pelo menos 10 caracteres.'),
   image: z.any()
@@ -63,6 +66,9 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
             author_id: authorId,
             title: recipe?.title || '',
             description: recipe?.description || '',
+            prep_time_minutes: recipe?.prep_time_minutes || undefined,
+            cook_time_minutes: recipe?.cook_time_minutes || undefined,
+            servings: recipe?.servings || undefined,
             ingredients: recipe?.ingredients || '',
             instructions: recipe?.instructions || '',
             image: undefined,
@@ -121,7 +127,7 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
                                 <span>Passo 1: A Essência da Receita</span>
                                 <span className="text-sm font-normal text-muted-foreground">1 de 3</span>
                             </CardTitle>
-                            <CardDescription>Comece por dar um nome e uma pequena história à sua receita.</CardDescription>
+                            <CardDescription>Comece por dar um nome, uma história e os detalhes básicos à sua receita.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <FormField control={form.control} name="title" render={({ field }) => (
@@ -138,6 +144,32 @@ export function RecipeForm({ confrariaId, authorId, recipe = null, onSuccess }: 
                                     <FormMessage />
                                 </FormItem>
                             )}/>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="prep_time_minutes" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4"/>Tempo de Preparação</FormLabel>
+                                        <FormControl><Input type="number" placeholder="Ex: 15" {...field} /></FormControl>
+                                        <FormDescription>Em minutos.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="cook_time_minutes" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4"/>Tempo de Cozedura</FormLabel>
+                                        <FormControl><Input type="number" placeholder="Ex: 30" {...field} /></FormControl>
+                                         <FormDescription>Em minutos.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="servings" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><UsersIcon className="h-4 w-4"/>Doses</FormLabel>
+                                        <FormControl><Input type="number" placeholder="Ex: 4" {...field} /></FormControl>
+                                        <FormDescription>Nº de pessoas.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                             </div>
                         </CardContent>
                         <CardFooter>
                             <Button type="button" onClick={() => handleNextStep(['title', 'description'])} size="lg" className="ml-auto">

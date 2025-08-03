@@ -66,13 +66,16 @@ async function checkPermissions(confrariaId: number, supabaseClient: any) {
         .from('confrarias')
         .select('responsible_user_id')
         .eq('id', confrariaId)
-        .single();
+        .maybeSingle(); // Use maybeSingle to avoid 406 error if no row is found
     
-    if (error) throw new Error('Confraria not found');
+    if (error) {
+        console.error("Permission check error:", error);
+        throw new Error('Confraria not found or error checking permissions.');
+    }
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     const isAdmin = session?.user.email === process.env.ADMIN_EMAIL;
-    const isResponsible = confraria.responsible_user_id === user.id;
+    const isResponsible = confraria?.responsible_user_id === user.id;
 
     if (!isAdmin && !isResponsible) {
         throw new Error('Not authorized');
@@ -514,3 +517,5 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
+
+    

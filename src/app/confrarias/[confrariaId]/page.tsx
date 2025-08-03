@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
@@ -15,10 +14,11 @@ import { toggleMembershipRequest } from './actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 
 type ConfrariaDetails = Confraria & {
@@ -97,15 +97,16 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
                              <DialogTitle className="sr-only">História da {confrariaName}</DialogTitle>
                              <DialogDescription className="sr-only">A história completa da confraria {confrariaName}.</DialogDescription>
-                            <div className="relative w-full h-auto aspect-[3/4]">
+                            <div className="relative w-full h-auto">
                                 <Image
                                     src="/images/pergaminho.png"
                                     alt="Pergaminho com a história da confraria"
-                                    fill
+                                    width={800}
+                                    height={1067}
                                     className="object-contain"
                                 />
                                 <div className="absolute inset-0 unfurl-animation">
-                                    <div className="parchment-scroll w-full h-full overflow-y-auto px-24 py-20 pr-12 text-center">
+                                    <div className="parchment-scroll w-full h-full overflow-y-auto px-24 py-20 pr-24 text-center">
                                          <h2 className="font-parchment text-4xl font-bold text-primary mb-6 mt-12">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                             {history}
@@ -126,107 +127,108 @@ export default function ConfrariaPage() {
     const [confraria, setConfraria] = useState<ConfrariaDetails | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const supabase = createClient();
     const params = useParams();
+    const { toast } = useToast();
     const confrariaId = params.confrariaId as string;
+
+    const getConfrariaDetails = useCallback(async () => {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUser(currentUser);
+
+        const { data: confrariaData, error } = await supabase
+            .from('confrarias')
+            .select(`
+                *,
+                discoveries (
+                    *,
+                    confrarias ( id, name, seal_url, seal_hint ),
+                    discovery_images ( image_url, image_hint ),
+                    discovery_seal_counts ( seal_count ),
+                    discovery_types ( name )
+                ),
+                confraria_members ( id, status ),
+                events ( * ),
+                articles ( * ),
+                recipes ( * ),
+                confraria_gallery_images ( * )
+            `)
+            .eq('id', confrariaId)
+            .single();
+        
+        if (error || !confrariaData) {
+            console.error(`Error fetching confraria with id ${confrariaId}:`, error);
+            return notFound();
+        }
+
+        let membership_status: 'member' | 'pending' | 'none' = 'none';
+        if(currentUser) {
+            const { data: userMembership } = await supabase
+                .from('confraria_members')
+                .select('status')
+                .eq('user_id', currentUser.id)
+                .eq('confraria_id', confrariaData.id)
+                .single();
+
+            if (userMembership) {
+                membership_status = userMembership.status as 'member' | 'pending';
+            }
+        }
+
+        const discoveries = (confrariaData.discoveries || []).map((d: any) => {
+            const images = (d.discovery_images || []).map((img: any) => ({
+                imageUrl: img.image_url,
+                imageHint: img.image_hint,
+            }));
+            return {
+                ...d,
+                type: d.discovery_types.name,
+                confrariaId: d.confraria_id,
+                images: images,
+                imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+                imageHint: images[0]?.imageHint || 'placeholder',
+                confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+                seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+            }
+        }) as Discovery[];
+        
+        const articles = (confrariaData.articles || [])
+            .filter((a: Article) => a.status === 'published')
+            .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
+
+        const recipes = (confrariaData.recipes || [])
+            .filter((r: Recipe) => r.status === 'published')
+            .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const galleryImages = (confrariaData.confraria_gallery_images || [])
+            .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
+
+        const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        
+        setConfraria({
+            ...confrariaData,
+            sealUrl: confrariaData.seal_url,
+            sealHint: confrariaData.seal_hint,
+            discoveries,
+            events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+            articles,
+            recipes,
+            galleryImages,
+            member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
+            membership_status,
+            is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
+            history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
+            founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
+        } as ConfrariaDetails);
+        setLoading(false);
+    }, [confrariaId, supabase]);
 
     useEffect(() => {
         if (!confrariaId) return;
-
-        async function getConfrariaDetails() {
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            setUser(currentUser);
-
-            const { data: confrariaData, error } = await supabase
-                .from('confrarias')
-                .select(`
-                    *,
-                    discoveries (
-                        *,
-                        confrarias ( id, name, seal_url, seal_hint ),
-                        discovery_images ( image_url, image_hint ),
-                        discovery_seal_counts ( seal_count ),
-                        discovery_types ( name )
-                    ),
-                    confraria_members ( id, status ),
-                    events ( * ),
-                    articles ( * ),
-                    recipes ( * ),
-                    confraria_gallery_images ( * )
-                `)
-                .eq('id', confrariaId)
-                .single();
-            
-            if (error || !confrariaData) {
-                console.error(`Error fetching confraria with id ${confrariaId}:`, error);
-                return notFound();
-            }
-
-            let membership_status: 'member' | 'pending' | 'none' = 'none';
-            if(currentUser) {
-                const { data: userMembership } = await supabase
-                    .from('confraria_members')
-                    .select('status')
-                    .eq('user_id', currentUser.id)
-                    .eq('confraria_id', confrariaData.id)
-                    .single();
-
-                if (userMembership) {
-                    membership_status = userMembership.status as 'member' | 'pending';
-                }
-            }
-
-            const discoveries = (confrariaData.discoveries || []).map((d: any) => {
-                const images = (d.discovery_images || []).map((img: any) => ({
-                    imageUrl: img.image_url,
-                    imageHint: img.image_hint,
-                }));
-                return {
-                    ...d,
-                    type: d.discovery_types.name,
-                    confrariaId: d.confraria_id,
-                    images: images,
-                    imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
-                    imageHint: images[0]?.imageHint || 'placeholder',
-                    confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-                    seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-                }
-            }) as Discovery[];
-            
-            const articles = (confrariaData.articles || [])
-                .filter((a: Article) => a.status === 'published')
-                .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
-
-            const recipes = (confrariaData.recipes || [])
-                .filter((r: Recipe) => r.status === 'published')
-                .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-            const galleryImages = (confrariaData.confraria_gallery_images || [])
-                .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
-
-            const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-            
-            setConfraria({
-                ...confrariaData,
-                sealUrl: confrariaData.seal_url,
-                sealHint: confrariaData.seal_hint,
-                discoveries,
-                events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-                articles,
-                recipes,
-                galleryImages,
-                member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
-                membership_status,
-                is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
-                history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
-                founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
-            } as ConfrariaDetails);
-            setLoading(false);
-        }
-
         getConfrariaDetails();
-    }, [confrariaId, supabase]);
+    }, [confrariaId, getConfrariaDetails]);
 
 
     if (loading) {
@@ -259,6 +261,20 @@ export default function ConfrariaPage() {
         return notFound();
     }
     
+    const handleToggleMembership = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            const result = await toggleMembershipRequest(formData);
+            if(result.error) {
+                toast({title: "Erro", description: result.error, variant: "destructive"});
+            } else {
+                toast({title: "Sucesso!", description: "O seu pedido foi atualizado."});
+                await getConfrariaDetails(); // Re-fetch data to update the UI
+            }
+        });
+    }
+
     const MembershipButton = () => {
         if (confraria.is_responsible && user) {
              return (
@@ -290,13 +306,13 @@ export default function ConfrariaPage() {
 
         if (confraria.membership_status === 'pending') {
             return (
-                <form action={toggleMembershipRequest}>
+                <form onSubmit={handleToggleMembership}>
                     <input type="hidden" name="confrariaId" value={confraria.id} />
                     <input type="hidden" name="hasRequested" value="true" />
                      <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button type="submit" variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                <Button type="submit" variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isPending}>
                                     <Clock /> Adesão Pendente
                                 </Button>
                             </TooltipTrigger>
@@ -310,10 +326,10 @@ export default function ConfrariaPage() {
         }
 
         return (
-            <form action={toggleMembershipRequest}>
+            <form onSubmit={handleToggleMembership}>
                 <input type="hidden" name="confrariaId" value={confraria.id} />
                  <input type="hidden" name="hasRequested" value="false" />
-                <Button type="submit">
+                <Button type="submit" disabled={isPending}>
                     <UserPlus /> Solicitar Associação
                 </Button>
             </form>

@@ -16,7 +16,7 @@ type Member = {
     user_id: string;
     user_email: string;
     user_full_name: string | null;
-    rank: UserRankInfo;
+    rank: Omit<UserRankInfo, 'rankIcon'>; // Remove the component from the type
 }
 
 async function getMembers(confrariaId: number, status: 'pending' | 'approved', supabaseService: any): Promise<Member[]> {
@@ -62,13 +62,14 @@ async function getMembers(confrariaId: number, status: 'pending' | 'approved', s
         const userProfile = usersById.get(request.user_id);
         const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
         const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
-        const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, userProfile?.rank_override);
+        const { rankIcon, ...rankDetails } = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, userProfile?.rank_override);
+        
         return {
             id: request.id,
             user_id: request.user_id,
             user_email: userProfile?.email ?? 'Email Desconhecido',
             user_full_name: userProfile?.full_name ?? 'Desconhecido',
-            rank: rank,
+            rank: rankDetails,
         };
     });
 }

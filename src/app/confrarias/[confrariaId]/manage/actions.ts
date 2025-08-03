@@ -37,6 +37,24 @@ const articleSchema = z.object({
   status: z.enum(['draft', 'published']),
 });
 
+const recipeSchema = z.object({
+    id: z.number().optional(),
+    confraria_id: z.number(),
+    author_id: z.string().uuid(),
+    title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+    description: z.string().optional(),
+    ingredients: z.string().optional(),
+    instructions: z.string().optional(),
+    image: z.any().optional(),
+    status: z.enum(['draft', 'published']),
+});
+
+const galleryImageSchema = z.object({
+    confraria_id: z.number(),
+    description: z.string().optional(),
+    image: z.any(),
+});
+
 
 async function checkPermissions(confrariaId: number, supabaseClient: any) {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -365,4 +383,134 @@ export async function removeMember(formData: FormData) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
 
     return { success: true, message: 'Membro removido com sucesso.' };
+}
+
+
+export async function upsertRecipe(formData: FormData) {
+    'use server';
+    const supabase = createServerClient();
+    const supabaseService = createServiceRoleClient();
+
+    const values = {
+        id: formData.get('id') ? Number(formData.get('id')) : undefined,
+        confraria_id: Number(formData.get('confraria_id')),
+        author_id: formData.get('author_id') as string,
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        ingredients: formData.get('ingredients') as string,
+        instructions: formData.get('instructions') as string,
+        image: formData.get('image') as File,
+        status: formData.get('status') as 'draft' | 'published',
+    };
+    
+    const parsedData = recipeSchema.safeParse(values);
+    if (!parsedData.success) {
+        console.error('Recipe validation error', parsedData.error);
+        return { error: 'Dados da receita inválidos.' };
+    }
+    
+    const { id, confraria_id, author_id, title, description, ingredients, instructions, image, status } = parsedData.data;
+    
+    await checkPermissions(confraria_id, supabase);
+    
+    const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
+    let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
+    
+    if (image && image.size > 0) {
+        const fileExtension = image.name.split('.').pop();
+        const fileName = `recipes/${nanoid()}.${fileExtension}`;
+        
+        const { error: uploadError } = await supabaseService.storage
+            .from('public-images')
+            .upload(fileName, image, { upsert: true });
+
+        if (uploadError) return { error: 'Não foi possível carregar a imagem.' };
+
+        imageUrl = supabaseService.storage.from('public-images').getPublicUrl(fileName).data.publicUrl;
+    }
+    
+    const recipeData = {
+        confraria_id,
+        author_id,
+        title,
+        description,
+        ingredients,
+        instructions,
+        status,
+        slug: id ? undefined : slug,
+        image_url: imageUrl,
+        image_hint: 'recipe photo',
+        published_at: status === 'published' && !id ? new Date().toISOString() : undefined,
+    };
+    
+    let error;
+    if (id) {
+        const { error: updateError } = await supabase.from('recipes').update(recipeData).eq('id', id);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabase.from('recipes').insert(recipeData);
+        error = insertError;
+    }
+    
+    if (error) return { error: `Erro ao guardar receita: ${error.message}` };
+    
+    revalidatePath(`/confrarias/${confraria_id}`);
+    revalidatePath(`/confrarias/${confraria_id}/manage`);
+    
+    return { success: true, message: id ? 'Receita atualizada!' : 'Receita criada!' };
+}
+
+export async function addGalleryImage(formData: FormData) {
+    'use server';
+    const supabase = createServerClient();
+    const supabaseService = createServiceRoleClient();
+
+    const values = {
+        confraria_id: Number(formData.get('confraria_id')),
+        description: formData.get('description') as string,
+        image: formData.get('image') as File,
+    };
+
+    const parsedData = galleryImageSchema.safeParse(values);
+    if (!parsedData.success || !parsedData.data.image || parsedData.data.image.size === 0) {
+        return { error: 'Dados da imagem inválidos ou imagem em falta.' };
+    }
+
+    const { confraria_id, description, image } = parsedData.data;
+
+    await checkPermissions(confraria_id, supabase);
+
+    const fileExtension = image.name.split('.').pop();
+    const fileName = `gallery/${confraria_id}/${nanoid()}.${fileExtension}`;
+
+    const { error: uploadError } = await supabaseService.storage
+        .from('public-images')
+        .upload(fileName, image);
+
+    if (uploadError) return { error: 'Não foi possível carregar a imagem.' };
+
+    const imageUrl = supabaseService.storage.from('public-images').getPublicUrl(fileName).data.publicUrl;
+    
+    const { error: dbError } = await supabaseService.from('confraria_gallery_images').insert({
+        confraria_id,
+        image_url: imageUrl,
+        description,
+    });
+
+    if (dbError) return { error: `Erro ao guardar a imagem: ${dbError.message}` };
+
+    revalidatePath(`/confrarias/${confraria_id}`);
+    revalidatePath(`/confrarias/${confraria_id}/manage`);
+
+    return { success: true, message: 'Imagem adicionada à galeria!' };
+}
+
+export async function deleteGalleryImage(id: number, confrariaId: number) {
+    'use server';
+    const supabase = createServerClient();
+    await checkPermissions(confrariaId, supabase);
+    const { error } = await createServiceRoleClient().from('confraria_gallery_images').delete().eq('id', id);
+    if (error) return { error: 'Erro ao apagar imagem.' };
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+    return { success: true, message: 'Imagem removida.' };
 }

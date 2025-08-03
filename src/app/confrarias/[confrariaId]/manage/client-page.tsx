@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
-import { handleMembershipAction, removeMember } from './actions';
+import { handleMembershipAction, removeMember, addGalleryImage, deleteGalleryImage } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
@@ -19,11 +19,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import type { Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { RecipeForm } from './recipe-form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 
 type Member = {
@@ -60,10 +63,15 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
     const { toast } = useToast();
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
     const [isArticleDialogOpen, setArticleDialogOpen] = useState(false);
+    const [isRecipeDialogOpen, setRecipeDialogOpen] = useState(false);
+    const [isGalleryDialogOpen, setGalleryDialogOpen] = useState(false);
+    
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-    const [isRemovingMember, setIsRemovingMember] = useState<number | null>(null);
+    const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
+    const [isRemovingMember, setIsRemovingMember] = useState<number | null>(null);
+    
     const handleEditEventClick = (event: Event) => {
         setSelectedEvent(event);
         setEventDialogOpen(true);
@@ -93,6 +101,26 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
         setArticleDialogOpen(false);
         router.refresh();
     };
+
+    const handleEditRecipeClick = (recipe: Recipe) => {
+        setSelectedRecipe(recipe);
+        setRecipeDialogOpen(true);
+    };
+
+    const handleAddNewRecipeClick = () => {
+        setSelectedRecipe(null);
+        setRecipeDialogOpen(true);
+    };
+
+    const handleRecipeFormSuccess = () => {
+        setRecipeDialogOpen(false);
+        router.refresh();
+    };
+
+    const handleGalleryFormSuccess = () => {
+        setGalleryDialogOpen(false);
+        router.refresh();
+    };
     
     const handleRemoveMember = async (membershipId: number, memberName: string) => {
         setIsRemovingMember(membershipId);
@@ -110,6 +138,17 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
         }
         setIsRemovingMember(null);
     };
+    
+    const handleDeleteGalleryImage = async (id: number) => {
+         const result = await deleteGalleryImage(id, confrariaData.id);
+         if (result.error) {
+            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso', description: `Imagem removida da galeria.` });
+            router.refresh();
+        }
+    }
+
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
@@ -399,12 +438,47 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                         title="Gestão da Galeria" 
                         description="Adicione ou remova imagens da galeria pública da sua confraria." 
                         icon={Camera}
-                        actions={<Button><PlusCircle/> Adicionar Imagem</Button>}
+                        actions={
+                            <Dialog open={isGalleryDialogOpen} onOpenChange={setGalleryDialogOpen}>
+                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagem</Button></DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle className="font-headline text-2xl">Adicionar à Galeria</DialogTitle>
+                                        <DialogDescription>Carregue uma nova imagem para partilhar com a comunidade.</DialogDescription>
+                                    </DialogHeader>
+                                    <GalleryImageForm confrariaId={confrariaData.id} onSuccess={handleGalleryFormSuccess} />
+                                </DialogContent>
+                            </Dialog>
+                        }
                     >
-                         <div className="text-center py-12 text-muted-foreground">
-                            <p className="font-semibold text-lg">Funcionalidade em construção.</p>
-                            <p>Em breve poderá adicionar e gerir as imagens da sua galeria.</p>
-                        </div>
+                        {galleryImages.length > 0 ? (
+                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {galleryImages.map(image => (
+                                    <Card key={image.id} className="group relative">
+                                        <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={300} height={300} className="rounded-md object-cover aspect-square" />
+                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon"><Trash2 /></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Apagar Imagem?</AlertDialogTitle><AlertDialogDescription>Esta ação é irreversível. A imagem será removida permanentemente.</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteGalleryImage(image.id)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="text-center py-12 text-muted-foreground">
+                                <p className="font-semibold text-lg">Galeria Vazia.</p>
+                                <p>Comece a adicionar imagens para criar a memória visual da sua confraria.</p>
+                            </div>
+                        )}
                     </TabContentCard>
                 </TabsContent>
 
@@ -413,12 +487,47 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                         title="Gestão de Receitas" 
                         description="Partilhe as receitas tradicionais e os segredos culinários da sua confraria." 
                         icon={UtensilsCrossed}
-                        actions={<Button><PlusCircle/> Nova Receita</Button>}
+                        actions={
+                             <Dialog open={isRecipeDialogOpen} onOpenChange={setRecipeDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button onClick={handleAddNewRecipeClick}><PlusCircle/> Nova Receita</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                    <DialogHeader>
+                                        <DialogTitle className="font-headline text-2xl">{selectedRecipe ? 'Editar Receita' : 'Nova Receita'}</DialogTitle>
+                                    </DialogHeader>
+                                    <RecipeForm 
+                                        confrariaId={confrariaData.id}
+                                        authorId={user.id}
+                                        recipe={selectedRecipe}
+                                        onSuccess={handleRecipeFormSuccess}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        }
                     >
-                        <div className="text-center py-12 text-muted-foreground">
-                            <p className="font-semibold text-lg">Funcionalidade em construção.</p>
-                            <p>Em breve poderá adicionar e gerir o livro de receitas da sua confraria.</p>
-                        </div>
+                        {recipes.length > 0 ? (
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Título</TableHead><TableHead>Data de Criação</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {recipes.map((recipe) => (
+                                        <TableRow key={recipe.id}>
+                                            <TableCell className="font-medium">{recipe.title}</TableCell>
+                                            <TableCell>{new Date(recipe.created_at).toLocaleDateString()}</TableCell>
+                                            <TableCell><Badge variant={recipe.status === 'published' ? 'default' : 'secondary'}>{recipe.status === 'published' ? 'Publicada' : 'Rascunho'}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="outline" size="icon" onClick={() => handleEditRecipeClick(recipe)}><Edit className="h-4 w-4"/></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <p className="font-semibold text-lg">Nenhuma receita publicada.</p>
+                                <p>Adicione a sua primeira receita para começar o livro de segredos da confraria.</p>
+                            </div>
+                        )}
                     </TabContentCard>
                 </TabsContent>
 
@@ -484,3 +593,42 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText, a
         </CardContent>
     </Card>
 );
+
+const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onSuccess: () => void }) => {
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setLoading(true);
+        const formData = new FormData(event.currentTarget);
+        const result = await addGalleryImage(formData);
+        if(result.error) {
+            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso', description: result.message });
+            formRef.current?.reset();
+            onSuccess();
+        }
+        setLoading(false);
+    }
+    
+    return (
+         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+            <input type="hidden" name="confraria_id" value={confrariaId} />
+            <div className="space-y-2">
+                <label htmlFor="gallery-image">Ficheiro da Imagem</label>
+                <Input id="gallery-image" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+            </div>
+             <div className="space-y-2">
+                <label htmlFor="gallery-description">Descrição (Opcional)</label>
+                <Textarea id="gallery-description" name="description" placeholder="Descreva a imagem ou o momento..."/>
+            </div>
+            <Button type="submit" disabled={loading} className="w-full">
+                {loading ? <Loader2 className="animate-spin" /> : <PlusCircle />}
+                Adicionar
+            </Button>
+        </form>
+    )
+}

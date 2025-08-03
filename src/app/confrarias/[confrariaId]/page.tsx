@@ -3,10 +3,10 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import type { Confraria, Discovery, Event, Article } from '@/lib/data';
+import type { Confraria, Discovery, Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ type ConfrariaDetails = Confraria & {
   discoveries: Discovery[];
   events: Event[];
   articles: Article[];
+  recipes: Recipe[];
+  galleryImages: ConfrariaGalleryImage[];
   member_count: number;
   membership_status: 'member' | 'pending' | 'none';
   is_responsible: boolean;
@@ -147,7 +149,9 @@ export default function ConfrariaPage() {
                     ),
                     confraria_members ( id, status ),
                     events ( * ),
-                    articles ( * )
+                    articles ( * ),
+                    recipes ( * ),
+                    confraria_gallery_images ( * )
                 `)
                 .eq('id', confrariaId)
                 .single();
@@ -192,6 +196,13 @@ export default function ConfrariaPage() {
                 .filter((a: Article) => a.status === 'published')
                 .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
 
+            const recipes = (confrariaData.recipes || [])
+                .filter((r: Recipe) => r.status === 'published')
+                .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            const galleryImages = (confrariaData.confraria_gallery_images || [])
+                .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
+
             const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
             
             setConfraria({
@@ -201,6 +212,8 @@ export default function ConfrariaPage() {
                 discoveries,
                 events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
                 articles,
+                recipes,
+                galleryImages,
                 member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
                 membership_status,
                 is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
@@ -367,7 +380,6 @@ export default function ConfrariaPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div className="lg:col-span-2 space-y-12">
-
                          <section>
                              <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
                                 <Newspaper className="h-8 w-8 text-primary/80"/>
@@ -396,6 +408,68 @@ export default function ConfrariaPage() {
                                 <Card className="border-l-4 border-primary">
                                     <CardContent className="p-6 text-center text-muted-foreground">
                                         Esta confraria ainda não tem publicações.
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </section>
+
+                        <section>
+                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                <Camera className="h-8 w-8 text-primary/80"/>
+                                Galeria
+                            </h2>
+                             {confraria.galleryImages && confraria.galleryImages.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {confraria.galleryImages.map(image => (
+                                        <Dialog key={image.id}>
+                                            <DialogTrigger asChild>
+                                                <Card className="overflow-hidden cursor-pointer group">
+                                                    <div className="aspect-square relative">
+                                                        <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
+                                                    </div>
+                                                </Card>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-3xl">
+                                                <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
+                                                {image.description && <DialogDescription className="text-center mt-2">{image.description}</DialogDescription>}
+                                            </DialogContent>
+                                        </Dialog>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border-l-4 border-primary">
+                                    <CardContent className="p-6 text-center text-muted-foreground">
+                                        Esta confraria ainda não partilhou nenhum momento na sua galeria.
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </section>
+
+                        <section>
+                            <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+                                <UtensilsCrossed className="h-8 w-8 text-primary/80"/>
+                                Receitas
+                            </h2>
+                            {confraria.recipes && confraria.recipes.length > 0 ? (
+                                <div className="space-y-6">
+                                    {confraria.recipes.map(recipe => (
+                                        <Card key={recipe.id} className="border-l-4 border-primary">
+                                            <CardHeader>
+                                                <CardTitle className="font-headline text-2xl">{recipe.title}</CardTitle>
+                                                {recipe.description && <CardDescription>{recipe.description}</CardDescription>}
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button variant="link" asChild className="p-0 h-auto">
+                                                    <Link href="#">Ver Receita Completa</Link>
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border-l-4 border-primary">
+                                    <CardContent className="p-6 text-center text-muted-foreground">
+                                        O livro de receitas desta confraria ainda é um segredo.
                                     </CardContent>
                                 </Card>
                             )}

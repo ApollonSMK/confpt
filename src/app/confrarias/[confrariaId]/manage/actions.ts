@@ -66,15 +66,14 @@ async function checkPermissions(confrariaId: number, supabaseClient: any) {
         .from('confrarias')
         .select('responsible_user_id')
         .eq('id', confrariaId)
-        .maybeSingle(); // Use maybeSingle to avoid 406 error if no row is found
+        .maybeSingle(); 
     
     if (error) {
         console.error("Permission check error:", error);
         throw new Error('Confraria not found or error checking permissions.');
     }
 
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const isAdmin = session?.user.email === process.env.ADMIN_EMAIL;
+    const isAdmin = user.email === process.env.ADMIN_EMAIL;
     const isResponsible = confraria?.responsible_user_id === user.id;
 
     if (!isAdmin && !isResponsible) {
@@ -490,17 +489,25 @@ export async function addGalleryImage(formData: FormData) {
         .from('public-images')
         .upload(fileName, image);
 
-    if (uploadError) return { error: 'Não foi possível carregar a imagem.' };
+    if (uploadError) {
+        console.error('Error uploading gallery image:', uploadError);
+        return { error: 'Não foi possível carregar a imagem.' };
+    }
 
-    const imageUrl = supabaseService.storage.from('public-images').getPublicUrl(fileName).data.publicUrl;
+    const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
     
     const { error: dbError } = await supabaseService.from('confraria_gallery_images').insert({
         confraria_id,
-        image_url: imageUrl,
+        image_url: publicUrl,
         description,
     });
 
-    if (dbError) return { error: `Erro ao guardar a imagem: ${dbError.message}` };
+    if (dbError) {
+        // Optional: delete the uploaded file if DB insert fails
+        await supabaseService.storage.from('public-images').remove([fileName]);
+        console.error("Error saving gallery image to DB:", dbError);
+        return { error: `Erro ao guardar a imagem: ${dbError.message}` };
+    }
 
     revalidatePath(`/confrarias/${confraria_id}`);
     revalidatePath(`/confrarias/${confraria_id}/manage`);
@@ -517,5 +524,7 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
+
+    
 
     

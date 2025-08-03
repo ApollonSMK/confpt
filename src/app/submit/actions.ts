@@ -53,22 +53,22 @@ export async function createSubmission(formData: FormData) {
     if (image && image.size > 0) {
         const supabaseService = createServiceRoleClient();
         const fileExtension = image.name.split('.').pop();
-        const fileName = `${nanoid()}.${fileExtension}`;
+        const fileName = `submissions/${nanoid()}.${fileExtension}`;
         
         const { error: uploadError } = await supabaseService.storage
-            .from('discovery-images')
+            .from('public-images')
             .upload(fileName, image);
 
         if (uploadError) {
-            console.error('Error uploading image:', uploadError);
+            console.error('Error uploading submission image:', uploadError);
             return { error: 'Não foi possível carregar a imagem.' };
         }
 
-        const { data: publicUrlData } = supabaseService.storage
-            .from('discovery-images')
+        const { data: { publicUrl } } = supabaseService.storage
+            .from('public-images')
             .getPublicUrl(fileName);
 
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = publicUrl;
     }
 
 
@@ -98,3 +98,5 @@ export async function createSubmission(formData: FormData) {
     
     return { success: true };
 }
+
+    

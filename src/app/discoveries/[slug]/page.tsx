@@ -4,9 +4,8 @@ import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
@@ -14,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import type { Discovery, TestimonialWithUser, DiscoveryImage } from '@/lib/data';
 import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
 import { createServiceRoleClient } from '@/lib/supabase/service';
+import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 type DiscoveryPageProps = {
   params: {
@@ -154,6 +155,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   ]);
 
   const confraria = discovery.confrarias;
+  const mainImage = discovery.images && discovery.images.length > 0 ? discovery.images[0] : { imageUrl: 'https://placehold.co/1200x800.png', imageHint: 'placeholder' };
 
   const SealButton = () => (
     <form action={toggleSeal}>
@@ -171,42 +173,16 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
         <div className="lg:col-span-3">
-          {discovery.images && discovery.images.length > 0 ? (
-            <Carousel className="w-full shadow-lg rounded-lg overflow-hidden">
-                <CarouselContent>
-                    {discovery.images.map((image, index) => (
-                        <CarouselItem key={index}>
-                            <div className="aspect-video relative w-full">
-                                <Image
-                                    src={image.imageUrl}
-                                    alt={`${discovery.title} - Imagem ${index + 1}`}
-                                    fill
-                                    className="object-cover"
-                                    data-ai-hint={image.imageHint}
-                                    priority={index === 0}
-                                />
-                            </div>
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-                {discovery.images.length > 1 && (
-                    <>
-                        <CarouselPrevious className="left-4" />
-                        <CarouselNext className="right-4" />
-                    </>
-                )}
-            </Carousel>
-          ) : (
-            <div className="aspect-video relative w-full overflow-hidden rounded-lg shadow-lg mb-6 bg-muted">
-                 <Image
-                    src="https://placehold.co/600x400.png"
-                    alt="Placeholder image"
+           <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden">
+                <Image
+                    src={mainImage.imageUrl}
+                    alt={discovery.title}
                     fill
                     className="object-cover"
-                    data-ai-hint="placeholder"
-                 />
+                    data-ai-hint={mainImage.imageHint}
+                    priority
+                />
             </div>
-          )}
         </div>
         <div className="lg:col-span-2">
            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
@@ -257,10 +233,37 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
         </div>
       </div>
 
-       <div className="mt-8 lg:mt-0 lg:col-span-5 prose max-w-none">
+       <div className="mt-12 lg:col-span-5 prose max-w-none">
           <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
           <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
       </div>
+
+        {discovery.images && discovery.images.length > 0 && (
+             <section className="mt-16 md:mt-24">
+                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3">
+                    <Camera className="h-8 w-8 text-primary/80"/>
+                    Galeria
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {discovery.images.map((image, index) => (
+                        <Dialog key={index}>
+                            <DialogTrigger asChild>
+                                <Card className="overflow-hidden cursor-pointer group">
+                                    <div className="aspect-square relative">
+                                        <Image src={image.imageUrl} alt={`${discovery.title} - Imagem ${index + 1}`} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
+                                    </div>
+                                </Card>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                                <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
+                                <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
+                                {image.imageHint && <DialogDescription className="text-center mt-2 sr-only">{image.imageHint}</DialogDescription>}
+                            </DialogContent>
+                        </Dialog>
+                    ))}
+                </div>
+            </section>
+        )}
 
        <section className="mt-16 md:mt-24">
             <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3">
@@ -297,4 +300,3 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     </div>
   );
 }
-

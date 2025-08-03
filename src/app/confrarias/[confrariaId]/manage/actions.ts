@@ -43,8 +43,8 @@ const recipeSchema = z.object({
     author_id: z.string().uuid(),
     title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
     description: z.string().optional(),
-    ingredients: z.string().optional(),
-    instructions: z.string().optional(),
+    ingredients: z.string().min(10, 'Os ingredientes devem ter pelo menos 10 caracteres.'),
+    instructions: z.string().min(10, 'As instruções devem ter pelo menos 10 caracteres.'),
     image: z.any().optional(),
     status: z.enum(['draft', 'published']),
 });
@@ -407,7 +407,7 @@ export async function upsertRecipe(formData: FormData) {
     
     const parsedData = recipeSchema.safeParse(values);
     if (!parsedData.success) {
-        console.error('Recipe validation error', parsedData.error);
+        console.error('Recipe validation error', parsedData.error.flatten());
         return { error: 'Dados da receita inválidos.' };
     }
     
@@ -435,9 +435,9 @@ export async function upsertRecipe(formData: FormData) {
         confraria_id,
         author_id,
         title,
-        description,
-        ingredients,
-        instructions,
+        description: description || null,
+        ingredients: ingredients || null,
+        instructions: instructions || null,
         status,
         slug: id ? undefined : slug,
         image_url: imageUrl,
@@ -499,7 +499,7 @@ export async function addGalleryImage(formData: FormData) {
     const { error: dbError } = await supabaseService.from('confraria_gallery_images').insert({
         confraria_id,
         image_url: publicUrl,
-        description,
+        description: description || null,
     });
 
     if (dbError) {
@@ -524,7 +524,3 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
-
-    
-
-    

@@ -105,8 +105,8 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
                                     height={1067}
                                     className="object-contain"
                                 />
-                                <div className="absolute inset-0 unfurl-animation">
-                                    <div className="parchment-scroll w-full h-full overflow-y-auto px-24 py-20 pr-24 text-center">
+                                <div className="absolute inset-0">
+                                    <div className="parchment-scroll w-full h-full overflow-y-auto px-24 py-32 pr-24 text-center">
                                          <h2 className="font-parchment text-4xl font-bold text-primary mb-6 mt-12">{confrariaName}</h2>
                                         <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                             {history}
@@ -231,6 +231,20 @@ export default function ConfrariaPage() {
     }, [confrariaId, getConfrariaDetails]);
 
 
+    const handleToggleMembership = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            const result = await toggleMembershipRequest(formData);
+            if(result.error) {
+                toast({title: "Erro", description: result.error, variant: "destructive"});
+            } else {
+                toast({title: "Sucesso!", description: "O seu pedido foi atualizado."});
+                await getConfrariaDetails(); // Re-fetch data to update the UI
+            }
+        });
+    }
+
     if (loading) {
         return (
              <div className="container mx-auto px-4 py-8 md:py-16">
@@ -261,19 +275,6 @@ export default function ConfrariaPage() {
         return notFound();
     }
     
-    const handleToggleMembership = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        startTransition(async () => {
-            const result = await toggleMembershipRequest(formData);
-            if(result.error) {
-                toast({title: "Erro", description: result.error, variant: "destructive"});
-            } else {
-                toast({title: "Sucesso!", description: "O seu pedido foi atualizado."});
-                await getConfrariaDetails(); // Re-fetch data to update the UI
-            }
-        });
-    }
 
     const MembershipButton = () => {
         if (confraria.is_responsible && user) {
@@ -523,6 +524,7 @@ export default function ConfrariaPage() {
                                                     </Card>
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-3xl">
+                                                    <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
                                                     <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
                                                     {image.description && <DialogDescription className="text-center mt-2">{image.description}</DialogDescription>}
                                                 </DialogContent>
@@ -599,3 +601,5 @@ export default function ConfrariaPage() {
         </div>
     );
 }
+
+    

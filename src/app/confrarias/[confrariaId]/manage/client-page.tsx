@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
-import { removeMember, addGalleryImage, deleteGalleryImage } from './actions';
+import { removeMember, addGalleryImage, deleteGalleryImage, deleteArticle } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
@@ -70,6 +70,7 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
     const [isRemovingMember, setIsRemovingMember] = useState<number | null>(null);
+    const [isDeletingArticle, setIsDeletingArticle] = useState<number | null>(null);
     
     const handleEditEventClick = (event: Event) => {
         setSelectedEvent(event);
@@ -146,6 +147,18 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
             toast({ title: 'Sucesso', description: `Imagem removida da galeria.` });
             router.refresh();
         }
+    }
+    
+    const handleDeleteArticle = async (article: Article) => {
+        setIsDeletingArticle(article.id);
+        const result = await deleteArticle(article.id, confrariaData.id);
+        if (result.error) {
+            toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Publicação Apagada', description: `"${article.title}" foi apagada com sucesso.`});
+            router.refresh();
+        }
+        setIsDeletingArticle(null);
     }
 
 
@@ -364,8 +377,27 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
                                                     {article.status === 'published' ? 'Publicado' : 'Rascunho'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-2">
                                                 <Button variant="outline" size="icon" onClick={() => handleEditArticleClick(article)}><Edit className="h-4 w-4"/></Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon" disabled={isDeletingArticle === article.id}>
+                                                             {isDeletingArticle === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Apagar Publicação?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Tem a certeza que quer apagar a publicação &quot;{article.title}&quot;? Esta ação não pode ser desfeita.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteArticle(article)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}

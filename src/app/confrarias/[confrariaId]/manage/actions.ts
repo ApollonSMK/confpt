@@ -315,6 +315,26 @@ export async function upsertArticle(formData: FormData) {
     return { success: true, message: id ? 'Publicação atualizada!' : 'Publicação criada!' };
 }
 
+export async function deleteArticle(articleId: number, confrariaId: number) {
+    'use server';
+
+    const supabase = createServerClient();
+    await checkPermissions(confrariaId, supabase);
+
+    const supabaseService = createServiceRoleClient();
+    const { error } = await supabaseService.from('articles').delete().eq('id', articleId);
+    
+    if (error) {
+        console.error("Error deleting article:", error);
+        return { error: 'Ocorreu um erro ao apagar a publicação.' };
+    }
+
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+
+    return { success: true };
+}
+
 
 export async function removeMember(formData: FormData) {
     'use server';
@@ -489,5 +509,3 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
-
-    

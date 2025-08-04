@@ -66,7 +66,8 @@ async function getConfrariaDetails(confrariaId: number, user: User | null) {
     const galleryImages = (confrariaData.confraria_gallery_images || [])
         .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
 
-    const isResponsible = user ? (user.id === confrariaData.responsible_user_id || user.email === process.env.ADMIN_EMAIL) : false;
+    const isAdmin = user?.email === process.env.ADMIN_EMAIL;
+    const isResponsible = user ? (user.id === confrariaData.responsible_user_id) : false;
     
     return {
         ...confrariaData,
@@ -78,7 +79,7 @@ async function getConfrariaDetails(confrariaId: number, user: User | null) {
         recipes,
         galleryImages,
         member_count: (confrariaData as any).confraria_members_count[0]?.member_count || 0,
-        is_responsible: isResponsible,
+        is_responsible: isResponsible || isAdmin,
         history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
         founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
     } as any;
@@ -101,3 +102,4 @@ export default async function ConfrariaPage({ params }: { params: { confrariaId:
         <ClientConfrariaPage confraria={confrariaDetails} user={user} />
     );
 }
+

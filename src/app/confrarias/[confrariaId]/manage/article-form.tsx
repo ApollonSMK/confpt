@@ -94,7 +94,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
     
     return (
         <FormProvider {...form}>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 py-4">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                  <Card className="border-none shadow-none">
                     <CardContent className="space-y-6 pt-6">
                         <FormField
@@ -145,9 +145,9 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                             )}
                         />
                         {/* Hidden fields */}
-                        <input type="hidden" {...form.register("id")} />
-                        <input type="hidden" {...form.register("confraria_id")} />
-                        <input type="hidden" {...form.register("author_id")} />
+                        <input type="hidden" name="id" value={form.getValues('id')} />
+                        <input type="hidden" name="confraria_id" value={form.getValues('confraria_id')} />
+                        <input type="hidden" name="author_id" value={form.getValues('author_id')} />
                     </CardContent>
                     <CardFooter className="flex justify-end gap-4">
                         <Button type="submit" variant="outline" onClick={() => setStatusToSave('draft')} disabled={loading}>

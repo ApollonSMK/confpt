@@ -132,25 +132,9 @@ export default function ConfrariaPage() {
         setUser(currentUser);
 
         const { data: confrariaData, error } = await supabase
-            .from('confrarias')
-            .select(`
-                *,
-                discoveries (
-                    *,
-                    confrarias ( id, name, seal_url, seal_hint ),
-                    discovery_images ( image_url, image_hint ),
-                    discovery_seal_counts ( seal_count ),
-                    discovery_types ( name )
-                ),
-                confraria_members ( id, status ),
-                events ( * ),
-                articles ( * ),
-                recipes ( * ),
-                confraria_gallery_images ( * )
-            `)
-            .eq('id', confrariaId)
+            .rpc('get_confraria_details_for_user', { confraria_id_param: parseInt(confrariaId, 10), user_id_param: currentUser?.id })
             .single();
-        
+
         if (error || !confrariaData) {
             console.error(`Error fetching confraria with id ${confrariaId}:`, error);
             return notFound();
@@ -181,10 +165,8 @@ export default function ConfrariaPage() {
             .filter((r: Recipe) => r.status === 'published')
             .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-        const galleryImages = (confrariaData.confraria_gallery_images || [])
+        const galleryImages = (confrariaData.gallery_images || [])
             .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
-
-        const isAdmin = currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
         
         setConfraria({
             ...confrariaData,
@@ -195,8 +177,8 @@ export default function ConfrariaPage() {
             articles,
             recipes,
             galleryImages,
-            member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
-            is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
+            member_count: confrariaData.member_count,
+            is_responsible: confrariaData.is_responsible,
             history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
             founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
         } as ConfrariaDetails);
@@ -500,5 +482,3 @@ export default function ConfrariaPage() {
         </div>
     );
 }
-
-    

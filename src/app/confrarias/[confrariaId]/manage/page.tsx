@@ -16,7 +16,7 @@ type Member = {
     user_id: string;
     user_email: string;
     user_full_name: string | null;
-    rank: Omit<UserRankInfo, 'rankIcon'>; // Remove the component from the type
+    rank: UserRankInfo;
 }
 
 async function getMembers(confrariaId: number, supabaseService: any): Promise<Member[]> {
@@ -62,14 +62,14 @@ async function getMembers(confrariaId: number, supabaseService: any): Promise<Me
         const userProfile = usersById.get(request.user_id);
         const sealedDiscoveriesCount = sealsByUser[request.user_id] || 0;
         const approvedSubmissionsCount = submissionsByUser[request.user_id] || 0;
-        const { rankIcon, ...rankDetails } = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, userProfile?.rank_override);
+        const rank = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, userProfile?.rank_override);
         
         return {
             id: request.id,
             user_id: request.user_id,
             user_email: userProfile?.email ?? 'Email Desconhecido',
             user_full_name: userProfile?.full_name ?? 'Desconhecido',
-            rank: rankDetails,
+            rank: rank,
         };
     });
 }
@@ -142,7 +142,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
     
     const { confrariaData, approvedMembers, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
     
-    const pageProps: Omit<ManageConfrariaPageProps, 'pendingMembers'> = {
+    const pageProps: ManageConfrariaPageProps = {
         confrariaData,
         approvedMembers,
         events,

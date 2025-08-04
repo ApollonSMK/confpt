@@ -48,6 +48,8 @@ export type Confraria = {
   discoveries?: Discovery[]; // Relação opcional
   events?: Event[]; // Relação opcional
   articles?: Article[]; // Relação opcional
+  recipes?: Recipe[]; // Relação opcional
+  galleryImages?: ConfrariaGalleryImage[]; // Relação opcional
   sealUrl: string; // Para compatibilidade
   sealHint: string; // Para compatibilidade
   discoveryCount?: number;

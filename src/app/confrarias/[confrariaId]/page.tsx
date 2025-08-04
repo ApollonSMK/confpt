@@ -1,487 +1,103 @@
 
-'use client';
 
-import { createClient } from '@/lib/supabase/client';
+'use server';
+
+import { createServerClient } from '@/lib/supabase/server';
 import type { Confraria, Discovery, Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
-import { notFound, useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera, Shield, NotebookText, Star } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { DiscoveryCard } from '@/components/discovery-card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { notFound, redirect } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { useState, useEffect, useCallback, useTransition } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createServiceRoleClient } from '@/lib/supabase/service';
+import { ClientConfrariaPage } from './client-page';
 
 
-type ConfrariaDetails = Confraria & {
-  discoveries: Discovery[];
-  events: Event[];
-  articles: Article[];
-  recipes: Recipe[];
-  galleryImages: ConfrariaGalleryImage[];
-  member_count: number;
-  is_responsible: boolean;
-  history: string;
-  founders: string;
-};
+async function getConfrariaDetails(confrariaId: number, user: User | null) {
+    const supabase = createServiceRoleClient();
 
-// We need a client component to handle the state of the history modal
-function HistoryCard({ history, confrariaName }: { history: string; confrariaName: string }) {
-    const [open, setOpen] = useState(false);
-    const MAX_LENGTH = 300; // Character limit before showing "Ver Mais"
-    const isLongText = history.length > MAX_LENGTH;
+    const { data: confrariaData, error } = await supabase
+        .from('confrarias')
+        .select(`
+            *,
+            discoveries (
+                *,
+                discovery_types (name),
+                discovery_images (image_url, image_hint),
+                discovery_seal_counts (seal_count),
+                confrarias (id, name, seal_url, seal_hint)
+            ),
+            events (*),
+            articles (*),
+            recipes (*),
+            confraria_gallery_images (*),
+            confraria_members_count (member_count)
+        `)
+        .eq('id', confrariaId)
+        .single();
+    
+    if (error || !confrariaData) {
+        console.error(`Error fetching confraria with id ${confrariaId}:`, error);
+        notFound();
+    }
+    
+    const discoveries = (confrariaData.discoveries || []).map((d: any) => {
+        const images = (d.discovery_images || []).map((img: any) => ({
+            imageUrl: img.image_url,
+            imageHint: img.image_hint,
+        }));
+        return {
+            ...d,
+            type: d.discovery_types.name,
+            confrariaId: d.confraria_id,
+            images: images,
+            imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+            imageHint: images[0]?.imageHint || 'placeholder',
+            confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
+            seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
+        }
+    }) as Discovery[];
+    
+    const articles = (confrariaData.articles || [])
+        .filter((a: Article) => a.status === 'published')
+        .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
 
-    const visibleText = isLongText ? history.substring(0, MAX_LENGTH) : history;
+    const recipes = (confrariaData.recipes || [])
+        .filter((r: Recipe) => r.status === 'published')
+        .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                    <History className="h-6 w-6 text-primary/80"/>
-                    A Nossa História
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="font-body text-foreground/90 whitespace-pre-wrap space-y-4">
-                <p>
-                    {visibleText}{isLongText && '...'}
-                </p>
-                {isLongText && (
-                    <Dialog open={open} onOpenChange={setOpen}>
-                         <style>
-                            {`
-                                @keyframes unfurl {
-                                    from {
-                                        max-height: 50vh;
-                                        opacity: 0.5;
-                                    }
-                                    to {
-                                        max-height: 90vh;
-                                        opacity: 1;
-                                    }
-                                }
-                                .unfurl-animation {
-                                    animation: unfurl 0.5s ease-out forwards;
-                                }
-                                .parchment-scroll::-webkit-scrollbar {
-                                    width: 8px;
-                                }
+    const galleryImages = (confrariaData.confraria_gallery_images || [])
+        .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
 
-                                .parchment-scroll::-webkit-scrollbar-track {
-                                    background: transparent;
-                                }
-
-                                .parchment-scroll::-webkit-scrollbar-thumb {
-                                    background-color: hsl(var(--primary) / 0.5);
-                                    border-radius: 10px;
-                                    border: 2px solid transparent;
-                                    background-clip: content-box;
-                                }
-
-                                .parchment-scroll::-webkit-scrollbar-thumb:hover {
-                                     background-color: hsl(var(--primary) / 0.7);
-                                }
-                            `}
-                        </style>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary">Ver Mais</Button>
-                        </DialogTrigger>
-                        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
-                             <DialogTitle className="sr-only">História da {confrariaName}</DialogTitle>
-                             <DialogDescription className="sr-only">A história completa da confraria {confrariaName}.</DialogDescription>
-                            <div className="relative w-full h-auto">
-                                <Image
-                                    src="/images/pergaminho.png"
-                                    alt="Pergaminho com a história da confraria"
-                                    width={800}
-                                    height={1067}
-                                    className="object-contain"
-                                />
-                                <div className="absolute inset-0">
-                                    <div className="parchment-scroll w-full h-full overflow-y-auto px-24 py-32 pr-24 text-center">
-                                         <h2 className="font-parchment text-4xl font-bold text-primary mb-6 mt-12">{confrariaName}</h2>
-                                        <p className="font-body text-foreground/80 whitespace-pre-wrap leading-relaxed">
-                                            {history}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                )}
-            </CardContent>
-        </Card>
-    )
+    const isResponsible = user ? (user.id === confrariaData.responsible_user_id || user.email === process.env.ADMIN_EMAIL) : false;
+    
+    return {
+        ...confrariaData,
+        sealUrl: confrariaData.seal_url,
+        sealHint: confrariaData.seal_hint,
+        discoveries,
+        events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+        articles,
+        recipes,
+        galleryImages,
+        member_count: (confrariaData as any).confraria_members_count[0]?.member_count || 0,
+        is_responsible: isResponsible,
+        history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
+        founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
+    } as any;
 }
 
+
 // The page itself remains a server component for data fetching
-export default function ConfrariaPage() {
-    const [confraria, setConfraria] = useState<ConfrariaDetails | null>(null);
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-    const supabase = createClient();
-    const params = useParams();
-    const confrariaId = params.confrariaId as string;
-
-    const getConfrariaDetails = useCallback(async () => {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        setUser(currentUser);
-
-        const { data: confrariaData, error } = await supabase
-            .rpc('get_confraria_details_for_user', { confraria_id_param: parseInt(confrariaId, 10), user_id_param: currentUser?.id })
-            .single();
-
-        if (error || !confrariaData) {
-            console.error(`Error fetching confraria with id ${confrariaId}:`, error);
-            return notFound();
-        }
-
-        const discoveries = (confrariaData.discoveries || []).map((d: any) => {
-            const images = (d.discovery_images || []).map((img: any) => ({
-                imageUrl: img.image_url,
-                imageHint: img.image_hint,
-            }));
-            return {
-                ...d,
-                type: d.discovery_types.name,
-                confrariaId: d.confraria_id,
-                images: images,
-                imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
-                imageHint: images[0]?.imageHint || 'placeholder',
-                confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
-                seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
-            }
-        }) as Discovery[];
-        
-        const articles = (confrariaData.articles || [])
-            .filter((a: Article) => a.status === 'published')
-            .sort((a: Article, b: Article) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
-
-        const recipes = (confrariaData.recipes || [])
-            .filter((r: Recipe) => r.status === 'published')
-            .sort((a: Recipe, b: Recipe) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        const galleryImages = (confrariaData.gallery_images || [])
-            .sort((a: ConfrariaGalleryImage, b: ConfrariaGalleryImage) => a.sort_order - b.sort_order);
-        
-        setConfraria({
-            ...confrariaData,
-            sealUrl: confrariaData.seal_url,
-            sealHint: confrariaData.seal_hint,
-            discoveries,
-            events: (confrariaData.events || []).sort((a: Event, b: Event) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-            articles,
-            recipes,
-            galleryImages,
-            member_count: confrariaData.member_count,
-            is_responsible: confrariaData.is_responsible,
-            history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
-            founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
-        } as ConfrariaDetails);
-        setLoading(false);
-    }, [confrariaId, supabase]);
-
-    useEffect(() => {
-        if (!confrariaId) return;
-        getConfrariaDetails();
-    }, [confrariaId, getConfrariaDetails]);
-
-
-    if (loading) {
-        return (
-             <div className="container mx-auto px-4 py-8 md:py-16">
-                <Skeleton className="h-8 w-48 mb-12" />
-                <Skeleton className="h-64 w-full mb-[-4rem] md:mb-[-6rem]" />
-                 <div className="relative">
-                    <section className="bg-card border rounded-lg p-6 md:p-8 mb-12 shadow-lg">
-                        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                            <Skeleton className="h-[150px] w-[150px] rounded-full -mt-16 md:-ml-16 md:-mt-24" />
-                            <div className="text-center md:text-left flex-grow space-y-3">
-                                <Skeleton className="h-12 w-3/4" />
-                                <Skeleton className="h-8 w-1/2" />
-                                <div className="flex justify-center md:justify-start gap-2">
-                                    <Skeleton className="h-6 w-24 rounded-full" />
-                                    <Skeleton className="h-6 w-24 rounded-full" />
-                                    <Skeleton className="h-6 w-24 rounded-full" />
-                                </div>
-                            </div>
-                            <Skeleton className="h-12 w-40 shrink-0" />
-                        </div>
-                    </section>
-                </div>
-            </div>
-        );
-    }
+export default async function ConfrariaPage({ params }: { params: { confrariaId: string } }) {
+    const supabase = createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!confraria) {
-        return notFound();
+    const confrariaId = parseInt(params.confrariaId, 10);
+    if (isNaN(confrariaId)) {
+        notFound();
     }
+
+    const confrariaDetails = await getConfrariaDetails(confrariaId, user);
     
     return (
-        <div>
-             <div className="mb-8 container mx-auto px-4 pt-8">
-                <Button variant="ghost" asChild>
-                    <Link href="/confrarias">
-                        <ArrowLeft />
-                        Voltar às confrarias
-                    </Link>
-                </Button>
-            </div>
-             <div className="relative h-48 md:h-64 w-full mb-[-4rem] md:mb-[-6rem]">
-                <Image 
-                    src="https://placehold.co/1200x300.png"
-                    alt={`Banner da ${confraria.name}`}
-                    fill
-                    className="object-cover"
-                    data-ai-hint="abstract texture"
-                />
-                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
-            </div>
-
-            <div className="container mx-auto px-4 py-8 md:py-12 relative">
-                <section className="bg-card border rounded-lg p-6 md:p-8 mb-12 shadow-lg">
-                    <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                        <Image
-                            src={confraria.sealUrl}
-                            alt={`Selo da ${confraria.name}`}
-                            width={150}
-                            height={150}
-                            className="rounded-full bg-muted p-3 shadow-lg -mt-16 md:-ml-16 md:-mt-24"
-                            data-ai-hint={confraria.sealHint}
-                        />
-                        <div className="text-center md:text-left flex-grow">
-                            <h1 className="font-headline text-4xl md:text-5xl font-bold text-primary mb-2">
-                                {confraria.name}
-                            </h1>
-                            <p className="text-xl md:text-2xl italic text-muted-foreground mb-4">
-                                &quot;{confraria.motto}&quot;
-                            </p>
-                            <div className="flex justify-center md:justify-start flex-wrap gap-2">
-                                <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{confraria.region}</span>
-                                </Badge>
-                                <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
-                                    <BookOpen className="h-4 w-4" />
-                                    <span>{confraria.discoveries.length} {confraria.discoveries.length === 1 ? 'descoberta' : 'descobertas'}</span>
-                                </Badge>
-                                <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
-                                    <Users className="h-4 w-4" />
-                                    <span>{confraria.member_count} {confraria.member_count === 1 ? 'membro' : 'membros'}</span>
-                                </Badge>
-                            </div>
-                        </div>
-                        <div className="shrink-0 mt-4 md:mt-0">
-                           {confraria.is_responsible && user && (
-                                <Button asChild>
-                                    <Link href={`/confrarias/${confraria.id}/manage`}>
-                                        <Wrench /> Gerir Confraria
-                                    </Link>
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </section>
-                
-                <Tabs defaultValue="inicio" className="w-full">
-                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                        <TabsTrigger value="inicio"><Newspaper className="mr-2 h-4 w-4"/>Início</TabsTrigger>
-                        <TabsTrigger value="gallery"><Camera className="mr-2 h-4 w-4"/>Galeria</TabsTrigger>
-                        <TabsTrigger value="recipes"><UtensilsCrossed className="mr-2 h-4 w-4"/>Receitas</TabsTrigger>
-                        <TabsTrigger value="discoveries"><Star className="mr-2 h-4 w-4"/>Descobertas</TabsTrigger>
-                    </TabsList>
-                    
-                    <div className="mt-6">
-                        <TabsContent value="inicio">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                                <div className="lg:col-span-2 space-y-12">
-                                    <section>
-                                        <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                            <Newspaper className="h-8 w-8 text-primary/80"/>
-                                            Publicações
-                                        </h2>
-                                        {confraria.articles && confraria.articles.length > 0 ? (
-                                            <div className="space-y-6">
-                                                {confraria.articles.map(article => (
-                                                    <Card key={article.id} className="border-l-4 border-primary">
-                                                        <CardHeader>
-                                                            <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
-                                                            <CardDescription className="flex items-center gap-2 pt-2 text-sm">
-                                                                <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                            </CardDescription>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <p className="text-base text-muted-foreground line-clamp-3">{article.content}</p>
-                                                            <Button variant="link" asChild className="p-0 h-auto mt-2">
-                                                                <Link href="#">Ler Mais</Link>
-                                                            </Button>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <Card className="border-l-4 border-primary">
-                                                <CardContent className="p-6 text-center text-muted-foreground">
-                                                    Esta confraria ainda não tem publicações.
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </section>
-                                     <section>
-                                        <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                            <Calendar className="h-8 w-8 text-primary/80"/>
-                                            Próximos Eventos
-                                        </h2>
-                                        {confraria.events && confraria.events.length > 0 ? (
-                                            <div className="space-y-4">
-                                                {confraria.events.map(event => (
-                                                    <Card key={event.id} className="border-l-4 border-primary/50 flex flex-col sm:flex-row">
-                                                        <div className="flex-shrink-0 w-full sm:w-40 h-40 sm:h-auto relative">
-                                                            <Image src={event.image_url ?? 'https://placehold.co/400x400.png'} alt={event.name} fill className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none" data-ai-hint={event.image_hint ?? 'event'} />
-                                                        </div>
-                                                        <CardHeader className="flex-grow">
-                                                            <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                                                                {event.name}
-                                                                {!event.is_public && (
-                                                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                                                        <EyeOff className="h-3 w-3" /> Privado
-                                                                    </Badge>
-                                                                )}
-                                                            </CardTitle>
-                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
-                                                            <CardContent className="p-0 pt-2">
-                                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
-                                                                <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>
-                                                            </CardContent>
-                                                        </CardHeader>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <Card className="border-l-4 border-primary">
-                                                <CardContent className="p-6 text-center text-muted-foreground">
-                                                    De momento, não existem eventos agendados.
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </section>
-                                </div>
-                                 <aside className="space-y-8">
-                                    <HistoryCard history={confraria.history} confrariaName={confraria.name} />
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                                                <Users className="h-6 w-6 text-primary/80"/>
-                                                Fundadores
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="font-body text-foreground/90 whitespace-pre-wrap">
-                                            {confraria.founders}
-                                        </CardContent>
-                                    </Card>
-                                </aside>
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="gallery">
-                             <section>
-                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                    <Camera className="h-8 w-8 text-primary/80"/>
-                                    Galeria
-                                </h2>
-                                {confraria.galleryImages && confraria.galleryImages.length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {confraria.galleryImages.map(image => (
-                                            <Dialog key={image.id}>
-                                                <DialogTrigger asChild>
-                                                    <Card className="overflow-hidden cursor-pointer group">
-                                                        <div className="aspect-square relative">
-                                                            <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
-                                                        </div>
-                                                    </Card>
-                                                </DialogTrigger>
-                                                <DialogContent className="max-w-3xl">
-                                                    <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
-                                                    <DialogDescription className="sr-only">
-                                                        {image.description || `Imagem da galeria da ${confraria.name}`}
-                                                    </DialogDescription>
-                                                    <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
-                                                    {image.description && <p className="text-center mt-2">{image.description}</p>}
-                                                </DialogContent>
-                                            </Dialog>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <Card>
-                                        <CardContent className="p-6 text-center text-muted-foreground">
-                                            Esta confraria ainda não partilhou nenhum momento na sua galeria.
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </section>
-                        </TabsContent>
-
-                        <TabsContent value="recipes">
-                             <section>
-                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                    <UtensilsCrossed className="h-8 w-8 text-primary/80"/>
-                                    Receitas
-                                </h2>
-                                {confraria.recipes && confraria.recipes.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {confraria.recipes.map(recipe => (
-                                            <Card key={recipe.id} className="border-l-4 border-primary">
-                                                <CardHeader>
-                                                    <CardTitle className="font-headline text-2xl">{recipe.title}</CardTitle>
-                                                    {recipe.description && <CardDescription>{recipe.description}</CardDescription>}
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <Button variant="link" asChild className="p-0 h-auto">
-                                                        <Link href="#">Ver Receita Completa</Link>
-                                                    </Button>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <Card>
-                                        <CardContent className="p-6 text-center text-muted-foreground">
-                                            O livro de receitas desta confraria ainda é um segredo.
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </section>
-                        </TabsContent>
-                        
-                        <TabsContent value="discoveries">
-                            <section>
-                                <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
-                                    <Star className="h-8 w-8 text-primary/80"/>
-                                    Descobertas Recomendadas
-                                </h2>
-                                {confraria.discoveries && confraria.discoveries.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                        {confraria.discoveries.map((discovery) => (
-                                        <DiscoveryCard key={discovery.id} discovery={discovery} />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <Card>
-                                        <CardContent className="p-6 text-center text-muted-foreground">
-                                            <p className="font-semibold text-lg">Nenhuma descoberta por aqui... ainda.</p>
-                                            <p>Esta confraria ainda não partilhou os seus segredos.</p>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </section>
-                        </TabsContent>
-                    </div>
-                </Tabs>
-            </div>
-        </div>
+        <ClientConfrariaPage confraria={confrariaDetails} user={user} />
     );
 }

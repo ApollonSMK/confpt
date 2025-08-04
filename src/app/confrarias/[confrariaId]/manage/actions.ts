@@ -58,13 +58,6 @@ const galleryImageSchema = z.object({
     image: z.any(),
 });
 
-const imageUploadSchema = z.object({
-    confraria_id: z.coerce.number(),
-    image: z.any(),
-    type: z.enum(['seal_url', 'cover_url']),
-});
-
-
 async function checkPermissions(confrariaId: number) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -225,6 +218,8 @@ export async function upsertEvent(formData: FormData) {
 export async function upsertArticle(formData: FormData) {
     'use server';
     
+    await checkPermissions(Number(formData.get('confraria_id')));
+
     const values = {
         id: formData.get('id') ? Number(formData.get('id')) : undefined,
         confraria_id: Number(formData.get('confraria_id')),
@@ -242,8 +237,6 @@ export async function upsertArticle(formData: FormData) {
     }
 
     const { id, confraria_id, author_id, title, content, image, status } = parsedData.data;
-
-    await checkPermissions(confraria_id);
     
     const supabaseService = createServiceRoleClient();
 
@@ -274,17 +267,19 @@ export async function upsertArticle(formData: FormData) {
         imageUrl = publicUrlData.publicUrl;
     }
 
-    const articleData = {
+    const articleData: any = {
         confraria_id,
         author_id,
         title,
         content,
         status,
-        slug: id ? undefined : slug, // only set slug on creation
         image_url: imageUrl,
         image_hint: 'article cover',
-        published_at: undefined as (string | undefined),
     };
+    
+    if (!id) {
+        articleData.slug = slug;
+    }
     
     const existingArticle = id ? await supabaseService.from('articles').select('published_at').eq('id', id).single() : null;
     
@@ -479,17 +474,19 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 
 
 export async function updateConfrariaImage(formData: FormData) {
-    const parsedData = imageUploadSchema.safeParse({
-        confraria_id: formData.get('confraria_id'),
-        image: formData.get('image'),
-        type: formData.get('type'),
-    });
+    'use server';
 
-    if (!parsedData.success || !parsedData.data.image || parsedData.data.image.size === 0) {
+    const confraria_id_raw = formData.get('confraria_id');
+    const type_raw = formData.get('type');
+    const image_raw = formData.get('image');
+    
+    if (!confraria_id_raw || !type_raw || !image_raw || !(image_raw instanceof File) || image_raw.size === 0) {
         return { error: "Dados inválidos ou imagem em falta." };
     }
     
-    const { confraria_id, image, type } = parsedData.data;
+    const confraria_id = Number(confraria_id_raw);
+    const type = type_raw as 'seal_url' | 'cover_url';
+    const image = image_raw;
 
     await checkPermissions(confraria_id);
     
@@ -527,5 +524,3 @@ export async function updateConfrariaImage(formData: FormData) {
 
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
-
-    

@@ -281,7 +281,7 @@ export async function upsertArticle(formData: FormData) {
     
     // Don't overwrite published_at if article is already published and we're just saving a draft
     if (id && status === 'published') {
-        const { data: existingArticle } = await supabase.from('articles').select('published_at').eq('id', id).single();
+        const { data: existingArticle } = await supabaseService.from('articles').select('published_at').eq('id', id).single();
         if (!existingArticle?.published_at) {
             articleData.published_at = new Date().toISOString();
         } else {
@@ -292,13 +292,13 @@ export async function upsertArticle(formData: FormData) {
 
     let error;
     if (id) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseService
             .from('articles')
             .update(articleData)
             .eq('id', id);
         error = updateError;
     } else {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseService
             .from('articles')
             .insert(articleData);
         error = insertError;
@@ -489,3 +489,5 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
+
+    

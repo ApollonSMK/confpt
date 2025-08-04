@@ -179,7 +179,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                             </div>
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">
-                           {confraria.is_responsible && user && (
+                           {confraria.is_responsible && (
                                 <Button asChild>
                                     <Link href={`/confrarias/${confraria.id}/manage`}>
                                         <Wrench /> Gerir Confraria
@@ -214,7 +214,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                                         <CardHeader>
                                                             <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
                                                             <CardDescription className="flex items-center gap-2 pt-2 text-sm">
-                                                                <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                                <Calendar className="h-4 w-4"/> Publicado a {new Date(article.published_at!).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}
                                                             </CardDescription>
                                                         </CardHeader>
                                                         <CardContent>
@@ -255,7 +255,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                                                     </Badge>
                                                                 )}
                                                             </CardTitle>
-                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
+                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(`${event.event_date}T00:00:00`).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</CardDescription>
                                                             <CardContent className="p-0 pt-2">
                                                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
                                                                 <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>

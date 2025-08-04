@@ -10,15 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { toggleMembershipRequest } from './actions';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 
 
 type ConfrariaDetails = Confraria & {
@@ -28,7 +25,6 @@ type ConfrariaDetails = Confraria & {
   recipes: Recipe[];
   galleryImages: ConfrariaGalleryImage[];
   member_count: number;
-  membership_status: 'member' | 'pending' | 'none';
   is_responsible: boolean;
   history: string;
   founders: string;
@@ -127,11 +123,8 @@ export default function ConfrariaPage() {
     const [confraria, setConfraria] = useState<ConfrariaDetails | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isPending, startTransition] = useTransition();
-    const router = useRouter();
     const supabase = createClient();
     const params = useParams();
-    const { toast } = useToast();
     const confrariaId = params.confrariaId as string;
 
     const getConfrariaDetails = useCallback(async () => {
@@ -161,20 +154,6 @@ export default function ConfrariaPage() {
         if (error || !confrariaData) {
             console.error(`Error fetching confraria with id ${confrariaId}:`, error);
             return notFound();
-        }
-
-        let membership_status: 'member' | 'pending' | 'none' = 'none';
-        if(currentUser) {
-            const { data: userMembership } = await supabase
-                .from('confraria_members')
-                .select('status')
-                .eq('user_id', currentUser.id)
-                .eq('confraria_id', confrariaData.id)
-                .single();
-
-            if (userMembership) {
-                membership_status = userMembership.status as 'member' | 'pending';
-            }
         }
 
         const discoveries = (confrariaData.discoveries || []).map((d: any) => {
@@ -217,7 +196,6 @@ export default function ConfrariaPage() {
             recipes,
             galleryImages,
             member_count: (confrariaData.confraria_members || []).filter((m: any) => m.status === 'approved').length,
-            membership_status,
             is_responsible: currentUser?.id === confrariaData.responsible_user_id || isAdmin,
             history: confrariaData.history || 'A história desta confraria ainda não foi contada.',
             founders: confrariaData.founders || 'Os nobres fundadores desta confraria ainda não foram nomeados.',
@@ -230,20 +208,6 @@ export default function ConfrariaPage() {
         getConfrariaDetails();
     }, [confrariaId, getConfrariaDetails]);
 
-
-    const handleToggleMembership = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        startTransition(async () => {
-            const result = await toggleMembershipRequest(formData);
-            if(result.error) {
-                toast({title: "Erro", description: result.error, variant: "destructive"});
-            } else {
-                toast({title: "Sucesso!", description: "O seu pedido foi atualizado."});
-                await getConfrariaDetails(); // Re-fetch data to update the UI
-            }
-        });
-    }
 
     if (loading) {
         return (
@@ -275,68 +239,6 @@ export default function ConfrariaPage() {
         return notFound();
     }
     
-
-    const MembershipButton = () => {
-        if (confraria.is_responsible && user) {
-             return (
-                <Button asChild>
-                    <Link href={`/confrarias/${confraria.id}/manage`}>
-                        <Wrench /> Gerir Confraria
-                    </Link>
-                </Button>
-            );
-        }
-
-        if (!user) {
-            return (
-                <Button asChild>
-                    <Link href={`/login?redirect=/confrarias/${confraria.id}`}>
-                        <UserPlus /> Solicitar Associação
-                    </Link>
-                </Button>
-            );
-        }
-
-        if (confraria.membership_status === 'member') {
-            return (
-                <Button disabled variant="secondary">
-                    <Check /> Você é Membro
-                </Button>
-            );
-        }
-
-        if (confraria.membership_status === 'pending') {
-            return (
-                <form onSubmit={handleToggleMembership}>
-                    <input type="hidden" name="confrariaId" value={confraria.id} />
-                    <input type="hidden" name="hasRequested" value="true" />
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button type="submit" variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isPending}>
-                                    <Clock /> Adesão Pendente
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Clique para cancelar o seu pedido de adesão.</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </form>
-            );
-        }
-
-        return (
-            <form onSubmit={handleToggleMembership}>
-                <input type="hidden" name="confrariaId" value={confraria.id} />
-                 <input type="hidden" name="hasRequested" value="false" />
-                <Button type="submit" disabled={isPending}>
-                    <UserPlus /> Solicitar Associação
-                </Button>
-            </form>
-        );
-    };
-
     return (
         <div>
              <div className="mb-8 container mx-auto px-4 pt-8">
@@ -386,13 +288,19 @@ export default function ConfrariaPage() {
                                     <span>{confraria.discoveries.length} {confraria.discoveries.length === 1 ? 'descoberta' : 'descobertas'}</span>
                                 </Badge>
                                 <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
-                                    <UserPlus className="h-4 w-4" />
+                                    <Users className="h-4 w-4" />
                                     <span>{confraria.member_count} {confraria.member_count === 1 ? 'membro' : 'membros'}</span>
                                 </Badge>
                             </div>
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">
-                            <MembershipButton />
+                           {confraria.is_responsible && user && (
+                                <Button asChild>
+                                    <Link href={`/confrarias/${confraria.id}/manage`}>
+                                        <Wrench /> Gerir Confraria
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -457,18 +365,9 @@ export default function ConfrariaPage() {
                                                             <CardTitle className="font-headline text-2xl flex items-center justify-between">
                                                                 {event.name}
                                                                 {!event.is_public && (
-                                                                    <TooltipProvider>
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger>
-                                                                                <Badge variant="secondary" className="flex items-center gap-1">
-                                                                                    <EyeOff className="h-3 w-3" /> Privado
-                                                                                </Badge>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>
-                                                                                <p>Este evento é visível apenas para membros.</p>
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    </TooltipProvider>
+                                                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                                                        <EyeOff className="h-3 w-3" /> Privado
+                                                                    </Badge>
                                                                 )}
                                                             </CardTitle>
                                                             <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
@@ -601,5 +500,3 @@ export default function ConfrariaPage() {
         </div>
     );
 }
-
-    

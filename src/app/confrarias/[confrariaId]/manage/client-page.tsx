@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
-import { handleMembershipAction, removeMember, addGalleryImage, deleteGalleryImage } from './actions';
+import { removeMember, addGalleryImage, deleteGalleryImage } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
@@ -48,7 +48,6 @@ type ConfrariaDataType = {
 
 export type ManageConfrariaPageProps = {
     confrariaData: ConfrariaDataType;
-    pendingMembers: Member[];
     approvedMembers: Member[];
     events: Event[];
     articles: Article[];
@@ -58,7 +57,7 @@ export type ManageConfrariaPageProps = {
 }
 
 // Client component to handle state and interactions
-export function ClientManagePage({ confrariaData, pendingMembers, approvedMembers, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
+export function ClientManagePage({ confrariaData, approvedMembers, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
@@ -166,14 +165,9 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
             </div>
             
             <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-8">
+                <TabsList className="grid w-full grid-cols-7">
                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
                     <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
-                    <TabsTrigger value="requests">
-                        <UserPlus className="mr-2 h-4 w-4"/>
-                        Pedidos
-                        {pendingMembers.length > 0 && <Badge className="ml-2">{pendingMembers.length}</Badge>}
-                    </TabsTrigger>
                     <TabsTrigger value="members">
                         <Users className="mr-2 h-4 w-4"/>
                         Membros
@@ -211,53 +205,6 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
                 <TabsContent value="details" className="mt-6">
                     <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
                         <ManageConfrariaForm confraria={confrariaData} />
-                    </TabContentCard>
-                </TabsContent>
-
-                <TabsContent value="requests" className="mt-6">
-                    <TabContentCard 
-                        title="Pedidos de Adesão" 
-                        description="Aprove ou rejeite os pedidos dos confrades que desejam juntar-se." 
-                        icon={UserPlus}
-                        badgeText={pendingMembers.length > 0 ? `${pendingMembers.length} pendente(s)` : undefined}
-                    >
-                        {pendingMembers.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Confrade</TableHead>
-                                        <TableHead>Nível</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {pendingMembers.map((member) => {
-                                        const RankIcon = rankIcons[member.rank.rankIconName];
-                                        return (
-                                        <TableRow key={member.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="font-bold">{member.user_full_name || 'Nome não definido'}</div>
-                                                <div className="text-xs text-muted-foreground">{member.user_email}</div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="flex items-center gap-2 w-fit">
-                                                    <RankIcon className="h-4 w-4 text-primary" />
-                                                    <span>{member.rank.rankName}</span>
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <ActionButtons member={member} confrariaId={confrariaData.id} />
-                                            </TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <p className="font-semibold text-lg">Nenhum pedido pendente.</p>
-                                <p>De momento, não há novos aspirantes a confrade.</p>
-                            </div>
-                        )}
                     </TabContentCard>
                 </TabsContent>
 
@@ -536,20 +483,6 @@ export function ClientManagePage({ confrariaData, pendingMembers, approvedMember
         </div>
     );
 }
-
-
-const ActionButtons = ({ member, confrariaId }: { member: Member, confrariaId: number }) => (
-    <form action={handleMembershipAction} className="flex gap-2 justify-end">
-        <input type="hidden" name="membershipId" value={member.id} />
-        <input type="hidden" name="confrariaId" value={confrariaId} />
-        <Button type="submit" name="action" value="approve" size="icon" variant="outline" className="text-green-600 hover:bg-green-100 hover:text-green-700">
-            <Check className="h-4 w-4" />
-        </Button>
-        <Button type="submit" name="action" value="reject" size="icon" variant="outline" className="text-red-600 hover:bg-red-100 hover:text-red-700">
-            <X className="h-4 w-4" />
-        </Button>
-    </form>
-);
 
 const TabContentCard = ({ title, description, children, icon: Icon, badgeText, actions }: { title: string, description: string, children: React.ReactNode, icon: React.ElementType, badgeText?: string, actions?: React.ReactNode }) => (
     <Card>

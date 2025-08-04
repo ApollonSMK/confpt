@@ -120,50 +120,6 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 }
 
 
-export async function handleMembershipAction(formData: FormData) {
-    'use server';
-    const supabase = createServiceRoleClient(); // Use service client for elevated privileges
-    const serverClient = createServerClient();
-
-    const membershipId = Number(formData.get('membershipId'));
-    const confrariaId = Number(formData.get('confrariaId'));
-    const action = formData.get('action'); // 'approve' or 'reject'
-
-    if (!membershipId || !confrariaId || !action) {
-        return { error: 'Dados inválidos.' };
-    }
-    
-    // Check if the current user has permission to manage this confraria
-    await checkPermissions(confrariaId, serverClient);
-
-    if (action === 'approve') {
-        const { error } = await supabase
-            .from('confraria_members')
-            .update({ status: 'approved' })
-            .eq('id', membershipId);
-        
-        if (error) {
-            console.error('Error approving member:', error);
-            return { error: 'Erro ao aprovar membro.' };
-        }
-    } else if (action === 'reject') {
-        const { error } = await supabase
-            .from('confraria_members')
-            .delete()
-            .eq('id', membershipId);
-        
-        if (error) {
-            console.error('Error rejecting member:', error);
-            return { error: 'Erro ao rejeitar membro.' };
-        }
-    }
-
-    revalidatePath(`/confrarias/${confrariaId}`);
-    revalidatePath(`/confrarias/${confrariaId}/manage`);
-
-    return { success: true };
-}
-
 export async function upsertEvent(formData: FormData) {
     const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
@@ -466,7 +422,7 @@ export async function upsertRecipe(formData: FormData) {
     if (error) return { error: `Erro ao guardar receita: ${error.message}` };
     
     revalidatePath(`/confrarias/${confraria_id}`);
-    revalidatePath(`/confrarias/${confrariaId}/manage`);
+    revalidatePath(`/confrarias/${confraria_id}/manage`);
     
     return { success: true, message: id ? 'Receita atualizada!' : 'Receita criada!' };
 }

@@ -19,15 +19,15 @@ type Member = {
     rank: Omit<UserRankInfo, 'rankIcon'>; // Remove the component from the type
 }
 
-async function getMembers(confrariaId: number, status: 'pending' | 'approved', supabaseService: any): Promise<Member[]> {
+async function getMembers(confrariaId: number, supabaseService: any): Promise<Member[]> {
     const { data: memberRequests, error: membersError } = await supabaseService
         .from('confraria_members')
         .select('id, user_id')
         .eq('confraria_id', confrariaId)
-        .eq('status', status);
+        .eq('status', 'approved');
 
     if (membersError) {
-        console.error(`Error fetching ${status} members:`, membersError);
+        console.error(`Error fetching approved members:`, membersError);
         return [];
     }
     
@@ -94,9 +94,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
         redirect(`/confrarias/${id}`);
     }
     
-    const [pendingMembers, approvedMembers, events, articles, recipes, galleryImages] = await Promise.all([
-        getMembers(id, 'pending', supabaseService),
-        getMembers(id, 'approved', supabaseService),
+    const [approvedMembers, events, articles, recipes, galleryImages] = await Promise.all([
+        getMembers(id, supabaseService),
         supabaseService.from('events').select('*').eq('confraria_id', id).order('event_date', { ascending: true }),
         supabaseService.from('articles').select('*').eq('confraria_id', id).order('created_at', { ascending: false }),
         supabaseService.from('recipes').select('*').eq('confraria_id', id).order('created_at', { ascending: false }),
@@ -118,7 +117,6 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             founders: confrariaData.founders ?? '',
             region: confrariaData.region,
         }, 
-        pendingMembers,
         approvedMembers,
         events: (events.data as Event[] || []),
         articles: (articles.data as Article[] || []),
@@ -142,11 +140,10 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         notFound();
     }
     
-    const { confrariaData, pendingMembers, approvedMembers, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
+    const { confrariaData, approvedMembers, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
     
-    const pageProps: ManageConfrariaPageProps = {
+    const pageProps: Omit<ManageConfrariaPageProps, 'pendingMembers'> = {
         confrariaData,
-        pendingMembers,
         approvedMembers,
         events,
         articles,

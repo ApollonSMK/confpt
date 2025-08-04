@@ -2,19 +2,22 @@
 'use client';
 
 import type { Confraria, Discovery, Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera, Shield, NotebookText, Star } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Check, Clock, Feather, MapPin, Users, UserPlus, Wrench, EyeOff, Newspaper, History, UtensilsCrossed, Camera, Shield, NotebookText, Star, Edit, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { updateConfrariaImage } from './manage/actions';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 
 type ConfrariaDetails = Confraria & {
@@ -23,7 +26,6 @@ type ConfrariaDetails = Confraria & {
   articles: Article[];
   recipes: Recipe[];
   galleryImages: ConfrariaGalleryImage[];
-  member_count: number;
   is_responsible: boolean;
   history: string;
   founders: string;
@@ -34,7 +36,6 @@ interface ClientConfrariaPageProps {
     user: User | null;
 }
 
-// We need a client component to handle the state of the history modal
 function HistoryCard({ history, confrariaName }: { history: string; confrariaName: string }) {
     const [open, setOpen] = useState(false);
     const MAX_LENGTH = 300; // Character limit before showing "Ver Mais"
@@ -122,7 +123,63 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     )
 }
 
+function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuccess }: { confrariaId: number, imageType: 'seal_url' | 'cover_url', currentImageUrl?: string, onUploadSuccess: () => void }) {
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setLoading(true);
+        const formData = new FormData(event.currentTarget);
+        formData.append('type', imageType);
+        
+        const result = await updateConfrariaImage(formData);
+
+        if(result.error) {
+            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso!', description: result.message });
+            onUploadSuccess();
+        }
+        setLoading(false);
+    }
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Alterar Imagem de {imageType === 'seal_url' ? 'Selo' : 'Capa'}</DialogTitle>
+                <DialogDescription>
+                    Selecione uma nova imagem para a sua confraria. A imagem antiga será substituída.
+                </DialogDescription>
+            </DialogHeader>
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                <input type="hidden" name="confraria_id" value={confrariaId} />
+                {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-md object-cover border" />}
+                <div className="space-y-2">
+                    <label htmlFor="image-upload">Novo Ficheiro</label>
+                    <Input id="image-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                </div>
+                <Button type="submit" disabled={loading} className="w-full">
+                    {loading && <Loader2 className="animate-spin" />}
+                    Guardar Imagem
+                </Button>
+            </form>
+        </DialogContent>
+    );
+}
+
+
 export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProps) {
+    const router = useRouter();
+    const [isSealModalOpen, setSealModalOpen] = useState(false);
+    const [isCoverModalOpen, setCoverModalOpen] = useState(false);
+
+    const onUploadSuccess = () => {
+        setSealModalOpen(false);
+        setCoverModalOpen(false);
+        router.refresh();
+    }
     
     return (
         <div>
@@ -134,28 +191,63 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                     </Link>
                 </Button>
             </div>
-             <div className="relative h-48 md:h-64 w-full mb-[-4rem] md:mb-[-6rem]">
+             <div className="relative h-48 md:h-64 w-full mb-[-4rem] md:mb-[-6rem] group">
                 <Image 
-                    src="https://placehold.co/1200x300.png"
+                    src={confraria.cover_url ?? 'https://placehold.co/1200x300.png'}
                     alt={`Banner da ${confraria.name}`}
                     fill
                     className="object-cover"
                     data-ai-hint="abstract texture"
+                    priority
                 />
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+                 {confraria.is_responsible && (
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Dialog open={isCoverModalOpen} onOpenChange={setCoverModalOpen}>
+                            <DialogTrigger asChild>
+                                 <Button>
+                                    <Camera className="mr-2 h-4 w-4"/> Alterar Capa
+                                </Button>
+                            </DialogTrigger>
+                            <ImageUploadModal 
+                                confrariaId={confraria.id}
+                                imageType="cover_url"
+                                currentImageUrl={confraria.cover_url}
+                                onUploadSuccess={onUploadSuccess}
+                            />
+                        </Dialog>
+                    </div>
+                 )}
             </div>
 
             <div className="container mx-auto px-4 py-8 md:py-12 relative">
                 <section className="bg-card border rounded-lg p-6 md:p-8 mb-12 shadow-lg">
                     <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                        <Image
-                            src={confraria.sealUrl}
-                            alt={`Selo da ${confraria.name}`}
-                            width={150}
-                            height={150}
-                            className="rounded-full bg-muted p-3 shadow-lg -mt-16 md:-ml-16 md:-mt-24"
-                            data-ai-hint={confraria.sealHint}
-                        />
+                        <div className="relative group">
+                            <Image
+                                src={confraria.sealUrl}
+                                alt={`Selo da ${confraria.name}`}
+                                width={150}
+                                height={150}
+                                className="rounded-full bg-muted p-3 shadow-lg -mt-16 md:-ml-16 md:-mt-24"
+                                data-ai-hint={confraria.sealHint}
+                            />
+                            {confraria.is_responsible && (
+                                <Dialog open={isSealModalOpen} onOpenChange={setSealModalOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="icon" className="absolute bottom-0 right-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -mt-16">
+                                            <Camera/>
+                                        </Button>
+                                    </DialogTrigger>
+                                     <ImageUploadModal 
+                                        confrariaId={confraria.id}
+                                        imageType="seal_url"
+                                        currentImageUrl={confraria.sealUrl}
+                                        onUploadSuccess={onUploadSuccess}
+                                    />
+                                </Dialog>
+                            )}
+                        </div>
                         <div className="text-center md:text-left flex-grow">
                             <h1 className="font-headline text-4xl md:text-5xl font-bold text-primary mb-2">
                                 {confraria.name}
@@ -251,7 +343,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                                                     </Badge>
                                                                 )}
                                                             </CardTitle>
-                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(`${event.event_date}T00:00:00`).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</CardDescription>
+                                                            <CardDescription className="flex items-center gap-2 pt-2 text-base"><Calendar className="h-4 w-4"/> {new Date(event.event_date + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</CardDescription>
                                                             <CardContent className="p-0 pt-2">
                                                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
                                                                 <p className="font-semibold flex items-center gap-2 pt-2"><MapPin className="h-4 w-4 text-primary"/>{event.location || 'Local a confirmar'}</p>

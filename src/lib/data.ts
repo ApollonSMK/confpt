@@ -44,6 +44,7 @@ export type Confraria = {
   region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
   seal_url: string;
   seal_hint: string;
+  cover_url?: string;
   responsible_user_id?: string | null;
   discoveries?: Discovery[]; // Relação opcional
   events?: Event[]; // Relação opcional

@@ -58,14 +58,22 @@ const galleryImageSchema = z.object({
     image: z.any(),
 });
 
+const imageUploadSchema = z.object({
+    confraria_id: z.coerce.number(),
+    image: z.any(),
+    type: z.enum(['seal_url', 'cover_url']),
+});
 
-async function checkPermissions(confrariaId: number, supabaseClient: any) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
+
+async function checkPermissions(confrariaId: number) {
+    const supabase = createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         throw new Error('Not authenticated');
     }
 
-    const { data: confraria, error } = await supabaseClient
+    const supabaseService = createServiceRoleClient();
+    const { data: confraria, error } = await supabaseService
         .from('confrarias')
         .select('responsible_user_id')
         .eq('id', confrariaId)
@@ -87,7 +95,6 @@ async function checkPermissions(confrariaId: number, supabaseClient: any) {
 
 
 export async function updateConfrariaDetails(values: z.infer<typeof detailsFormSchema>) {
-    const supabase = createServerClient();
     
     const parsedData = detailsFormSchema.safeParse(values);
 
@@ -97,7 +104,9 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
     
     const { id, motto, history, founders } = parsedData.data;
 
-    await checkPermissions(id, supabase);
+    await checkPermissions(id);
+
+    const supabase = createServiceRoleClient();
 
     const { error } = await supabase
         .from('confrarias')
@@ -146,7 +155,7 @@ export async function upsertEvent(formData: FormData) {
     const { id, confraria_id, name, description, event_date, location, region, image, is_public } = parsedData.data;
 
     // Check permissions before upserting
-    await checkPermissions(confraria_id, supabase);
+    await checkPermissions(confraria_id);
     
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
 
@@ -189,14 +198,14 @@ export async function upsertEvent(formData: FormData) {
     let error;
     if (id) {
         // Update existing event
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseService
             .from('events')
             .update(eventData)
             .eq('id', id);
         error = updateError;
     } else {
         // Create new event
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseService
             .from('events')
             .insert(eventData);
         error = insertError;
@@ -238,7 +247,7 @@ export async function upsertArticle(formData: FormData) {
 
     const { id, confraria_id, author_id, title, content, image, status } = parsedData.data;
 
-    await checkPermissions(confraria_id, supabase);
+    await checkPermissions(confraria_id);
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
 
@@ -318,8 +327,7 @@ export async function upsertArticle(formData: FormData) {
 export async function deleteArticle(articleId: number, confrariaId: number) {
     'use server';
 
-    const supabase = createServerClient();
-    await checkPermissions(confrariaId, supabase);
+    await checkPermissions(confrariaId);
 
     const supabaseService = createServiceRoleClient();
     const { error } = await supabaseService.from('articles').delete().eq('id', articleId);
@@ -363,7 +371,7 @@ export async function upsertRecipe(formData: FormData) {
     
     const { id, confraria_id, author_id, title, description, ingredients, instructions, image, status, prep_time_minutes, cook_time_minutes, servings } = parsedData.data;
     
-    await checkPermissions(confraria_id, supabase);
+    await checkPermissions(confraria_id);
     
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
@@ -400,10 +408,10 @@ export async function upsertRecipe(formData: FormData) {
     
     let error;
     if (id) {
-        const { error: updateError } = await supabase.from('recipes').update(recipeData).eq('id', id);
+        const { error: updateError } = await supabaseService.from('recipes').update(recipeData).eq('id', id);
         error = updateError;
     } else {
-        const { error: insertError } = await supabase.from('recipes').insert(recipeData);
+        const { error: insertError } = await supabaseService.from('recipes').insert(recipeData);
         error = insertError;
     }
     
@@ -417,7 +425,6 @@ export async function upsertRecipe(formData: FormData) {
 
 export async function addGalleryImage(formData: FormData) {
     'use server';
-    const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
 
     const values = {
@@ -433,7 +440,7 @@ export async function addGalleryImage(formData: FormData) {
 
     const { confraria_id, description, image } = parsedData.data;
 
-    await checkPermissions(confraria_id, supabase);
+    await checkPermissions(confraria_id);
 
     const fileExtension = image.name.split('.').pop();
     const fileName = `gallery/${confraria_id}/${nanoid()}.${fileExtension}`;
@@ -470,10 +477,60 @@ export async function addGalleryImage(formData: FormData) {
 
 export async function deleteGalleryImage(id: number, confrariaId: number) {
     'use server';
-    const supabase = createServerClient();
-    await checkPermissions(confrariaId, supabase);
+    await checkPermissions(confrariaId);
     const { error } = await createServiceRoleClient().from('confraria_gallery_images').delete().eq('id', id);
     if (error) return { error: 'Erro ao apagar imagem.' };
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
+}
+
+
+export async function updateConfrariaImage(formData: FormData) {
+    const parsedData = imageUploadSchema.safeParse({
+        confraria_id: formData.get('confraria_id'),
+        image: formData.get('image'),
+        type: formData.get('type'),
+    });
+
+    if (!parsedData.success || !parsedData.data.image || parsedData.data.image.size === 0) {
+        return { error: "Dados inválidos." };
+    }
+    
+    const { confraria_id, image, type } = parsedData.data;
+
+    await checkPermissions(confraria_id);
+    
+    const supabaseService = createServiceRoleClient();
+    
+    const fileExtension = image.name.split('.').pop();
+    const fileName = `confrarias/${confraria_id}/${type === 'seal_url' ? 'selo' : 'capa'}-${nanoid()}.${fileExtension}`;
+    
+    const { error: uploadError } = await supabaseService.storage
+        .from('public-images')
+        .upload(fileName, image, {
+            cacheControl: '3600',
+            upsert: true, // Overwrite if exists
+        });
+
+    if (uploadError) {
+        console.error(`Error uploading ${type} image:`, uploadError);
+        return { error: 'Não foi possível carregar a imagem.' };
+    }
+
+    const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
+
+    const { error: dbError } = await supabaseService
+        .from('confrarias')
+        .update({ [type]: publicUrl })
+        .eq('id', confraria_id);
+
+    if (dbError) {
+        console.error(`Error updating confraria ${type}:`, dbError);
+        return { error: 'Não foi possível atualizar a imagem da confraria.' };
+    }
+
+    revalidatePath(`/confrarias/${confraria_id}`);
+    revalidatePath(`/confrarias/${confraria_id}/manage`);
+
+    return { success: true, message: "Imagem atualizada com sucesso!" };
 }

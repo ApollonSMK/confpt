@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '4mb', // Aumenta o limite do corpo do pedido para uploads
+      bodySizeLimit: '4mb',
     },
     // This is required to allow the Next.js dev server to be accessed from
     // the Firebase Studio preview pane.
@@ -44,3 +44,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+    

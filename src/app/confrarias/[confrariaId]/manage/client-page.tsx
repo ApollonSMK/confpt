@@ -151,8 +151,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
             </div>
             
             <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
-                    <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
                     <TabsTrigger value="events">
                         <Calendar className="mr-2 h-4 w-4"/>
@@ -175,13 +174,6 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         {recipes.length > 0 && <Badge className="ml-2">{recipes.length}</Badge>}
                     </TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="overview" className="mt-6">
-                    <TabContentCard title="Visão Geral" description="Resumo rápido do estado da sua confraria." icon={LayoutDashboard}>
-                    <p>Bem-vindo ao painel de gestão. Use as abas acima para navegar entre as diferentes secções.</p>
-                        <p className="mt-4 text-sm text-muted-foreground">Futuramente, esta área terá estatísticas e atalhos úteis.</p>
-                    </TabContentCard>
-                </TabsContent>
                 
                 <TabsContent value="details" className="mt-6">
                     <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
@@ -424,7 +416,6 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText, a
                  <CardTitle className="font-headline text-3xl flex items-center gap-3">
                     <div className={cn("p-2 bg-primary/10 rounded-lg", 
                         title.includes("Pedidos") && "bg-yellow-400/10 text-yellow-600",
-                        title.includes("Membros") && "bg-blue-400/10 text-blue-600",
                         title.includes("Eventos") && "bg-purple-400/10 text-purple-600",
                         title.includes("Publicações") && "bg-green-400/10 text-green-600",
                         title.includes("Detalhes") && "bg-orange-400/10 text-orange-600",
@@ -433,7 +424,6 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText, a
                     )}>
                         <Icon className={cn("h-7 w-7 text-primary",
                            title.includes("Pedidos") && "text-yellow-600",
-                           title.includes("Membros") && "text-blue-600",
                            title.includes("Eventos") && "text-purple-600",
                            title.includes("Publicações") && "text-green-600",
                            title.includes("Detalhes") && "text-orange-600",
@@ -498,3 +488,5 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
         </form>
     )
 }
+
+    

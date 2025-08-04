@@ -502,7 +502,7 @@ export async function updateConfrariaImage(formData: FormData) {
         .from('public-images')
         .upload(fileName, image, {
             cacheControl: '3600',
-            upsert: true, // Overwrite if exists for the same path
+            upsert: true,
         });
 
     if (uploadError) {
@@ -528,3 +528,4 @@ export async function updateConfrariaImage(formData: FormData) {
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
 
+    

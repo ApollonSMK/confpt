@@ -123,50 +123,93 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     )
 }
 
-function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, imageType: 'seal_url' | 'cover_url', currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
+function SealUploadModal({ confrariaId, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setLoading(true);
         const formData = new FormData(event.currentTarget);
-        
         const result = await updateConfrariaImage(formData);
 
-        if(result.error) {
+        if (result.error) {
             toast({ title: 'Erro', description: result.error, variant: 'destructive' });
         } else {
             toast({ title: 'Sucesso!', description: result.message });
             onUploadSuccess();
+            setIsOpen(false);
         }
         setLoading(false);
-    }
+    };
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                {children}
-            </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Alterar Imagem de {imageType === 'seal_url' ? 'Selo' : 'Capa'}</DialogTitle>
-                    <DialogDescription>
-                        Selecione uma nova imagem para a sua confraria. A imagem antiga será substituída.
-                    </DialogDescription>
+                    <DialogTitle className="font-headline text-2xl">Alterar Imagem do Selo</DialogTitle>
+                    <DialogDescription>Selecione uma nova imagem para o selo. A imagem antiga será substituída.</DialogDescription>
                 </DialogHeader>
-                <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <input type="hidden" name="confraria_id" value={confrariaId} />
-                    <input type="hidden" name="type" value={imageType} />
-                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-md object-cover border" />}
+                    <input type="hidden" name="type" value="seal_url" />
+                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-full object-cover border bg-muted" />}
                     <div className="space-y-2">
-                        <label htmlFor="image-upload">Novo Ficheiro</label>
-                        <Input id="image-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                        <label htmlFor="seal-upload">Novo Ficheiro</label>
+                        <Input id="seal-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
                     </div>
                     <Button type="submit" disabled={loading} className="w-full">
-                        {loading && <Loader2 className="animate-spin" />}
-                        Guardar Imagem
+                        {loading && <Loader2 className="animate-spin mr-2" />}
+                        Guardar Selo
+                    </Button>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function CoverUploadModal({ confrariaId, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
+    const [loading, setLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setLoading(true);
+        const formData = new FormData(event.currentTarget);
+        const result = await updateConfrariaImage(formData);
+
+        if (result.error) {
+            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso!', description: result.message });
+            onUploadSuccess();
+            setIsOpen(false);
+        }
+        setLoading(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl">Alterar Imagem de Capa</DialogTitle>
+                    <DialogDescription>Selecione uma nova imagem de capa. A imagem antiga será substituída.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <input type="hidden" name="confraria_id" value={confrariaId} />
+                    <input type="hidden" name="type" value="cover_url" />
+                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={400} height={100} className="rounded-md object-cover border w-full aspect-video" />}
+                    <div className="space-y-2">
+                        <label htmlFor="cover-upload">Novo Ficheiro</label>
+                        <Input id="cover-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                    </div>
+                    <Button type="submit" disabled={loading} className="w-full">
+                        {loading && <Loader2 className="animate-spin mr-2" />}
+                        Guardar Capa
                     </Button>
                 </form>
             </DialogContent>
@@ -204,16 +247,15 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                  {confraria.is_responsible && (
                     <div className="absolute top-4 right-4">
-                        <ImageUploadModal 
+                         <CoverUploadModal
                             confrariaId={confraria.id}
-                            imageType="cover_url"
                             currentImageUrl={confraria.cover_url}
                             onUploadSuccess={onUploadSuccess}
                         >
                             <Button>
                                 <Camera className="mr-2 h-4 w-4"/> Alterar Capa
                             </Button>
-                        </ImageUploadModal>
+                        </CoverUploadModal>
                     </div>
                  )}
             </div>
@@ -231,16 +273,15 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                 data-ai-hint={confraria.sealHint}
                             />
                             {confraria.is_responsible && (
-                               <ImageUploadModal 
+                                <SealUploadModal
                                     confrariaId={confraria.id}
-                                    imageType="seal_url"
                                     currentImageUrl={confraria.sealUrl}
                                     onUploadSuccess={onUploadSuccess}
                                 >
-                                    <Button size="icon" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
+                                    <Button size="icon" variant="secondary" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
                                         <Camera className="h-5 w-5"/>
                                     </Button>
-                                </ImageUploadModal>
+                                </SealUploadModal>
                             )}
                         </div>
                         <div className="text-center md:text-left flex-grow">
@@ -472,3 +513,4 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
     );
 }
 
+    

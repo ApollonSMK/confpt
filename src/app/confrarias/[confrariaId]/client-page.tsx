@@ -172,10 +172,6 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                     <BookOpen className="h-4 w-4" />
                                     <span>{confraria.discoveries.length} {confraria.discoveries.length === 1 ? 'descoberta' : 'descobertas'}</span>
                                 </Badge>
-                                <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
-                                    <Users className="h-4 w-4" />
-                                    <span>{confraria.member_count} {confraria.member_count === 1 ? 'membro' : 'membros'}</span>
-                                </Badge>
                             </div>
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">

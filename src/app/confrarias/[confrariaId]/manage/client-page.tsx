@@ -8,11 +8,11 @@ import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Users, X, Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
-import { removeMember, addGalleryImage, deleteGalleryImage, deleteArticle } from './actions';
+import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
+import { addGalleryImage, deleteGalleryImage, deleteArticle } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { getUserRank, type UserRankInfo, regions, rankIcons } from '@/lib/data';
+import { regions } from '@/lib/data';
 import { EventForm } from './event-form';
 import { ArticleForm } from './article-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -29,14 +29,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 
-type Member = {
-    id: number; // This is the membership ID
-    user_id: string;
-    user_email: string;
-    user_full_name: string | null;
-    rank: UserRankInfo;
-}
-
 type ConfrariaDataType = {
     id: number;
     name: string;
@@ -48,7 +40,6 @@ type ConfrariaDataType = {
 
 export type ManageConfrariaPageProps = {
     confrariaData: ConfrariaDataType;
-    approvedMembers: Member[];
     events: Event[];
     articles: Article[];
     recipes: Recipe[];
@@ -57,7 +48,7 @@ export type ManageConfrariaPageProps = {
 }
 
 // Client component to handle state and interactions
-export function ClientManagePage({ confrariaData, approvedMembers, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
+export function ClientManagePage({ confrariaData, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
@@ -69,7 +60,6 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
-    const [isRemovingMember, setIsRemovingMember] = useState<number | null>(null);
     const [isDeletingArticle, setIsDeletingArticle] = useState<number | null>(null);
     
     const handleEditEventClick = (event: Event) => {
@@ -122,23 +112,6 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
         router.refresh();
     };
     
-    const handleRemoveMember = async (membershipId: number, memberName: string) => {
-        setIsRemovingMember(membershipId);
-        const formData = new FormData();
-        formData.append('membershipId', String(membershipId));
-        formData.append('confrariaId', String(confrariaData.id));
-
-        const result = await removeMember(formData);
-
-        if (result.error) {
-            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Sucesso', description: `O confrade ${memberName} foi removido.` });
-            router.refresh();
-        }
-        setIsRemovingMember(null);
-    };
-    
     const handleDeleteGalleryImage = async (id: number) => {
          const result = await deleteGalleryImage(id, confrariaData.id);
          if (result.error) {
@@ -178,14 +151,9 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
             </div>
             
             <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
                     <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
-                    <TabsTrigger value="members">
-                        <Users className="mr-2 h-4 w-4"/>
-                        Membros
-                            {approvedMembers.length > 0 && <Badge className="ml-2">{approvedMembers.length}</Badge>}
-                    </TabsTrigger>
                     <TabsTrigger value="events">
                         <Calendar className="mr-2 h-4 w-4"/>
                         Eventos
@@ -221,73 +189,6 @@ export function ClientManagePage({ confrariaData, approvedMembers, events, artic
                     </TabContentCard>
                 </TabsContent>
 
-                <TabsContent value="members" className="mt-6">
-                    <TabContentCard 
-                        title="Gestão de Membros" 
-                        description="Veja todos os membros, altere cargos ou remova membros." 
-                        icon={Users}
-                        badgeText={approvedMembers.length > 0 ? `${approvedMembers.length} membro(s)` : undefined}
-                    >
-                        {approvedMembers.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Confrade</TableHead>
-                                        <TableHead>Nível</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {approvedMembers.map((member) => {
-                                            const RankIcon = rankIcons[member.rank.rankIconName];
-                                            return (
-                                        <TableRow key={member.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="font-bold">{member.user_full_name || 'Nome não definido'}</div>
-                                                <div className="text-xs text-muted-foreground">{member.user_email}</div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="flex items-center gap-2 w-fit">
-                                                    <RankIcon className="h-4 w-4 text-primary" />
-                                                    <span>{member.rank.rankName}</span>
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                            <Button variant="destructive" size="icon" disabled={isRemovingMember === member.id}>
-                                                            {isRemovingMember === member.id ? <Loader2 className="animate-spin"/> : <Trash2 />}
-                                                            </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                        <AlertDialogTitle>Expulsar Confrade?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Tem a certeza que deseja remover <strong>{member.user_full_name || member.user_email}</strong> da confraria? Esta ação é irreversível.
-                                                        </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleRemoveMember(member.id, member.user_full_name || member.user_email)} className="bg-destructive hover:bg-destructive/90">
-                                                            Sim, Remover
-                                                        </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <p className="font-semibold text-lg">Ainda não há membros.</p>
-                                <p>Aprove os pedidos de adesão para começar a formar a sua irmandade.</p>
-                            </div>
-                        )}
-                    </TabContentCard>
-                </TabsContent>
-                
                 <TabsContent value="events" className="mt-6">
                     <TabContentCard 
                         title="Gestão de Eventos" 

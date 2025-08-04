@@ -335,38 +335,6 @@ export async function deleteArticle(articleId: number, confrariaId: number) {
     return { success: true };
 }
 
-
-export async function removeMember(formData: FormData) {
-    'use server';
-    const supabase = createServiceRoleClient(); // Use service client for elevated privileges
-    const serverClient = createServerClient();
-
-    const membershipId = Number(formData.get('membershipId'));
-    const confrariaId = Number(formData.get('confrariaId'));
-    
-    if (!membershipId || !confrariaId) {
-        return { error: 'Dados inválidos.' };
-    }
-    
-    await checkPermissions(confrariaId, serverClient);
-    
-    const { error } = await supabase
-        .from('confraria_members')
-        .delete()
-        .eq('id', membershipId);
-        
-    if (error) {
-        console.error('Error removing member:', error);
-        return { error: 'Erro ao remover membro.' };
-    }
-    
-    revalidatePath(`/confrarias/${confrariaId}`);
-    revalidatePath(`/confrarias/${confrariaId}/manage`);
-
-    return { success: true, message: 'Membro removido com sucesso.' };
-}
-
-
 export async function upsertRecipe(formData: FormData) {
     'use server';
     const supabase = createServerClient();

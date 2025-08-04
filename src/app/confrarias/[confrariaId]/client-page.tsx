@@ -123,7 +123,7 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     )
 }
 
-function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuccess }: { confrariaId: number, imageType: 'seal_url' | 'cover_url', currentImageUrl?: string, onUploadSuccess: () => void }) {
+function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, imageType: 'seal_url' | 'cover_url', currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
@@ -132,7 +132,6 @@ function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuc
         event.preventDefault();
         setLoading(true);
         const formData = new FormData(event.currentTarget);
-        formData.append('type', imageType);
         
         const result = await updateConfrariaImage(formData);
 
@@ -146,38 +145,40 @@ function ImageUploadModal({ confrariaId, imageType, currentImageUrl, onUploadSuc
     }
 
     return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">Alterar Imagem de {imageType === 'seal_url' ? 'Selo' : 'Capa'}</DialogTitle>
-                <DialogDescription>
-                    Selecione uma nova imagem para a sua confraria. A imagem antiga será substituída.
-                </DialogDescription>
-            </DialogHeader>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                <input type="hidden" name="confraria_id" value={confrariaId} />
-                {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-md object-cover border" />}
-                <div className="space-y-2">
-                    <label htmlFor="image-upload">Novo Ficheiro</label>
-                    <Input id="image-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
-                </div>
-                <Button type="submit" disabled={loading} className="w-full">
-                    {loading && <Loader2 className="animate-spin" />}
-                    Guardar Imagem
-                </Button>
-            </form>
-        </DialogContent>
+        <Dialog>
+            <DialogTrigger asChild>
+                {children}
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl">Alterar Imagem de {imageType === 'seal_url' ? 'Selo' : 'Capa'}</DialogTitle>
+                    <DialogDescription>
+                        Selecione uma nova imagem para a sua confraria. A imagem antiga será substituída.
+                    </DialogDescription>
+                </DialogHeader>
+                <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                    <input type="hidden" name="confraria_id" value={confrariaId} />
+                    <input type="hidden" name="type" value={imageType} />
+                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-md object-cover border" />}
+                    <div className="space-y-2">
+                        <label htmlFor="image-upload">Novo Ficheiro</label>
+                        <Input id="image-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                    </div>
+                    <Button type="submit" disabled={loading} className="w-full">
+                        {loading && <Loader2 className="animate-spin" />}
+                        Guardar Imagem
+                    </Button>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 
 export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProps) {
     const router = useRouter();
-    const [isSealModalOpen, setSealModalOpen] = useState(false);
-    const [isCoverModalOpen, setCoverModalOpen] = useState(false);
 
     const onUploadSuccess = () => {
-        setSealModalOpen(false);
-        setCoverModalOpen(false);
         router.refresh();
     }
     
@@ -203,19 +204,16 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                  {confraria.is_responsible && (
                     <div className="absolute top-4 right-4">
-                         <Dialog open={isCoverModalOpen} onOpenChange={setCoverModalOpen}>
-                            <DialogTrigger asChild>
-                                 <Button>
-                                    <Camera className="mr-2 h-4 w-4"/> Alterar Capa
-                                </Button>
-                            </DialogTrigger>
-                            <ImageUploadModal 
-                                confrariaId={confraria.id}
-                                imageType="cover_url"
-                                currentImageUrl={confraria.cover_url}
-                                onUploadSuccess={onUploadSuccess}
-                            />
-                        </Dialog>
+                        <ImageUploadModal 
+                            confrariaId={confraria.id}
+                            imageType="cover_url"
+                            currentImageUrl={confraria.cover_url}
+                            onUploadSuccess={onUploadSuccess}
+                        >
+                            <Button>
+                                <Camera className="mr-2 h-4 w-4"/> Alterar Capa
+                            </Button>
+                        </ImageUploadModal>
                     </div>
                  )}
             </div>
@@ -233,19 +231,16 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                 data-ai-hint={confraria.sealHint}
                             />
                             {confraria.is_responsible && (
-                                <Dialog open={isSealModalOpen} onOpenChange={setSealModalOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button size="icon" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
-                                            <Camera className="h-5 w-5"/>
-                                        </Button>
-                                    </DialogTrigger>
-                                     <ImageUploadModal 
-                                        confrariaId={confraria.id}
-                                        imageType="seal_url"
-                                        currentImageUrl={confraria.sealUrl}
-                                        onUploadSuccess={onUploadSuccess}
-                                    />
-                                </Dialog>
+                               <ImageUploadModal 
+                                    confrariaId={confraria.id}
+                                    imageType="seal_url"
+                                    currentImageUrl={confraria.sealUrl}
+                                    onUploadSuccess={onUploadSuccess}
+                                >
+                                    <Button size="icon" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
+                                        <Camera className="h-5 w-5"/>
+                                    </Button>
+                                </ImageUploadModal>
                             )}
                         </div>
                         <div className="text-center md:text-left flex-grow">
@@ -476,3 +471,4 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
         </div>
     );
 }
+

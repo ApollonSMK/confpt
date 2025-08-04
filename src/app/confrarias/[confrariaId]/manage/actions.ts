@@ -224,8 +224,6 @@ export async function upsertEvent(formData: FormData) {
 
 export async function upsertArticle(formData: FormData) {
     'use server';
-
-    const supabaseService = createServiceRoleClient();
     
     const values = {
         id: formData.get('id') ? Number(formData.get('id')) : undefined,
@@ -239,13 +237,15 @@ export async function upsertArticle(formData: FormData) {
 
     const parsedData = articleSchema.safeParse(values);
     if (!parsedData.success) {
-        console.error('Article validation error', parsedData.error);
+        console.error('Article validation error', parsedData.error.flatten());
         return { error: 'Dados do artigo inválidos.' };
     }
 
     const { id, confraria_id, author_id, title, content, image, status } = parsedData.data;
 
     await checkPermissions(confraria_id);
+    
+    const supabaseService = createServiceRoleClient();
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
 
@@ -283,17 +283,13 @@ export async function upsertArticle(formData: FormData) {
         slug: id ? undefined : slug, // only set slug on creation
         image_url: imageUrl,
         image_hint: 'article cover',
-        published_at: status === 'published' && !id ? new Date().toISOString() : undefined, // set publish date only on first publish
+        published_at: undefined as (string | undefined),
     };
     
-    // Don't overwrite published_at if article is already published and we're just saving a draft
-    if (id && status === 'published') {
-        const { data: existingArticle } = await supabaseService.from('articles').select('published_at').eq('id', id).single();
-        if (!existingArticle?.published_at) {
-            articleData.published_at = new Date().toISOString();
-        } else {
-             delete (articleData as any).published_at;
-        }
+    const existingArticle = id ? await supabaseService.from('articles').select('published_at').eq('id', id).single() : null;
+    
+    if (status === 'published' && !existingArticle?.data?.published_at) {
+        articleData.published_at = new Date().toISOString();
     }
 
 
@@ -400,7 +396,7 @@ export async function upsertRecipe(formData: FormData) {
         slug: id ? undefined : slug,
         image_url: imageUrl,
         image_hint: 'recipe photo',
-        published_at: status === 'published' && !id ? new Date().toISOString() : undefined,
+        published_at: undefined as (string | undefined),
     };
     
     let error;
@@ -490,7 +486,7 @@ export async function updateConfrariaImage(formData: FormData) {
     });
 
     if (!parsedData.success || !parsedData.data.image || parsedData.data.image.size === 0) {
-        return { error: "Dados inválidos." };
+        return { error: "Dados inválidos ou imagem em falta." };
     }
     
     const { confraria_id, image, type } = parsedData.data;
@@ -506,7 +502,7 @@ export async function updateConfrariaImage(formData: FormData) {
         .from('public-images')
         .upload(fileName, image, {
             cacheControl: '3600',
-            upsert: true, // Overwrite if exists
+            upsert: true, // Overwrite if exists for the same path
         });
 
     if (uploadError) {
@@ -531,3 +527,4 @@ export async function updateConfrariaImage(formData: FormData) {
 
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
+

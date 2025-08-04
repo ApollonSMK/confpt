@@ -202,7 +202,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                 />
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                  {confraria.is_responsible && (
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-4 right-4">
                          <Dialog open={isCoverModalOpen} onOpenChange={setCoverModalOpen}>
                             <DialogTrigger asChild>
                                  <Button>
@@ -235,8 +235,8 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                             {confraria.is_responsible && (
                                 <Dialog open={isSealModalOpen} onOpenChange={setSealModalOpen}>
                                     <DialogTrigger asChild>
-                                        <Button size="icon" className="absolute bottom-0 right-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -mt-16">
-                                            <Camera/>
+                                        <Button size="icon" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
+                                            <Camera className="h-5 w-5"/>
                                         </Button>
                                     </DialogTrigger>
                                      <ImageUploadModal 

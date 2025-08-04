@@ -130,7 +130,6 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 
 
 export async function upsertEvent(formData: FormData) {
-    const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
 
     const values = {
@@ -226,7 +225,6 @@ export async function upsertEvent(formData: FormData) {
 export async function upsertArticle(formData: FormData) {
     'use server';
 
-    const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
     
     const values = {
@@ -345,7 +343,6 @@ export async function deleteArticle(articleId: number, confrariaId: number) {
 
 export async function upsertRecipe(formData: FormData) {
     'use server';
-    const supabase = createServerClient();
     const supabaseService = createServiceRoleClient();
 
     const values = {

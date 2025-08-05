@@ -258,7 +258,6 @@ function CoverUploadModal({ confrariaId, onUploadSuccess, children }: { confrari
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -284,7 +283,7 @@ function CoverUploadModal({ confrariaId, onUploadSuccess, children }: { confrari
                     <DialogTitle className="font-headline text-2xl">Alterar Imagem de Capa</DialogTitle>
                     <DialogDescription>Selecione uma nova imagem de capa. A imagem antiga será substituída.</DialogDescription>
                 </DialogHeader>
-                <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <input type="hidden" name="confraria_id" value={confrariaId} />
                     <input type="hidden" name="type" value="cover_url" />
                     <div className="space-y-2">

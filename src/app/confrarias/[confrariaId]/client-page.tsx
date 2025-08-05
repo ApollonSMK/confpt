@@ -11,13 +11,17 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { User } from '@supabase/supabase-js';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { updateConfrariaImage } from './manage/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import Cropper from 'react-easy-crop';
+import type { Point, Area } from 'react-easy-crop';
+import { getCroppedImg } from '@/lib/crop-image';
+import { Slider } from '@/components/ui/slider';
 
 
 type ConfrariaDetails = Confraria & {
@@ -123,54 +127,134 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
     )
 }
 
-function SealUploadModal({ confrariaId, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
+function SealUploadModal({ confrariaId, onUploadSuccess, children }: { confrariaId: number, onUploadSuccess: () => void, children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
+    const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const { toast } = useToast();
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setLoading(true);
-        const formData = new FormData(event.currentTarget);
-        const result = await updateConfrariaImage(formData);
+    const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
 
-        if (result.error) {
-            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Sucesso!', description: result.message });
-            onUploadSuccess();
-            setIsOpen(false);
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                setImageSrc(reader.result as string);
+            });
+            reader.readAsDataURL(file);
         }
-        setLoading(false);
     };
 
+    const handleSaveCrop = async () => {
+        if (!imageSrc || !croppedAreaPixels) return;
+
+        setLoading(true);
+        try {
+            const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+            if (!croppedImageBlob) {
+                 toast({ title: 'Erro', description: 'Não foi possível cortar a imagem.', variant: 'destructive' });
+                 setLoading(false);
+                 return;
+            }
+            
+            const formData = new FormData();
+            formData.append('confraria_id', String(confrariaId));
+            formData.append('type', 'seal_url');
+            formData.append('image', new File([croppedImageBlob], 'selo.webp', { type: 'image/webp' }));
+
+            const result = await updateConfrariaImage(formData);
+
+            if (result.error) {
+                toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Sucesso!', description: result.message });
+                onUploadSuccess();
+                closeModal();
+            }
+        } catch (e) {
+            console.error(e);
+            toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const closeModal = () => {
+        setIsOpen(false);
+        setImageSrc(null);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) closeModal(); else setIsOpen(true); }}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent>
+            <DialogContent className={imageSrc ? 'sm:max-w-[450px]' : 'sm:max-w-[425px]'}>
                 <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Alterar Imagem do Selo</DialogTitle>
-                    <DialogDescription>Selecione uma nova imagem para o selo. A imagem antiga será substituída.</DialogDescription>
+                    <DialogTitle className="font-headline text-2xl">Atualizar Selo</DialogTitle>
+                    <DialogDescription>{imageSrc ? 'Ajuste a imagem para caber no círculo.' : 'Selecione uma nova imagem para o selo da confraria.'}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="hidden" name="confraria_id" value={confrariaId} />
-                    <input type="hidden" name="type" value="seal_url" />
-                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={100} height={100} className="rounded-full object-cover border bg-muted" />}
-                    <div className="space-y-2">
-                        <label htmlFor="seal-upload">Novo Ficheiro</label>
-                        <Input id="seal-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                {imageSrc ? (
+                    <div className="space-y-4">
+                        <div className="relative h-64 w-full bg-muted rounded-md">
+                             <Cropper
+                                image={imageSrc}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={onCropComplete}
+                                cropShape="round"
+                                showGrid={false}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                             <label htmlFor="zoom-slider">Zoom</label>
+                             <Slider
+                                id="zoom-slider"
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                value={[zoom]}
+                                onValueChange={(val) => setZoom(val[0])}
+                             />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setImageSrc(null)} disabled={loading}>Cancelar</Button>
+                            <Button onClick={handleSaveCrop} disabled={loading}>
+                                {loading && <Loader2 className="animate-spin mr-2"/>}
+                                Guardar Selo
+                            </Button>
+                        </div>
                     </div>
-                    <Button type="submit" disabled={loading} className="w-full">
-                        {loading && <Loader2 className="animate-spin mr-2" />}
-                        Guardar Selo
-                    </Button>
-                </form>
+                ) : (
+                    <div className="py-4">
+                        <Button onClick={() => inputRef.current?.click()} className="w-full">
+                           <Camera className="mr-2"/> Selecionar Imagem
+                        </Button>
+                        <input
+                            type="file"
+                            ref={inputRef}
+                            onChange={handleFileChange}
+                            accept="image/png, image/jpeg, image/webp"
+                            className="hidden"
+                        />
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );
 }
 
-function CoverUploadModal({ confrariaId, currentImageUrl, onUploadSuccess, children }: { confrariaId: number, currentImageUrl?: string | null, onUploadSuccess: () => void, children: React.ReactNode }) {
+function CoverUploadModal({ confrariaId, onUploadSuccess, children }: { confrariaId: number, onUploadSuccess: () => void, children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
@@ -202,7 +286,6 @@ function CoverUploadModal({ confrariaId, currentImageUrl, onUploadSuccess, child
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input type="hidden" name="confraria_id" value={confrariaId} />
                     <input type="hidden" name="type" value="cover_url" />
-                    {currentImageUrl && <Image src={currentImageUrl} alt="Imagem atual" width={400} height={100} className="rounded-md object-cover border w-full aspect-video" />}
                     <div className="space-y-2">
                         <label htmlFor="cover-upload">Novo Ficheiro</label>
                         <Input id="cover-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
@@ -235,7 +318,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                     </Link>
                 </Button>
             </div>
-             <div className="relative h-48 md:h-64 w-full mb-[-4rem] md:mb-[-6rem] group">
+             <div className="relative h-48 md:h-64 w-full group">
                 <Image 
                     src={confraria.cover_url ?? 'https://placehold.co/1200x300.png'}
                     alt={`Banner da ${confraria.name}`}
@@ -246,10 +329,9 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                 />
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                  {confraria.is_responsible && (
-                    <div className="absolute top-4 right-4">
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                          <CoverUploadModal
                             confrariaId={confraria.id}
-                            currentImageUrl={confraria.cover_url}
                             onUploadSuccess={onUploadSuccess}
                         >
                             <Button>
@@ -260,27 +342,28 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                  )}
             </div>
 
-            <div className="container mx-auto px-4 py-8 md:py-12 relative">
+            <div className="container mx-auto px-4 py-8 md:py-12 relative -mt-16 md:-mt-24">
                 <section className="bg-card border rounded-lg p-6 md:p-8 mb-12 shadow-lg">
                     <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                        <div className="relative group">
+                        <div className="relative group shrink-0">
                             <Image
                                 src={confraria.sealUrl}
                                 alt={`Selo da ${confraria.name}`}
                                 width={150}
                                 height={150}
-                                className="rounded-full bg-muted p-3 shadow-lg -mt-16 md:-ml-16 md:-mt-24"
+                                className="rounded-full bg-muted p-2 shadow-lg border-4 border-background"
                                 data-ai-hint={confraria.sealHint}
                             />
                             {confraria.is_responsible && (
                                 <SealUploadModal
                                     confrariaId={confraria.id}
-                                    currentImageUrl={confraria.sealUrl}
                                     onUploadSuccess={onUploadSuccess}
                                 >
-                                    <Button size="icon" variant="secondary" className="absolute bottom-4 right-0 rounded-full h-10 w-10">
-                                        <Camera className="h-5 w-5"/>
-                                    </Button>
+                                    <div className="absolute bottom-2 right-2">
+                                        <Button size="icon" variant="secondary" className="rounded-full h-10 w-10">
+                                            <Camera className="h-5 w-5"/>
+                                        </Button>
+                                    </div>
                                 </SealUploadModal>
                             )}
                         </div>

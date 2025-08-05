@@ -496,21 +496,21 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     return { success: true, message: 'Imagem removida.' };
 }
 
-
 export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_url' | 'cover_url', newUrl: string) {
     'use server';
 
-    await checkPermissions(confrariaId);
+    // We use the normal server client, which has the user's session,
+    // to call the RPC function. The function itself will handle permissions.
+    const supabase = createServerClient();
+
+    const { error } = await supabase.rpc('update_confraria_image_url', {
+        p_confraria_id: confrariaId,
+        p_image_type: type,
+        p_new_url: newUrl,
+    });
     
-    const supabaseService = createServiceRoleClient();
-
-    const { error: dbError } = await supabaseService
-        .from('confrarias')
-        .update({ [type]: newUrl })
-        .eq('id', confrariaId);
-
-    if (dbError) {
-        console.error(`[ERROR] Supabase DB update error for ${type}:`, dbError);
+    if (error) {
+        console.error(`[ERROR] Supabase RPC error for ${type}:`, error);
         return { error: 'Não foi possível atualizar o URL da imagem na base de dados.' };
     }
 
@@ -519,5 +519,3 @@ export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_u
 
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
-
-    

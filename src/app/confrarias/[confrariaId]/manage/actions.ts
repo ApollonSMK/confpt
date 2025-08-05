@@ -477,13 +477,6 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 export async function updateConfrariaImage(formData: FormData) {
     'use server';
 
-    const supabase = createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return { error: "Utilizador não autenticado." };
-    }
-
     const confraria_id_raw = formData.get('confraria_id');
     const type_raw = formData.get('type');
     const image_raw = formData.get('image');
@@ -496,29 +489,13 @@ export async function updateConfrariaImage(formData: FormData) {
     const type = type_raw as 'seal_url' | 'cover_url';
     const image = image_raw;
     
-    const supabaseService = createServiceRoleClient();
-
-    // Check permissions
-    const { data: confraria, error: confrariaError } = await supabaseService
-        .from('confrarias')
-        .select('responsible_user_id')
-        .eq('id', confraria_id)
-        .single();
+    await checkPermissions(confraria_id);
     
-    if (confrariaError || !confraria) {
-        return { error: "Confraria não encontrada." };
-    }
-
-    const isAdmin = user.email === process.env.ADMIN_EMAIL;
-    const isResponsible = confraria.responsible_user_id === user.id;
-
-    if (!isAdmin && !isResponsible) {
-        return { error: "Não autorizado." };
-    }
+    const supabaseService = createServiceRoleClient();
     
     // --- Permission granted, proceed with upload ---
 
-    const fileExtension = image.name.split('.').pop();
+    const fileExtension = image.name.split('.').pop() || 'webp';
     const fileName = `confrarias/${confraria_id}/${type === 'seal_url' ? 'selo' : 'capa'}-${nanoid()}.${fileExtension}`;
     
     const { error: uploadError } = await supabaseService.storage

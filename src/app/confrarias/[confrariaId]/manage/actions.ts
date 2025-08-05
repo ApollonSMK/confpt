@@ -70,7 +70,7 @@ async function checkPermissions(confrariaId: number) {
         .from('confrarias')
         .select('responsible_user_id')
         .eq('id', confrariaId)
-        .maybeSingle(); 
+        .single(); 
     
     if (error) {
         console.error("Permission check error:", error);
@@ -477,6 +477,13 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 export async function updateConfrariaImage(formData: FormData) {
     'use server';
 
+    const supabase = createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Utilizador não autenticado." };
+    }
+
     const confraria_id_raw = formData.get('confraria_id');
     const type_raw = formData.get('type');
     const image_raw = formData.get('image');
@@ -488,11 +495,29 @@ export async function updateConfrariaImage(formData: FormData) {
     const confraria_id = Number(confraria_id_raw);
     const type = type_raw as 'seal_url' | 'cover_url';
     const image = image_raw;
-
-    await checkPermissions(confraria_id);
     
     const supabaseService = createServiceRoleClient();
+
+    // Check permissions
+    const { data: confraria, error: confrariaError } = await supabaseService
+        .from('confrarias')
+        .select('responsible_user_id')
+        .eq('id', confraria_id)
+        .single();
     
+    if (confrariaError || !confraria) {
+        return { error: "Confraria não encontrada." };
+    }
+
+    const isAdmin = user.email === process.env.ADMIN_EMAIL;
+    const isResponsible = confraria.responsible_user_id === user.id;
+
+    if (!isAdmin && !isResponsible) {
+        return { error: "Não autorizado." };
+    }
+    
+    // --- Permission granted, proceed with upload ---
+
     const fileExtension = image.name.split('.').pop();
     const fileName = `confrarias/${confraria_id}/${type === 'seal_url' ? 'selo' : 'capa'}-${nanoid()}.${fileExtension}`;
     

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Shuffle, X, Filter as FilterIcon } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { type Discovery, type DiscoveryType } from '@/lib/data';
+import { type Discovery, type DiscoveryType, portugalDistricts } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,8 @@ export function DiscoveryFilter({ districts, discoveryTypes, allDiscoveries }: D
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [district, setDistrict] = useState(searchParams.get('district') || 'all');
+  const [municipality, setMunicipality] = useState(searchParams.get('municipality') || 'all');
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
   const [type, setType] = useState(searchParams.get('type') || 'all');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -33,8 +35,16 @@ export function DiscoveryFilter({ districts, discoveryTypes, allDiscoveries }: D
     setIsMounted(true);
     // When params change in URL, update the state
     setSearchTerm(searchParams.get('search') || '');
-    setDistrict(searchParams.get('district') || 'all');
+    const currentDistrict = searchParams.get('district') || 'all';
+    setDistrict(currentDistrict);
+    setMunicipality(searchParams.get('municipality') || 'all');
     setType(searchParams.get('type') || 'all');
+    
+    if (currentDistrict !== 'all' && portugalDistricts[currentDistrict as keyof typeof portugalDistricts]) {
+        setMunicipalities(portugalDistricts[currentDistrict as keyof typeof portugalDistricts]);
+    } else {
+        setMunicipalities([]);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -44,34 +54,39 @@ export function DiscoveryFilter({ districts, discoveryTypes, allDiscoveries }: D
     
     // This effect runs debounced to avoid too many redirects
     const timeoutId = setTimeout(() => {
-        if (searchTerm) {
-            params.set('search', searchTerm);
-        } else {
-            params.delete('search');
-        }
-        if (district && district !== 'all') {
-            params.set('district', district);
-        } else {
-            params.delete('district');
-        }
-        if (type && type !== 'all') {
-            params.set('type', type);
-        } else {
-            params.delete('type');
-        }
+        if (searchTerm) params.set('search', searchTerm);
+        else params.delete('search');
         
-        // Only push if the params have changed
+        if (district && district !== 'all') params.set('district', district);
+        else params.delete('district');
+        
+        if (municipality && municipality !== 'all') params.set('municipality', municipality);
+        else params.delete('municipality');
+
+        if (type && type !== 'all') params.set('type', type);
+        else params.delete('type');
+        
         if (params.toString() !== searchParams.toString()){
              router.push(`${pathname}?${params.toString()}`);
         }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, district, type, router, pathname, isMounted, searchParams]);
+  }, [searchTerm, district, municipality, type, router, pathname, isMounted, searchParams]);
+
+  useEffect(() => {
+    if (district !== 'all' && portugalDistricts[district as keyof typeof portugalDistricts]) {
+        setMunicipalities(portugalDistricts[district as keyof typeof portugalDistricts]);
+    } else {
+        setMunicipalities([]);
+    }
+    setMunicipality('all'); // Reset municipality when district changes
+  }, [district]);
 
   const handleClear = () => {
     setSearchTerm('');
     setDistrict('all');
+    setMunicipality('all');
     setType('all');
     router.push(pathname);
   };
@@ -121,6 +136,18 @@ export function DiscoveryFilter({ districts, discoveryTypes, allDiscoveries }: D
                     <SelectContent>
                     <SelectItem value="all">Todos os distritos</SelectItem>
                     {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium">Concelho</label>
+                <Select value={municipality} onValueChange={setMunicipality} disabled={!municipalities.length}>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Todos os concelhos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="all">Todos os concelhos</SelectItem>
+                    {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>

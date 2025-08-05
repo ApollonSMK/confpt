@@ -97,6 +97,7 @@ export default async function DiscoveriesPage({
   
   const searchTerm = searchParams?.search as string || '';
   const district = searchParams?.district as string || '';
+  const municipality = searchParams?.municipality as string || '';
   const type = searchParams?.type as string || '';
 
   let filteredDiscoveries = allDiscoveries;
@@ -109,6 +110,9 @@ export default async function DiscoveriesPage({
   }
   if (district) {
     filteredDiscoveries = filteredDiscoveries.filter(d => d.district === district);
+  }
+  if (municipality) {
+    filteredDiscoveries = filteredDiscoveries.filter(d => d.municipality === municipality);
   }
   if (type) {
     filteredDiscoveries = filteredDiscoveries.filter(d => d.type === type);

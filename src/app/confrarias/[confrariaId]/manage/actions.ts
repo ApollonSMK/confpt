@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { nanoid } from 'nanoid';
 
 const detailsFormSchema = z.object({
@@ -22,7 +22,7 @@ const eventFormSchema = z.object({
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   is_public: z.boolean().default(true),
   image: z.any().optional(), // for the file upload
 });
@@ -132,7 +132,7 @@ export async function upsertEvent(formData: FormData) {
         description: formData.get('description') as string,
         event_date: new Date(formData.get('event_date') as string),
         location: formData.get('location') as string,
-        region: formData.get('region') as any,
+        district: formData.get('district') as any,
         is_public: formData.get('is_public') === 'true',
         image: formData.get('image') as File,
     };
@@ -144,7 +144,7 @@ export async function upsertEvent(formData: FormData) {
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, region, image, is_public } = parsedData.data;
+    const { id, confraria_id, name, description, event_date, location, district, image, is_public } = parsedData.data;
 
     // Check permissions before upserting
     await checkPermissions(confraria_id);
@@ -181,10 +181,10 @@ export async function upsertEvent(formData: FormData) {
         description: description || null,
         event_date: event_date.toISOString(),
         location: location || null,
-        region,
+        district,
+        is_public,
         image_url: imageUrl || 'https://placehold.co/600x400.png',
         image_hint: 'event placeholder',
-        is_public,
     };
 
     let error;

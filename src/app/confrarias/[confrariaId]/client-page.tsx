@@ -15,13 +15,13 @@ import { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { updateConfrariaImage } from './manage/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/crop-image';
 import { Slider } from '@/components/ui/slider';
+import { updateConfrariaImage } from './manage/actions';
 
 
 type ConfrariaDetails = Confraria & {
@@ -254,53 +254,6 @@ function SealUploadModal({ confrariaId, onUploadSuccess, children }: { confraria
     );
 }
 
-function CoverUploadModal({ confrariaId, onUploadSuccess, children }: { confrariaId: number, onUploadSuccess: () => void, children: React.ReactNode }) {
-    const [loading, setLoading] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
-    const { toast } = useToast();
-
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setLoading(true);
-        const formData = new FormData(event.currentTarget);
-        const result = await updateConfrariaImage(formData);
-
-        if (result.error) {
-            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Sucesso!', description: result.message });
-            onUploadSuccess();
-            setIsOpen(false);
-        }
-        setLoading(false);
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Alterar Imagem de Capa</DialogTitle>
-                    <DialogDescription>Selecione uma nova imagem de capa. A imagem antiga será substituída.</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="hidden" name="confraria_id" value={confrariaId} />
-                    <input type="hidden" name="type" value="cover_url" />
-                    <div className="space-y-2">
-                        <label htmlFor="cover-upload">Novo Ficheiro</label>
-                        <Input id="cover-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
-                    </div>
-                    <Button type="submit" disabled={loading} className="w-full">
-                        {loading && <Loader2 className="animate-spin mr-2" />}
-                        Guardar Capa
-                    </Button>
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-
 export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProps) {
     const router = useRouter();
 
@@ -330,14 +283,11 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                  {confraria.is_responsible && (
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                         <CoverUploadModal
-                            confrariaId={confraria.id}
-                            onUploadSuccess={onUploadSuccess}
-                        >
-                            <Button>
+                         <Button asChild>
+                            <Link href={`/confrarias/${confraria.id}/manage?tab=images`}>
                                 <Camera className="mr-2 h-4 w-4"/> Alterar Capa
-                            </Button>
-                        </CoverUploadModal>
+                            </Link>
+                        </Button>
                     </div>
                  )}
             </div>

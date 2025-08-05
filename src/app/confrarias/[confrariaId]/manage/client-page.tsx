@@ -1,15 +1,14 @@
 
-
 'use client';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { notFound, redirect, useRouter } from 'next/navigation';
+import { notFound, redirect, useRouter, useSearchParams } from 'next/navigation';
 import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle } from './actions';
+import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
+import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImage } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { regions } from '@/lib/data';
@@ -19,7 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import type { Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -27,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { RecipeForm } from './recipe-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { SealUploadModal } from './image-upload-modals';
 
 
 type ConfrariaDataType = {
@@ -36,6 +36,8 @@ type ConfrariaDataType = {
     history: string;
     founders: string;
     region: (typeof regions)[number];
+    seal_url: string;
+    cover_url: string;
 }
 
 export type ManageConfrariaPageProps = {
@@ -50,6 +52,7 @@ export type ManageConfrariaPageProps = {
 // Client component to handle state and interactions
 export function ClientManagePage({ confrariaData, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
     const [isArticleDialogOpen, setArticleDialogOpen] = useState(false);
@@ -61,7 +64,14 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
     const [isDeletingArticle, setIsDeletingArticle] = useState<number | null>(null);
-    
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
+
+     useEffect(() => {
+        // Update URL when tab changes without reloading the page
+        const newUrl = `${window.location.pathname}?tab=${activeTab}`;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    }, [activeTab]);
+
     const handleEditEventClick = (event: Event) => {
         setSelectedEvent(event);
         setEventDialogOpen(true);
@@ -150,9 +160,10 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                 </p>
             </div>
             
-            <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Editar Detalhes</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-6">
+                    <TabsTrigger value="details"><PenSquare className="mr-2 h-4 w-4"/>Detalhes</TabsTrigger>
+                    <TabsTrigger value="images"><Camera className="mr-2 h-4 w-4"/>Imagens</TabsTrigger>
                     <TabsTrigger value="events">
                         <Calendar className="mr-2 h-4 w-4"/>
                         Eventos
@@ -178,6 +189,12 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                 <TabsContent value="details" className="mt-6">
                     <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
                         <ManageConfrariaForm confraria={confrariaData} />
+                    </TabContentCard>
+                </TabsContent>
+                
+                 <TabsContent value="images" className="mt-6">
+                    <TabContentCard title="Gerir Imagens" description="Altere o selo e a imagem de capa da sua confraria." icon={Camera}>
+                        <ImageForms confraria={confrariaData} />
                     </TabContentCard>
                 </TabsContent>
 
@@ -411,36 +428,36 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
 
 const TabContentCard = ({ title, description, children, icon: Icon, badgeText, actions }: { title: string, description: string, children: React.ReactNode, icon: React.ElementType, badgeText?: string, actions?: React.ReactNode }) => (
     <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-                 <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                    <div className={cn("p-2 bg-primary/10 rounded-lg", 
-                        title.includes("Pedidos") && "bg-yellow-400/10 text-yellow-600",
-                        title.includes("Eventos") && "bg-purple-400/10 text-purple-600",
-                        title.includes("Publicações") && "bg-green-400/10 text-green-600",
-                        title.includes("Detalhes") && "bg-orange-400/10 text-orange-600",
-                        title.includes("Galeria") && "bg-indigo-400/10 text-indigo-600",
-                        title.includes("Receitas") && "bg-pink-400/10 text-pink-600"
-                    )}>
-                        <Icon className={cn("h-7 w-7 text-primary",
-                           title.includes("Pedidos") && "text-yellow-600",
-                           title.includes("Eventos") && "text-purple-600",
-                           title.includes("Publicações") && "text-green-600",
-                           title.includes("Detalhes") && "text-orange-600",
-                           title.includes("Galeria") && "text-indigo-600",
-                           title.includes("Receitas") && "text-pink-600"
-                        )}/>
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+                 <div className={cn("hidden sm:flex p-2 bg-primary/10 rounded-lg mt-1", 
+                    title.includes("Pedidos") && "bg-yellow-400/10 text-yellow-600",
+                    title.includes("Eventos") && "bg-purple-400/10 text-purple-600",
+                    title.includes("Publicações") && "bg-green-400/10 text-green-600",
+                    title.includes("Detalhes") && "bg-orange-400/10 text-orange-600",
+                    title.includes("Imagens") && "bg-blue-400/10 text-blue-600",
+                    title.includes("Galeria") && "bg-indigo-400/10 text-indigo-600",
+                    title.includes("Receitas") && "bg-pink-400/10 text-pink-600"
+                )}>
+                    <Icon className={cn("h-7 w-7 text-primary",
+                        title.includes("Pedidos") && "text-yellow-600",
+                        title.includes("Eventos") && "text-purple-600",
+                        title.includes("Publicações") && "text-green-600",
+                        title.includes("Detalhes") && "text-orange-600",
+                        title.includes("Imagens") && "text-blue-600",
+                        title.includes("Galeria") && "text-indigo-600",
+                        title.includes("Receitas") && "text-pink-600"
+                    )}/>
+                </div>
+                <div>
+                    <div className="flex items-center gap-4">
+                        <CardTitle className="font-headline text-3xl">{title}</CardTitle>
+                        {badgeText && <Badge variant="destructive">{badgeText}</Badge>}
                     </div>
-                    <div>
-                        <div className="flex items-center gap-4">
-                           <span className="font-headline text-3xl">{title}</span>
-                           {badgeText && <Badge variant="destructive">{badgeText}</Badge>}
-                        </div>
-                        <CardDescription>{description}</CardDescription>
-                    </div>
-                </CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </div>
             </div>
-            <div className="flex items-center gap-4 pt-2">
+            <div className="flex items-center gap-4 pt-2 w-full md:w-auto">
                 {actions}
             </div>
         </CardHeader>
@@ -482,11 +499,73 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
                 <Textarea id="gallery-description" name="description" placeholder="Descreva a imagem ou o momento..."/>
             </div>
             <Button type="submit" disabled={loading} className="w-full">
-                {loading ? <Loader2 className="animate-spin" /> : <PlusCircle />}
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />}
                 Adicionar
             </Button>
         </form>
     )
 }
 
+const ImageForms = ({ confraria }: { confraria: ConfrariaDataType }) => {
+    const { toast } = useToast();
+    const router = useRouter();
+    const [loadingCover, setLoadingCover] = useState(false);
     
+    const onUploadSuccess = () => {
+        router.refresh();
+    };
+
+    const handleCoverSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setLoadingCover(true);
+        
+        const formData = new FormData(event.currentTarget);
+        const result = await updateConfrariaImage(formData);
+        
+        if (result.error) {
+            toast({ title: 'Erro ao Alterar Capa', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso!', description: 'A imagem de capa foi alterada.' });
+            onUploadSuccess();
+        }
+        
+        setLoadingCover(false);
+    };
+    
+    return (
+        <div className="grid md:grid-cols-2 gap-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-xl">Selo da Confraria</CardTitle>
+                    <CardDescription>A imagem redonda que representa a sua confraria. A imagem será cortada para um formato 1:1.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                    <Image src={confraria.seal_url} alt="Selo atual" width={120} height={120} className="rounded-full bg-muted p-1" />
+                    <SealUploadModal confrariaId={confraria.id} onUploadSuccess={onUploadSuccess}>
+                         <Button><Camera className="mr-2" />Alterar Selo</Button>
+                    </SealUploadModal>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-xl">Imagem de Capa</CardTitle>
+                    <CardDescription>A imagem de banner que aparece no topo do perfil público da sua confraria.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                    <div className="aspect-video w-full relative rounded-md overflow-hidden bg-muted">
+                        <Image src={confraria.cover_url} alt="Capa atual" layout="fill" objectFit="cover" />
+                    </div>
+                     <form onSubmit={handleCoverSubmit} className="w-full space-y-4">
+                        <input type="hidden" name="confraria_id" value={confraria.id} />
+                        <input type="hidden" name="type" value="cover_url" />
+                        <Input id="cover-upload" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                        <Button type="submit" disabled={loadingCover} className="w-full">
+                            {loadingCover ? <Loader2 className="animate-spin mr-2" /> : <Camera className="mr-2" />}
+                            Guardar Nova Capa
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
+    );
+};

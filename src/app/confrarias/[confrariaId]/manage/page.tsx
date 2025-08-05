@@ -51,6 +51,8 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             history: confrariaData.history ?? '',
             founders: confrariaData.founders ?? '',
             region: confrariaData.region,
+            seal_url: confrariaData.seal_url,
+            cover_url: confrariaData.cover_url ?? 'https://placehold.co/1200x300.png',
         },
         events: (events.data as Event[] || []),
         articles: (articles.data as Article[] || []),

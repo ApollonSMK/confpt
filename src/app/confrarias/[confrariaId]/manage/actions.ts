@@ -531,6 +531,8 @@ export async function updateConfrariaImage(formData: FormData) {
 
         if (dbError) {
             console.error(`[ERROR] Supabase DB update error for ${type}:`, dbError);
+            // Attempt to remove the orphaned file from storage
+            await supabaseService.storage.from('public-images').remove([fileName]);
             return { error: 'Não foi possível atualizar a imagem da confraria.' };
         }
 

@@ -503,7 +503,15 @@ export async function updateConfrariaImage(formData: FormData) {
         const supabaseService = createServiceRoleClient();
         
         const fileExtension = image.name.split('.').pop() || 'webp';
-        const fileName = `confrarias/${confraria_id}/${type === 'seal_url' ? 'selo' : 'capa'}-${nanoid()}.${fileExtension}`;
+        
+        // --- START OF THE FIX ---
+        // Create distinct paths for seal and cover images to avoid conflicts.
+        let pathPrefix = 'selo';
+        if (type === 'cover_url') {
+            pathPrefix = 'capa/capa'; // Use a "subdirectory" for covers
+        }
+        const fileName = `confrarias/${confraria_id}/${pathPrefix}-${nanoid()}.${fileExtension}`;
+        // --- END OF THE FIX ---
         
         console.log(`[LOG] Uploading to Supabase Storage at path: ${fileName}`);
 
@@ -551,3 +559,5 @@ export async function updateConfrariaImage(formData: FormData) {
         return { error: `Ocorreu um erro inesperado: ${e.message}` };
     }
 }
+
+    

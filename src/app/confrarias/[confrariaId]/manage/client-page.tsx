@@ -524,6 +524,13 @@ const ImageUploader = ({ confraria }: { confraria: ConfrariaDataType }) => {
 };
 
 const SealUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDataType, onUploadSuccess: () => void }) => {
+    const [isModalOpen, setModalOpen] = useState(false);
+    
+    const handleSuccess = () => {
+        setModalOpen(false);
+        onUploadSuccess();
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -532,11 +539,11 @@ const SealUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaData
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
                 <Image src={confraria.seal_url} alt="Selo atual" width={120} height={120} className="rounded-full bg-muted p-1" />
-                 <Dialog>
+                 <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild><Button><Camera className="mr-2" />Alterar Selo</Button></DialogTrigger>
                     <ImageCropModal 
                         confrariaId={confraria.id} 
-                        onUploadSuccess={onUploadSuccess} 
+                        onUploadSuccess={handleSuccess} 
                         imageType="seal_url" 
                         aspect={1}
                         cropShape="round"
@@ -549,6 +556,13 @@ const SealUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaData
 }
 
 const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDataType, onUploadSuccess: () => void }) => {
+    const [isModalOpen, setModalOpen] = useState(false);
+
+    const handleSuccess = () => {
+        setModalOpen(false);
+        onUploadSuccess();
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -559,11 +573,11 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
                 <div className="aspect-video w-full relative rounded-md overflow-hidden bg-muted">
                     <Image src={confraria.cover_url} alt="Capa atual" layout="fill" objectFit="cover" />
                 </div>
-                <Dialog>
+                <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild><Button><Camera className="mr-2" />Alterar Capa</Button></DialogTrigger>
                     <ImageCropModal 
                         confrariaId={confraria.id} 
-                        onUploadSuccess={onUploadSuccess} 
+                        onUploadSuccess={handleSuccess} 
                         imageType="cover_url" 
                         aspect={16 / 9}
                         cropShape="rect"
@@ -584,7 +598,6 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
     title: string;
 }) => {
     const [loading, setLoading] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
     const [imageSrc, setImageSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -630,18 +643,23 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
             } else {
                 toast({ title: 'Sucesso!', description: result.message });
                 onUploadSuccess();
-                closeModal();
             }
         } catch (e) {
             console.error(e);
             toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
         } finally {
             setLoading(false);
+            // Reset state for next use even on failure
+            if (!onUploadSuccess) {
+                 setImageSrc(null);
+                 setZoom(1);
+                 setCrop({ x: 0, y: 0 });
+            }
         }
     };
+    
 
-    const closeModal = () => {
-        setIsOpen(false);
+    const resetState = () => {
         setImageSrc(null);
         setZoom(1);
         setCrop({ x: 0, y: 0 });
@@ -680,7 +698,7 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
                          />
                     </div>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={() => setImageSrc(null)} disabled={loading}>Cancelar</Button>
+                        <Button variant="ghost" onClick={resetState} disabled={loading}>Cancelar</Button>
                         <Button onClick={handleSaveCrop} disabled={loading}>
                             {loading && <Loader2 className="animate-spin mr-2"/>}
                             Guardar
@@ -704,3 +722,6 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
         </DialogContent>
     )
 }
+
+
+    

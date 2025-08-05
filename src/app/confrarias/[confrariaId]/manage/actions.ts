@@ -497,61 +497,50 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 }
 
 
-export async function updateConfrariaImage(formData: FormData) {
+const imageUpdateSchema = z.object({
+  confraria_id: z.number(),
+  type: z.enum(['seal_url', 'cover_url']),
+  imageDataUrl: z.string().startsWith('data:image/'),
+});
+
+export async function updateConfrariaImage(values: z.infer<typeof imageUpdateSchema>) {
     'use server';
-    console.log('--- [updateConfrariaImage] Action Started ---');
 
     try {
-        const confraria_id_raw = formData.get('confraria_id');
-        const type_raw = formData.get('type');
-        const image_raw = formData.get('image');
-        
-        console.log(`[LOG] Raw form data: confraria_id='${confraria_id_raw}', type='${type_raw}', image provided='${!!image_raw}'`);
-
-        if (!confraria_id_raw || !type_raw || !image_raw || !(image_raw instanceof File) || image_raw.size === 0) {
-            console.error('[ERROR] Validation failed: Invalid form data or missing image.');
-            return { error: "Dados inválidos ou imagem em falta." };
+        const parsedData = imageUpdateSchema.safeParse(values);
+        if (!parsedData.success) {
+            console.error('[ERROR] Validation failed:', parsedData.error);
+            return { error: "Dados inválidos." };
         }
-        
-        const confraria_id = Number(confraria_id_raw);
-        const type = type_raw as 'seal_url' | 'cover_url';
-        const image = image_raw;
-        
-        console.log(`[LOG] Parsed data: confraria_id=${confraria_id}, type=${type}, image_name='${image.name}', image_size=${image.size}`);
 
-        console.log('[LOG] Checking permissions...');
+        const { confraria_id, type, imageDataUrl } = parsedData.data;
+
         await checkPermissions(confraria_id);
-        console.log('[LOG] Permissions check passed.');
         
         const supabaseService = createServiceRoleClient();
         
-        const fileExtension = image.name.split('.').pop() || 'webp';
+        // Decode the base64 string
+        const base64Data = imageDataUrl.split(',')[1];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
         
-        let pathPrefix = 'selo';
-        if (type === 'cover_url') {
-            pathPrefix = 'capa/capa';
-        }
-        const fileName = `confrarias/${confraria_id}/${pathPrefix}-${nanoid()}.${fileExtension}`;
+        let pathPrefix = type === 'seal_url' ? 'selo' : 'capa';
+        const fileName = `confrarias/${confraria_id}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
         
-        console.log(`[LOG] Uploading to Supabase Storage at path: ${fileName}`);
-
         const { error: uploadError } = await supabaseService.storage
             .from('public-images')
-            .upload(fileName, image, {
+            .upload(fileName, imageBuffer, {
                 cacheControl: '3600',
                 upsert: true,
+                contentType: 'image/webp'
             });
 
         if (uploadError) {
             console.error(`[ERROR] Supabase Storage upload error for ${type}:`, uploadError);
-            return { error: `Não foi possível carregar a imagem. Erro: ${uploadError.message}` };
+            return { error: `Não foi possível atualizar a imagem da confraria.` };
         }
 
-        console.log('[LOG] Upload successful. Getting public URL.');
         const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
-        console.log(`[LOG] Public URL obtained: ${publicUrl}`);
 
-        console.log(`[LOG] Updating 'confrarias' table in DB. Column: ${type}`);
         const { error: dbError } = await supabaseService
             .from('confrarias')
             .update({ [type]: publicUrl })
@@ -559,18 +548,13 @@ export async function updateConfrariaImage(formData: FormData) {
 
         if (dbError) {
             console.error(`[ERROR] Supabase DB update error for ${type}:`, dbError);
-            // Attempt to remove the orphaned file from storage
             await supabaseService.storage.from('public-images').remove([fileName]);
             return { error: 'Não foi possível atualizar a imagem da confraria.' };
         }
 
-        console.log('[LOG] DB update successful.');
-        console.log('[LOG] Revalidating paths...');
         revalidatePath(`/confrarias/${confraria_id}`);
         revalidatePath(`/confrarias/${confraria_id}/manage`);
-        console.log('[LOG] Paths revalidated.');
 
-        console.log('--- [updateConfrariaImage] Action Finished Successfully ---');
         return { success: true, message: "Imagem atualizada com sucesso!" };
 
     } catch (e: any) {
@@ -579,3 +563,5 @@ export async function updateConfrariaImage(formData: FormData) {
         return { error: `Ocorreu um erro inesperado: ${e.message}` };
     }
 }
+
+    

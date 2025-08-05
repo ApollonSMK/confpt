@@ -11,7 +11,7 @@ import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2,
 import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImage, deleteEvent } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { EventForm } from './event-form';
 import { ArticleForm } from './article-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
-import { getCroppedImg } from '@/lib/crop-image';
+import { getCroppedImg, getCroppedImgAsDataUrl } from '@/lib/crop-image';
 import { Slider } from '@/components/ui/slider';
 
 
@@ -38,7 +38,7 @@ type ConfrariaDataType = {
     motto: string;
     history: string;
     founders: string;
-    region: (typeof regions)[number];
+    district: (typeof districts)[number];
     seal_url: string;
     cover_url: string;
 }
@@ -230,7 +230,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                     </DialogHeader>
                                     <EventForm 
                                         confrariaId={confrariaData.id} 
-                                        confrariaRegion={confrariaData.region} 
+                                        confrariaRegion={confrariaData.district} 
                                         event={selectedEvent} 
                                         onSuccess={handleEventFormSuccess}
                                     />
@@ -664,19 +664,18 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         if (!imageSrc || !croppedAreaPixels) return;
         setLoading(true);
         try {
-            const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-            if (!croppedImageBlob) {
+            const imageDataUrl = await getCroppedImgAsDataUrl(imageSrc, croppedAreaPixels);
+            if (!imageDataUrl) {
                  toast({ title: 'Erro', description: 'Não foi possível cortar a imagem.', variant: 'destructive' });
                  setLoading(false);
                  return;
             }
             
-            const formData = new FormData();
-            formData.append('confraria_id', String(confrariaId));
-            formData.append('type', imageType);
-            formData.append('image', new File([croppedImageBlob], `${imageType}.webp`, { type: 'image/webp' }));
-
-            const result = await updateConfrariaImage(formData);
+            const result = await updateConfrariaImage({
+                confraria_id: confrariaId,
+                type: imageType,
+                imageDataUrl: imageDataUrl,
+            });
 
             if (result.error) {
                 toast({ title: 'Erro', description: result.error, variant: 'destructive' });
@@ -758,3 +757,5 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         </DialogContent>
     )
 }
+
+    

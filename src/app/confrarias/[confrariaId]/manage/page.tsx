@@ -50,7 +50,7 @@ async function getConfrariaAndRelatedData(id: number, user: User) {
             motto: confrariaData.motto,
             history: confrariaData.history ?? '',
             founders: confrariaData.founders ?? '',
-            region: confrariaData.region,
+            district: confrariaData.district,
             seal_url: confrariaData.seal_url,
             cover_url: confrariaData.cover_url ?? 'https://placehold.co/1200x300.png',
         },
@@ -79,7 +79,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
     const { confrariaData, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
     
     const pageProps: Omit<ManageConfrariaPageProps, 'approvedMembers'> = {
-        confrariaData,
+        confrariaData: confrariaData as any,
         events,
         articles,
         recipes,
@@ -91,3 +91,5 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         <ClientManagePage {...pageProps} />
     );
 }
+
+    

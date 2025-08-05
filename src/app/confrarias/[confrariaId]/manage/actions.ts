@@ -519,3 +519,5 @@ export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_u
 
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
+
+    

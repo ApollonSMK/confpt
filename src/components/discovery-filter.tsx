@@ -14,18 +14,18 @@ import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
 
 interface DiscoveryFilterProps {
-  regions: readonly string[];
+  districts: readonly string[];
   discoveryTypes: DiscoveryType[];
   allDiscoveries: Discovery[];
 }
 
-export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: DiscoveryFilterProps) {
+export function DiscoveryFilter({ districts, discoveryTypes, allDiscoveries }: DiscoveryFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [region, setRegion] = useState(searchParams.get('region') || 'all');
+  const [district, setDistrict] = useState(searchParams.get('district') || 'all');
   const [type, setType] = useState(searchParams.get('type') || 'all');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -33,7 +33,7 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
     setIsMounted(true);
     // When params change in URL, update the state
     setSearchTerm(searchParams.get('search') || '');
-    setRegion(searchParams.get('region') || 'all');
+    setDistrict(searchParams.get('district') || 'all');
     setType(searchParams.get('type') || 'all');
   }, [searchParams]);
 
@@ -49,10 +49,10 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
         } else {
             params.delete('search');
         }
-        if (region && region !== 'all') {
-            params.set('region', region);
+        if (district && district !== 'all') {
+            params.set('district', district);
         } else {
-            params.delete('region');
+            params.delete('district');
         }
         if (type && type !== 'all') {
             params.set('type', type);
@@ -67,11 +67,11 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, region, type, router, pathname, isMounted, searchParams]);
+  }, [searchTerm, district, type, router, pathname, isMounted, searchParams]);
 
   const handleClear = () => {
     setSearchTerm('');
-    setRegion('all');
+    setDistrict('all');
     setType('all');
     router.push(pathname);
   };
@@ -113,14 +113,14 @@ export function DiscoveryFilter({ regions, discoveryTypes, allDiscoveries }: Dis
                 </div>
             </div>
             <div className="space-y-2">
-                <label className="text-sm font-medium">Região</label>
-                <Select value={region} onValueChange={setRegion}>
+                <label className="text-sm font-medium">Distrito</label>
+                <Select value={district} onValueChange={setDistrict}>
                     <SelectTrigger>
-                    <SelectValue placeholder="Todas as regiões" />
+                    <SelectValue placeholder="Todos os distritos" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="all">Todas as regiões</SelectItem>
-                    {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    <SelectItem value="all">Todos os distritos</SelectItem>
+                    {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>

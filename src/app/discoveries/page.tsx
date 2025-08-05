@@ -1,6 +1,6 @@
 
 
-import { regions, type Discovery, DiscoveryType } from '@/lib/data';
+import { Discovery, DiscoveryType, districts } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';
 import { createServerClient } from '@/lib/supabase/server';
@@ -97,7 +97,7 @@ export default async function DiscoveriesPage({
   ]);
   
   const searchTerm = searchParams?.search as string || '';
-  const region = searchParams?.region as string || '';
+  const district = searchParams?.district as string || '';
   const type = searchParams?.type as string || '';
 
   let filteredDiscoveries = allDiscoveries;
@@ -108,15 +108,15 @@ export default async function DiscoveriesPage({
       d.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
-  if (region) {
-    filteredDiscoveries = filteredDiscoveries.filter(d => d.region === region);
+  if (district) {
+    filteredDiscoveries = filteredDiscoveries.filter(d => d.district === district);
   }
   if (type) {
     filteredDiscoveries = filteredDiscoveries.filter(d => d.type === type);
   }
 
   const FilterComponent = () => (
-    <DiscoveryFilter regions={regions} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveries} />
+    <DiscoveryFilter districts={districts} discoveryTypes={discoveryTypes} allDiscoveries={allDiscoveries} />
   );
 
   return (

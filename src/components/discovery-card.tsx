@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,7 +37,7 @@ export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <MapPin className="h-3 w-3" />
-            {discovery.region}
+            {discovery.district}
           </Badge>
           <Badge variant="secondary" className="flex items-center gap-1">
             <Tag className="h-3 w-3" />

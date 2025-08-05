@@ -153,7 +153,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   
   const [testimonials, relatedDiscoveries] = await Promise.all([
     getTestimonials(discovery.id),
-    discoveries.filter(d => d.region === discovery.region && d.id !== discovery.id).slice(0, 5)
+    discoveries.filter(d => d.district === discovery.district && d.id !== discovery.id).slice(0, 5)
   ]);
 
   const confraria = discovery.confrarias;
@@ -189,7 +189,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
         <div className="lg:col-span-2">
            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
           <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.region}</Badge>
+              <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.district}</Badge>
               <Badge variant="secondary" className="text-sm flex items-center gap-1"><Tag className="h-3 w-3" />{discovery.type}</Badge>
                {discovery.seal_count > 0 && (
                 <Badge variant="outline" className="text-sm flex items-center gap-1 text-primary border-primary/50">
@@ -290,7 +290,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
       {relatedDiscoveries.length > 0 && (
         <section className="mt-16 md:mt-24">
           <h2 className="font-headline text-3xl md:text-4xl font-bold mb-8 text-center">
-            Mais na Região de {discovery.region}
+            Mais no Distrito de {discovery.district}
           </h2>
           <Carousel opts={{ align: 'start' }} className="w-full">
             <CarouselContent>
@@ -310,4 +310,3 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     </div>
   );
 }
-

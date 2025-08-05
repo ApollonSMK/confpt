@@ -16,7 +16,8 @@ export type Discovery = {
   title: string;
   description: string;
   editorial: string;
-  region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
+  district: string;
+  municipality: string;
   type: string; 
   type_id: number;
   confraria_id: number;
@@ -41,7 +42,8 @@ export type Confraria = {
   id: number;
   name: string;
   motto: string;
-  region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
+  district: string;
+  municipality: string;
   seal_url: string;
   seal_hint: string;
   cover_url?: string;
@@ -61,7 +63,8 @@ export type Submission = {
   user_id: string;
   discovery_title: string;
   editorial: string;
-  region: string;
+  district: string;
+  municipality: string;
   type: number; // Agora é um ID
   confraria_id?: number | null;
   links?: string | null;
@@ -79,7 +82,8 @@ export type Event = {
   description?: string | null;
   event_date: string; // Vem como string do Supabase
   location?: string | null;
-  region: 'Norte' | 'Centro' | 'Lisboa' | 'Alentejo' | 'Algarve' | 'Açores' | 'Madeira';
+  district: string;
+  municipality: string;
   image_url?: string | null;
   image_hint?: string | null;
   is_public: boolean;
@@ -163,10 +167,28 @@ export type ConfrariaGalleryImage = {
     sort_order: number;
 }
 
+export const portugalDistricts = {
+  "Aveiro": ["Águeda", "Albergaria-a-Velha", "Anadia", "Arouca", "Aveiro"],
+  "Beja": ["Aljustrel", "Almodôvar", "Alvito", "Barrancos", "Beja"],
+  "Braga": ["Amares", "Barcelos", "Braga", "Cabeceiras de Basto", "Celorico de Basto"],
+  "Bragança": ["Alfândega da Fé", "Bragança", "Carrazeda de Ansiães", "Freixo de Espada à Cinta", "Macedo de Cavaleiros"],
+  "Castelo Branco": ["Belmonte", "Castelo Branco", "Covilhã", "Fundão", "Idanha-a-Nova"],
+  "Coimbra": ["Arganil", "Cantanhede", "Coimbra", "Condeixa-a-Nova", "Figueira da Foz"],
+  "Évora": ["Alandroal", "Arraiolos", "Borba", "Estremoz", "Évora"],
+  "Faro": ["Albufeira", "Alcoutim", "Aljezur", "Castro Marim", "Faro"],
+  "Guarda": ["Aguiar da Beira", "Almeida", "Celorico da Beira", "Figueira de Castelo Rodrigo", "Fornos de Algodres"],
+  "Leiria": ["Alcobaça", "Alvaiázere", "Ansião", "Batalha", "Bombarral"],
+  "Lisboa": ["Alenquer", "Amadora", "Arruda dos Vinhos", "Azambuja", "Cadaval"],
+  "Portalegre": ["Alter do Chão", "Arronches", "Avis", "Campo Maior", "Castelo de Vide"],
+  "Porto": ["Amarante", "Baião", "Felgueiras", "Gondomar", "Lousada"],
+  "Santarém": ["Abrantes", "Alcanena", "Almeirim", "Alpiarça", "Benavente"],
+  "Setúbal": ["Alcácer do Sal", "Alcochete", "Almada", "Barreiro", "Grândola"],
+  "Viana do Castelo": ["Arcos de Valdevez", "Caminha", "Melgaço", "Monção", "Paredes de Coura"],
+  "Vila Real": ["Alijó", "Boticas", "Chaves", "Mesão Frio", "Mondim de Basto"],
+  "Viseu": ["Armamar", "Carregal do Sal", "Castro Daire", "Cinfães", "Lamego"]
+} as const;
 
-// Dados estáticos para filtros, que não precisam estar no banco por enquanto
-export const regions = ['Norte', 'Centro', 'Lisboa', 'Alentejo', 'Algarve', 'Açores', 'Madeira'] as const;
-
+export const districts = Object.keys(portugalDistricts);
 
 // Sistema de Ranks de Gamificação
 

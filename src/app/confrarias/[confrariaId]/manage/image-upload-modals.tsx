@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
@@ -12,7 +13,9 @@ import { Camera, Loader2 } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/crop-image';
-import { updateConfrariaImage } from './actions';
+import { updateConfrariaImageUrl } from './actions';
+import { createClient } from '@/lib/supabase/client';
+import { nanoid } from 'nanoid';
 
 export function SealUploadModal({ confrariaId, onUploadSuccess, children }: { confrariaId: number, onUploadSuccess: () => void, children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
@@ -44,19 +47,23 @@ export function SealUploadModal({ confrariaId, onUploadSuccess, children }: { co
 
         setLoading(true);
         try {
-            const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-            if (!croppedImageBlob) {
-                 toast({ title: 'Erro', description: 'Não foi possível cortar a imagem.', variant: 'destructive' });
-                 setLoading(false);
-                 return;
+            const supabase = createClient();
+            const imageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+            if (!imageBlob) {
+                throw new Error("Não foi possível cortar a imagem.");
             }
-            
-            const formData = new FormData();
-            formData.append('confraria_id', String(confrariaId));
-            formData.append('type', 'seal_url');
-            formData.append('image', new File([croppedImageBlob], 'selo.webp', { type: 'image/webp' }));
 
-            const result = await updateConfrariaImage(formData);
+            const fileName = `confrarias/${confrariaId}/selo/selo-${nanoid()}.webp`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('public-images')
+                .upload(fileName, imageBlob, { upsert: true, contentType: 'image/webp' });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage.from('public-images').getPublicUrl(uploadData.path);
+            
+            const result = await updateConfrariaImageUrl(confrariaId, 'seal_url', publicUrl);
 
             if (result.error) {
                 toast({ title: 'Erro', description: result.error, variant: 'destructive' });
@@ -65,9 +72,9 @@ export function SealUploadModal({ confrariaId, onUploadSuccess, children }: { co
                 onUploadSuccess();
                 closeModal();
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+            toast({ title: 'Erro no Upload', description: e.message || 'Ocorreu um erro inesperado.', variant: 'destructive' });
         } finally {
             setLoading(false);
         }

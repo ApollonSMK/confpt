@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { createServerClient } from '@/lib/supabase/server';
@@ -8,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImage, deleteEvent } from './actions';
+import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImageUrl, deleteEvent } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { districts } from '@/lib/data';
@@ -28,8 +29,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
-import { getCroppedImg, getCroppedImgAsDataUrl } from '@/lib/crop-image';
+import { getCroppedImg } from '@/lib/crop-image';
 import { Slider } from '@/components/ui/slider';
+import { createClient } from '@/lib/supabase/client';
+import { nanoid } from 'nanoid';
 
 
 type ConfrariaDataType = {
@@ -664,28 +667,43 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         if (!imageSrc || !croppedAreaPixels) return;
         setLoading(true);
         try {
-            const imageDataUrl = await getCroppedImgAsDataUrl(imageSrc, croppedAreaPixels);
-            if (!imageDataUrl) {
-                 toast({ title: 'Erro', description: 'Não foi possível cortar a imagem.', variant: 'destructive' });
-                 setLoading(false);
-                 return;
+            const supabase = createClient();
+            const imageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+            if (!imageBlob) {
+                throw new Error("Could not crop image.");
             }
             
-            const result = await updateConfrariaImage({
-                confraria_id: confrariaId,
-                type: imageType,
-                imageDataUrl: imageDataUrl,
-            });
+            const pathPrefix = imageType === 'seal_url' ? 'selo' : 'capa';
+            const fileName = `confrarias/${confrariaId}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
 
+            // Upload directly from client
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('public-images')
+                .upload(fileName, imageBlob, {
+                    cacheControl: '3600',
+                    upsert: true,
+                    contentType: 'image/webp'
+                });
+
+            if (uploadError) {
+                throw uploadError;
+            }
+
+            const { data: { publicUrl } } = supabase.storage.from('public-images').getPublicUrl(uploadData.path);
+            
+            // Now call a simplified server action to update the DB
+            const result = await updateConfrariaImageUrl(confrariaId, imageType, publicUrl);
+            
             if (result.error) {
                 toast({ title: 'Erro', description: result.error, variant: 'destructive' });
             } else {
                 toast({ title: 'Sucesso!', description: result.message });
                 onUploadSuccess();
             }
-        } catch (e) {
+
+        } catch (e: any) {
             console.error(e);
-            toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+            toast({ title: 'Erro no Upload', description: e.message || 'Ocorreu um erro inesperado.', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -757,5 +775,3 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         </DialogContent>
     )
 }
-
-    

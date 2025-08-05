@@ -1,4 +1,6 @@
 
+import type { Area } from 'react-easy-crop';
+
 // Function to create an image from a URL
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -11,7 +13,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
 }
 
 // Function to get the cropped image data as a Blob
-export async function getCroppedImg(imageSrc: string, pixelCrop: { x: number; y: number; width: number; height: number }): Promise<Blob | null> {
+export async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -45,7 +47,7 @@ export async function getCroppedImg(imageSrc: string, pixelCrop: { x: number; y:
 }
 
 // Function to get the cropped image data as a Data URL string
-export async function getCroppedImgAsDataUrl(imageSrc: string, pixelCrop: { x: number; y: number; width: number; height: number }): Promise<string | null> {
+export async function getCroppedImgAsDataUrl(imageSrc: string, pixelCrop: Area): Promise<string | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');

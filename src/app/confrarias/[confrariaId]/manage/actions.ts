@@ -497,71 +497,25 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 }
 
 
-const imageUpdateSchema = z.object({
-  confraria_id: z.number(),
-  type: z.enum(['seal_url', 'cover_url']),
-  imageDataUrl: z.string().startsWith('data:image/'),
-});
-
-export async function updateConfrariaImage(values: z.infer<typeof imageUpdateSchema>) {
+export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_url' | 'cover_url', newUrl: string) {
     'use server';
 
-    try {
-        const parsedData = imageUpdateSchema.safeParse(values);
-        if (!parsedData.success) {
-            console.error('[ERROR] Validation failed:', parsedData.error);
-            return { error: "Dados inválidos." };
-        }
-
-        const { confraria_id, type, imageDataUrl } = parsedData.data;
-
-        await checkPermissions(confraria_id);
-        
-        const supabaseService = createServiceRoleClient();
-        
-        // Decode the base64 string
-        const base64Data = imageDataUrl.split(',')[1];
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-        
-        let pathPrefix = type === 'seal_url' ? 'selo' : 'capa';
-        const fileName = `confrarias/${confraria_id}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
-        
-        const { error: uploadError } = await supabaseService.storage
-            .from('public-images')
-            .upload(fileName, imageBuffer, {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: 'image/webp'
-            });
-
-        if (uploadError) {
-            console.error(`[ERROR] Supabase Storage upload error for ${type}:`, uploadError);
-            return { error: `Não foi possível atualizar a imagem da confraria.` };
-        }
-
-        const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
-
-        const { error: dbError } = await supabaseService
-            .from('confrarias')
-            .update({ [type]: publicUrl })
-            .eq('id', confraria_id);
-
-        if (dbError) {
-            console.error(`[ERROR] Supabase DB update error for ${type}:`, dbError);
-            await supabaseService.storage.from('public-images').remove([fileName]);
-            return { error: 'Não foi possível atualizar a imagem da confraria.' };
-        }
-
-        revalidatePath(`/confrarias/${confraria_id}`);
-        revalidatePath(`/confrarias/${confraria_id}/manage`);
-
-        return { success: true, message: "Imagem atualizada com sucesso!" };
-
-    } catch (e: any) {
-        console.error('--- [updateConfrariaImage] Unhandled Exception ---');
-        console.error(e);
-        return { error: `Ocorreu um erro inesperado: ${e.message}` };
-    }
-}
-
+    await checkPermissions(confrariaId);
     
+    const supabaseService = createServiceRoleClient();
+
+    const { error: dbError } = await supabaseService
+        .from('confrarias')
+        .update({ [type]: newUrl })
+        .eq('id', confrariaId);
+
+    if (dbError) {
+        console.error(`[ERROR] Supabase DB update error for ${type}:`, dbError);
+        return { error: 'Não foi possível atualizar o URL da imagem na base de dados.' };
+    }
+
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+
+    return { success: true, message: "Imagem atualizada com sucesso!" };
+}

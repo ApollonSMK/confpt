@@ -219,12 +219,14 @@ export async function upsertArticle(formData: FormData) {
     'use server';
     
     const confraria_id = Number(formData.get('confraria_id'));
-    await checkPermissions(confraria_id);
+    const supabaseService = createServiceRoleClient();
+    
+    const user = await checkPermissions(confraria_id);
 
     const values = {
         id: formData.get('id') ? Number(formData.get('id')) : undefined,
         confraria_id: confraria_id,
-        author_id: formData.get('author_id') as string,
+        author_id: user.id,
         title: formData.get('title') as string,
         content: formData.get('content') as string,
         image: formData.get('image') as File,
@@ -239,8 +241,6 @@ export async function upsertArticle(formData: FormData) {
 
     const { id, author_id, title, content, image, status } = parsedData.data;
     
-    const supabaseService = createServiceRoleClient();
-
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + `-${nanoid(4)}`;
 
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;

@@ -33,7 +33,7 @@ export function ConfrariaCard({ confraria }: ConfrariaCardProps) {
         <CardFooter className="flex justify-center gap-4 w-full">
             <Badge variant="outline" className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                {confraria.region}
+                {confraria.district}
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1">
                 <BookOpen className="h-3 w-3" />

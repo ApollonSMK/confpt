@@ -327,7 +327,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                             <div className="flex justify-center md:justify-start flex-wrap gap-2">
                                 <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
                                     <MapPin className="h-4 w-4" />
-                                    <span>{confraria.region}</span>
+                                    <span>{confraria.municipality}, {confraria.district}</span>
                                 </Badge>
                                 <Badge variant="secondary" className="text-sm flex items-center gap-2 px-3 py-1">
                                     <BookOpen className="h-4 w-4" />

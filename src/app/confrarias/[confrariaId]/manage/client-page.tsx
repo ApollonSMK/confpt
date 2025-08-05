@@ -8,7 +8,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImage } from './actions';
+import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImage, deleteEvent } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { regions } from '@/lib/data';
@@ -67,6 +67,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
     const [isDeletingArticle, setIsDeletingArticle] = useState<number | null>(null);
+    const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
 
      useEffect(() => {
@@ -88,6 +89,18 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
     const handleEventFormSuccess = () => {
         setEventDialogOpen(false);
         router.refresh(); 
+    };
+    
+    const handleDeleteEvent = async (event: Event) => {
+        setIsDeletingEvent(event.id);
+        const result = await deleteEvent(event.id, confrariaData.id);
+        if (result.error) {
+            toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Evento Apagado', description: `O evento "${event.name}" foi apagado com sucesso.`});
+            router.refresh();
+        }
+        setIsDeletingEvent(null);
     };
 
     const handleEditArticleClick = (article: Article) => {
@@ -234,7 +247,28 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                             <p className="text-sm text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> {new Date(event.event_date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                                             <p className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {event.location || 'Local a confirmar'}</p>
                                         </div>
-                                        <Button variant="outline" size="icon" onClick={() => handleEditEventClick(event)}><Edit className="h-4 w-4"/></Button>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="icon" onClick={() => handleEditEventClick(event)}><Edit className="h-4 w-4"/></Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon" disabled={isDeletingEvent === event.id}>
+                                                        {isDeletingEvent === event.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Apagar Evento?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Tem a certeza que quer apagar o evento &quot;{event.name}&quot;? Esta ação não pode ser desfeita.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteEvent(event)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
                                     </Card>
                                 ))}
                             </div>
@@ -542,6 +576,8 @@ const SealUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaData
                  <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild><Button><Camera className="mr-2" />Alterar Selo</Button></DialogTrigger>
                     <ImageCropModal 
+                        open={isModalOpen}
+                        onOpenChange={setModalOpen}
                         confrariaId={confraria.id} 
                         onUploadSuccess={handleSuccess} 
                         imageType="seal_url" 
@@ -576,6 +612,8 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
                 <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild><Button><Camera className="mr-2" />Alterar Capa</Button></DialogTrigger>
                     <ImageCropModal 
+                        open={isModalOpen}
+                        onOpenChange={setModalOpen}
                         confrariaId={confraria.id} 
                         onUploadSuccess={handleSuccess} 
                         imageType="cover_url" 
@@ -589,7 +627,9 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
     );
 }
 
-const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropShape, title }: {
+const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imageType, aspect, cropShape, title }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     confrariaId: number;
     onUploadSuccess: () => void;
     imageType: 'seal_url' | 'cover_url';
@@ -649,21 +689,17 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
             toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
         } finally {
             setLoading(false);
-            // Reset state for next use even on failure
-            if (!onUploadSuccess) {
-                 setImageSrc(null);
-                 setZoom(1);
-                 setCrop({ x: 0, y: 0 });
-            }
         }
     };
     
-
-    const resetState = () => {
-        setImageSrc(null);
-        setZoom(1);
-        setCrop({ x: 0, y: 0 });
-    }
+    // Reset state when modal is closed
+    useEffect(() => {
+        if (!open) {
+            setImageSrc(null);
+            setZoom(1);
+            setCrop({ x: 0, y: 0 });
+        }
+    }, [open]);
 
     return (
          <DialogContent className={imageSrc ? (aspect === 1 ? 'sm:max-w-[450px]' : 'sm:max-w-2xl' ): 'sm:max-w-[425px]'}>
@@ -698,7 +734,7 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
                          />
                     </div>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={resetState} disabled={loading}>Cancelar</Button>
+                        <Button variant="ghost" onClick={() => setImageSrc(null)} disabled={loading}>Cancelar</Button>
                         <Button onClick={handleSaveCrop} disabled={loading}>
                             {loading && <Loader2 className="animate-spin mr-2"/>}
                             Guardar
@@ -722,6 +758,3 @@ const ImageCropModal = ({ confrariaId, onUploadSuccess, imageType, aspect, cropS
         </DialogContent>
     )
 }
-
-
-    

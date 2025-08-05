@@ -215,6 +215,29 @@ export async function upsertEvent(formData: FormData) {
     return { success: true, message: id ? "Evento atualizado!" : "Evento criado!" };
 }
 
+export async function deleteEvent(eventId: number, confrariaId: number) {
+    'use server';
+    await checkPermissions(confrariaId);
+    
+    const supabaseService = createServiceRoleClient();
+    const { error } = await supabaseService
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+    
+    if (error) {
+        console.error("Error deleting event:", error);
+        return { error: 'Ocorreu um erro ao apagar o evento.' };
+    }
+    
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+    revalidatePath('/events');
+    
+    return { success: true };
+}
+
+
 export async function upsertArticle(formData: FormData) {
     'use server';
     
@@ -504,14 +527,11 @@ export async function updateConfrariaImage(formData: FormData) {
         
         const fileExtension = image.name.split('.').pop() || 'webp';
         
-        // --- START OF THE FIX ---
-        // Create distinct paths for seal and cover images to avoid conflicts.
         let pathPrefix = 'selo';
         if (type === 'cover_url') {
-            pathPrefix = 'capa/capa'; // Use a "subdirectory" for covers
+            pathPrefix = 'capa/capa';
         }
         const fileName = `confrarias/${confraria_id}/${pathPrefix}-${nanoid()}.${fileExtension}`;
-        // --- END OF THE FIX ---
         
         console.log(`[LOG] Uploading to Supabase Storage at path: ${fileName}`);
 
@@ -559,5 +579,3 @@ export async function updateConfrariaImage(formData: FormData) {
         return { error: `Ocorreu um erro inesperado: ${e.message}` };
     }
 }
-
-    

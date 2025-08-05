@@ -16,11 +16,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { districts, type Confraria, DiscoveryType } from '@/lib/data';
+import { districts, type Confraria, DiscoveryType, portugalDistricts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -30,6 +30,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
@@ -50,43 +51,55 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const formRef = useRef<HTMLFormElement>(null);
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
   
-  // State to hold all form data across steps
-  const [formData, setFormData] = useState<Partial<FormValues>>({
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
       title: '',
       editorial: '',
       district: undefined,
+      municipality: undefined,
       type_id: undefined,
       confrariaId: 'null',
       links: '',
       image: undefined,
+    },
   });
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: formData,
-  });
+  const { trigger, getValues, watch, setValue } = form;
+  const selectedDistrict = watch('district');
 
-  const { trigger, getValues } = form;
+  useEffect(() => {
+    if (selectedDistrict && portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]) {
+        setMunicipalities(portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]);
+        setValue('municipality', ''); // Reset municipality when district changes
+    } else {
+        setMunicipalities([]);
+    }
+  }, [selectedDistrict, setValue]);
 
   const handleNextStep = async () => {
       const isValid = await trigger(["title", "editorial"]);
       if (isValid) {
-          // Save step 1 data to our state
-          setFormData(prev => ({ ...prev, ...getValues() }));
           setStep(2);
       }
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    
+    // Trigger validation for all fields before submitting
+    const isValid = await trigger();
+    if (!isValid) {
+        toast({ title: "Erro de Validação", description: "Por favor, preencha todos os campos obrigatórios.", variant: "destructive" });
+        return;
+    }
+
     setLoading(true);
 
     const submissionFormData = new FormData(event.currentTarget);
-    // Manually add the data from step 1 (stored in our state) to the FormData
-    submissionFormData.append('title', formData.title || '');
-    submissionFormData.append('editorial', formData.editorial || '');
-
+    
     const result = await createSubmission(submissionFormData);
     
     setLoading(false);
@@ -103,7 +116,6 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
             description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
         });
         form.reset();
-        setFormData({}); // Clear the state
         setStep(1);
     }
   }
@@ -179,7 +191,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Selecione o distrito" />
@@ -195,11 +207,31 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         />
                         <FormField
                             control={form.control}
+                            name="municipality"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Concelho</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o concelho" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
                             name="type_id"
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><Tag className="h-4 w-4"/>Tipo</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Selecione o tipo" />

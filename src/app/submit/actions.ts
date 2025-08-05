@@ -13,10 +13,11 @@ const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('URL inválido').optional().or(z.literal('')),
-  image: z.instanceof(File).optional(),
+  image: z.any().optional(),
 });
 
 export async function createSubmission(formData: FormData) {
@@ -31,6 +32,7 @@ export async function createSubmission(formData: FormData) {
         title: formData.get('title'),
         editorial: formData.get('editorial'),
         district: formData.get('district'),
+        municipality: formData.get('municipality'),
         type_id: formData.get('type_id'),
         confrariaId: formData.get('confrariaId'),
         links: formData.get('links'),
@@ -45,7 +47,7 @@ export async function createSubmission(formData: FormData) {
         return { error: "Dados inválidos. Por favor, verifique todos os campos." };
     }
 
-    const { title, editorial, district, type_id, confrariaId, links, image } = parsedData.data;
+    const { title, editorial, district, municipality, type_id, confrariaId, links, image } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -80,6 +82,7 @@ export async function createSubmission(formData: FormData) {
             discovery_title: title,
             editorial,
             district,
+            municipality,
             type: parseInt(type_id, 10),
             confraria_id: confrariaId && confrariaId !== 'null' ? parseInt(confrariaId, 10) : null,
             links: links || null,

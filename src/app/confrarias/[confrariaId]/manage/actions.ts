@@ -218,11 +218,12 @@ export async function upsertEvent(formData: FormData) {
 export async function upsertArticle(formData: FormData) {
     'use server';
     
-    await checkPermissions(Number(formData.get('confraria_id')));
+    const confraria_id = Number(formData.get('confraria_id'));
+    await checkPermissions(confraria_id);
 
     const values = {
         id: formData.get('id') ? Number(formData.get('id')) : undefined,
-        confraria_id: Number(formData.get('confraria_id')),
+        confraria_id: confraria_id,
         author_id: formData.get('author_id') as string,
         title: formData.get('title') as string,
         content: formData.get('content') as string,
@@ -236,7 +237,7 @@ export async function upsertArticle(formData: FormData) {
         return { error: 'Dados do artigo inválidos.' };
     }
 
-    const { id, confraria_id, author_id, title, content, image, status } = parsedData.data;
+    const { id, author_id, title, content, image, status } = parsedData.data;
     
     const supabaseService = createServiceRoleClient();
 

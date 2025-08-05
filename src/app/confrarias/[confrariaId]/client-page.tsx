@@ -512,5 +512,3 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
         </div>
     );
 }
-
-    

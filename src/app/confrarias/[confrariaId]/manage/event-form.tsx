@@ -26,7 +26,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Image as ImageIcon } from 'lucide-react';
@@ -42,7 +42,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   is_public: z.boolean().default(true),
   image: z.any()
     .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
@@ -53,7 +53,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EventFormProps {
     confrariaId: number;
-    confrariaRegion: (typeof regions)[number];
+    confrariaRegion: (typeof districts)[number];
     event?: Event | null;
     onSuccess?: () => void;
 }
@@ -73,7 +73,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             description: event?.description || '',
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
-            region: event?.region || confrariaRegion,
+            district: event?.district || confrariaRegion,
             is_public: event?.is_public ?? true,
             image: undefined,
         },
@@ -82,7 +82,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
      const { trigger } = form;
 
     const handleNextStep = async () => {
-        const isValid = await trigger(["name", "event_date", "region", "location"]);
+        const isValid = await trigger(["name", "event_date", "district", "location"]);
         if (isValid) {
             setStep(2);
         }
@@ -158,12 +158,12 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
-                                <FormField control={form.control} name="region" render={({ field }) => (
+                                <FormField control={form.control} name="district" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Região</FormLabel>
+                                        <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                                            <SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <FormMessage />
                                     </FormItem>

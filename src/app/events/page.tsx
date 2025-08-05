@@ -1,6 +1,6 @@
 
 import { createServerClient } from '@/lib/supabase/server';
-import { regions, type Event } from '@/lib/data';
+import { districts, type Event } from '@/lib/data';
 import { EventCard } from '@/components/event-card';
 import { Calendar } from 'lucide-react';
 import { EventFilter } from '@/components/event-filter';
@@ -35,12 +35,12 @@ export default async function EventsPage({
 }) {
   const allEvents = await getPublicEvents();
   
-  const region = searchParams?.region as string || '';
+  const district = searchParams?.district as string || '';
 
   let filteredEvents = allEvents;
 
-  if (region) {
-    filteredEvents = filteredEvents.filter(d => d.region === region);
+  if (district) {
+    filteredEvents = filteredEvents.filter(d => d.district === district);
   }
 
 
@@ -58,7 +58,7 @@ export default async function EventsPage({
         </p>
       </div>
 
-      <EventFilter regions={regions} />
+      <EventFilter districts={districts} />
 
       {filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">

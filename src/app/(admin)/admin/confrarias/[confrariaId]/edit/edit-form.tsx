@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { deleteConfraria, updateConfraria } from './actions';
@@ -27,7 +27,7 @@ const formSchema = z.object({
   id: z.number(),
   name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
   motto: z.string().min(5, 'O lema deve ter pelo menos 5 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   seal_url: z.string().url('Por favor, insira um URL válido para o selo.'),
   seal_hint: z.string().min(2, 'O hint deve ter pelo menos 2 caracteres.'),
   responsible_email: z.string().email("Por favor, insira um email válido para o responsável.").optional().or(z.literal('')),
@@ -148,18 +148,18 @@ export function EditConfrariaForm({ confraria }: EditConfrariaFormProps) {
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="region"
+                                    name="district"
                                     render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Região</FormLabel>
+                                        <FormLabel>Distrito</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                            <SelectValue placeholder="Selecione a região principal" />
+                                            <SelectValue placeholder="Selecione o distrito principal" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                            {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                         </SelectContent>
                                         </Select>
                                         <FormMessage />

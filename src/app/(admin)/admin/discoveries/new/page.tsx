@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, Confraria, DiscoveryType } from '@/lib/data';
+import { districts, Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { createDiscovery } from './actions';
@@ -30,7 +29,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("URL da imagem inválido.").optional().or(z.literal('')),
@@ -69,7 +68,7 @@ export default function NewDiscoveryPage() {
             title: '',
             description: '',
             editorial: '',
-            region: undefined,
+            district: undefined,
             type_id: undefined,
             confraria_id: undefined,
             image_url: 'https://placehold.co/600x400.png',
@@ -122,8 +121,8 @@ export default function NewDiscoveryPage() {
                                     <FormItem><FormLabel>Editorial</FormLabel><FormControl><Textarea rows={6} {...field} /></FormControl><FormDescription>O texto principal da descoberta.</FormDescription><FormMessage /></FormItem>
                                 )}/>
                                 <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="region" render={({ field }) => (
-                                    <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                <FormField control={form.control} name="district" render={({ field }) => (
+                                    <FormItem><FormLabel>Distrito</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="type_id" render={({ field }) => (
                                     <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>

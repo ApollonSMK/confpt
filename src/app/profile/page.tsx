@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -101,13 +100,13 @@ async function getSubmissionsForUser(supabase: any, userId: string): Promise<Sub
 function processRegionData(discoveries: Discovery[]) {
     if (!discoveries || discoveries.length === 0) return [];
     const regionCounts = discoveries.reduce((acc, discovery) => {
-        const region = discovery.region;
-        if (!acc[region]) {
-            acc[region] = { region, selos: 0 };
+        const district = discovery.district;
+        if (!acc[district]) {
+            acc[district] = { district, selos: 0 };
         }
-        acc[region].selos += 1;
+        acc[district].selos += 1;
         return acc;
-    }, {} as Record<string, { region: string; selos: number }>);
+    }, {} as Record<string, { district: string; selos: number }>);
 
     return Object.values(regionCounts).sort((a, b) => b.selos - a.selos);
 }
@@ -177,7 +176,7 @@ export default function ProfilePage() {
 
 
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
-  const userRegion = user.user_metadata?.region || 'Região Desconhecida';
+  const userDistrict = user.user_metadata?.district || 'Distrito Desconhecido';
   const userInitial = userFullName.charAt(0).toUpperCase();
 
   const chartData = processRegionData(sealedDiscoveries);
@@ -198,7 +197,7 @@ export default function ProfilePage() {
                 <p className="text-lg text-muted-foreground mt-2">{user.email}</p>
                 <Badge variant="outline" className="mt-2 flex items-center justify-center gap-2 w-fit">
                     <MapPin className="h-4 w-4" />
-                    <span>Confrade da região de {userRegion}</span>
+                    <span>Confrade do distrito de {userDistrict}</span>
               </Badge>
             </div>
         </div>
@@ -226,11 +225,11 @@ export default function ProfilePage() {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Região Favorita</CardTitle>
+                    <CardTitle className="text-sm font-medium">Distrito Favorito</CardTitle>
                     <BarChart2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{chartData[0]?.region || 'N/A'}</div>
+                    <div className="text-2xl font-bold">{chartData[0]?.district || 'N/A'}</div>
                     <p className="text-xs text-muted-foreground">com base nos seus selos</p>
                 </CardContent>
             </Card>
@@ -264,7 +263,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <CardTitle className="font-headline text-3xl flex items-center gap-3">
                         <BarChart2 className="h-7 w-7 text-primary"/>
-                        Selos por Região
+                        Selos por Distrito
                     </CardTitle>
                     <CardDescription>
                        Uma visão geral das suas explorações por todo o país.
@@ -274,7 +273,7 @@ export default function ProfilePage() {
                      {chartData.length > 0 ? (
                         <ProfileRegionChart data={chartData} />
                      ) : (
-                         <p className="text-muted-foreground">Conceda selos para ver as suas estatísticas por região.</p>
+                         <p className="text-muted-foreground">Conceda selos para ver as suas estatísticas por distrito.</p>
                      )}
                 </CardContent>
             </Card>

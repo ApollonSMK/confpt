@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/chart"
 
 interface ProfileRegionChartProps {
-    data: { region: string; selos: number }[];
+    data: { district: string; selos: number }[];
 }
 
 const chartConfig = {
@@ -28,7 +28,7 @@ export function ProfileRegionChart({ data }: ProfileRegionChartProps) {
                 <BarChart data={data} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
-                    dataKey="region"
+                    dataKey="district"
                     tickLine={false}
                     tickMargin={10}
                     axisLine={false}

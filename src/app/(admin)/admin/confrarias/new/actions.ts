@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -22,7 +22,7 @@ async function checkAdmin() {
 const confrariaSchema = z.object({
   name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
   motto: z.string().min(5, 'O lema deve ter pelo menos 5 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   seal_url: z.string().url('Por favor, insira um URL válido para o selo.'),
   seal_hint: z.string().min(2, 'O hint deve ter pelo menos 2 caracteres.'),
   history: z.string().optional(),
@@ -39,7 +39,7 @@ export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
         return { error: "Dados inválidos." };
     }
 
-    const { name, motto, region, seal_url, seal_hint, history, founders } = parsedData.data;
+    const { name, motto, district, seal_url, seal_hint, history, founders } = parsedData.data;
 
     const supabase = createServiceRoleClient();
 
@@ -48,7 +48,7 @@ export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
         .insert({
             name,
             motto,
-            region,
+            district,
             seal_url,
             seal_hint,
             history: history || null,
@@ -63,5 +63,5 @@ export async function createConfraria(values: z.infer<typeof confrariaSchema>) {
     revalidatePath('/admin/dashboard');
     revalidatePath('/confrarias');
     
-    redirect('/admin/dashboard');
+    redirect('/admin/confrarias');
 }

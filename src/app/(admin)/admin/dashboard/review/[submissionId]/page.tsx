@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createServiceRoleClient } from '@/lib/supabase/service';
@@ -94,7 +93,7 @@ export async function approveSubmission(formData: FormData) {
             title: submission.discoveryTitle,
             description: submission.editorial.substring(0, 100) + '...', // Automatic short description
             editorial: submission.editorial,
-            region: submission.region,
+            district: submission.district,
             type_id: submission.type,
             confraria_id: submission.confraria_id,
             slug: slug,
@@ -207,8 +206,8 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <h3 className="font-semibold">Região</h3>
-                                <div><Badge variant="secondary">{submission.region}</Badge></div>
+                                <h3 className="font-semibold">Distrito</h3>
+                                <div><Badge variant="secondary">{submission.district}</Badge></div>
                             </div>
                              <div className="space-y-1">
                                 <h3 className="font-semibold">Tipo</h3>
@@ -249,4 +248,3 @@ export default async function ReviewSubmissionPage({ params }: ReviewPageProps) 
         </div>
     );
 }
-

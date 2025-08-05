@@ -60,7 +60,7 @@ export default async function AdminConfrariasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Confraria</TableHead>
-                <TableHead>Região</TableHead>
+                <TableHead>Distrito</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -72,7 +72,7 @@ export default async function AdminConfrariasPage() {
                     {confraria.name}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{confraria.region}</Badge>
+                    <Badge variant="secondary">{confraria.district}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">

@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
@@ -13,7 +12,7 @@ import { nanoid } from 'nanoid';
 const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.' }),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('URL inválido').optional().or(z.literal('')),
@@ -31,7 +30,7 @@ export async function createSubmission(formData: FormData) {
     const values = {
         title: formData.get('title'),
         editorial: formData.get('editorial'),
-        region: formData.get('region'),
+        district: formData.get('district'),
         type_id: formData.get('type_id'),
         confrariaId: formData.get('confrariaId'),
         links: formData.get('links'),
@@ -46,7 +45,7 @@ export async function createSubmission(formData: FormData) {
         return { error: "Dados inválidos. Por favor, verifique todos os campos." };
     }
 
-    const { title, editorial, region, type_id, confrariaId, links, image } = parsedData.data;
+    const { title, editorial, district, type_id, confrariaId, links, image } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -80,7 +79,7 @@ export async function createSubmission(formData: FormData) {
             user_id: user.id,
             discovery_title: title,
             editorial,
-            region,
+            district,
             type: parseInt(type_id, 10),
             confraria_id: confrariaId && confrariaId !== 'null' ? parseInt(confrariaId, 10) : null,
             links: links || null,
@@ -100,5 +99,3 @@ export async function createSubmission(formData: FormData) {
     
     return { success: true };
 }
-
-    

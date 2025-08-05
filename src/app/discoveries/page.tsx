@@ -1,5 +1,4 @@
 
-
 import { Discovery, DiscoveryType, districts } from '@/lib/data';
 import { DiscoveryFilter } from '@/components/discovery-filter';
 import { DiscoveryCard } from '@/components/discovery-card';

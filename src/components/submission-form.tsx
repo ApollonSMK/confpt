@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, type Confraria, DiscoveryType } from '@/lib/data';
+import { districts, type Confraria, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
@@ -30,7 +29,7 @@ const MAX_IMAGE_SIZE = 5; // In MB
 const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
@@ -56,7 +55,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const [formData, setFormData] = useState<Partial<FormValues>>({
       title: '',
       editorial: '',
-      region: undefined,
+      district: undefined,
       type_id: undefined,
       confrariaId: 'null',
       links: '',
@@ -176,18 +175,18 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                             control={form.control}
-                            name="region"
+                            name="district"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Região</FormLabel>
+                                <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
-                                    <SelectValue placeholder="Selecione a região" />
+                                    <SelectValue placeholder="Selecione o distrito" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                    {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                                 <FormMessage />

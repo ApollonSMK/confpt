@@ -40,7 +40,7 @@ async function getConfraria(id: number) {
       id: data.id,
       name: data.name,
       motto: data.motto,
-      region: data.region,
+      district: data.district,
       seal_url: data.seal_url,
       seal_hint: data.seal_hint,
       responsible_email: responsible_email || '',

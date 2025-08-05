@@ -1,5 +1,4 @@
 
-
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
@@ -65,7 +64,7 @@ export default async function AdminDiscoveriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
-                <TableHead>Região</TableHead>
+                <TableHead>Distrito</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Confraria</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -75,7 +74,7 @@ export default async function AdminDiscoveriesPage() {
               {discoveries.map((discovery) => (
                 <TableRow key={discovery.id}>
                   <TableCell className="font-medium">{discovery.title}</TableCell>
-                  <TableCell><Badge variant="secondary">{discovery.region}</Badge></TableCell>
+                  <TableCell><Badge variant="secondary">{discovery.district}</Badge></TableCell>
                    <TableCell><Badge variant="outline">{discovery.type}</Badge></TableCell>
                    <TableCell className="text-muted-foreground">{discovery.confrarias?.name ?? 'Comunitário'}</TableCell>
                   <TableCell className="text-right">

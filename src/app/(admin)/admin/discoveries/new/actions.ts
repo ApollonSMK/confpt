@@ -1,11 +1,10 @@
 
-
 'use server';
 
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { regions } from '@/lib/data';
+import { districts } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -24,7 +23,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions),
+  district: z.enum(districts),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   image_url: z.string().url("A URL da imagem é inválida.").optional().or(z.literal('')),
@@ -44,7 +43,7 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
         return { error: "Dados inválidos." };
     }
 
-    const { title, confraria_id, type_id, image_url, image_hint, ...rest } = parsedData.data;
+    const { title, confraria_id, type_id, image_url, image_hint, district, ...rest } = parsedData.data;
 
     const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
@@ -56,6 +55,7 @@ export async function createDiscovery(values: z.infer<typeof formSchema>) {
         .insert({
             title,
             slug,
+            district,
             type_id: parseInt(type_id, 10),
             confraria_id: confraria_id && confraria_id !== 'null' ? parseInt(confraria_id, 10) : null,
             ...rest

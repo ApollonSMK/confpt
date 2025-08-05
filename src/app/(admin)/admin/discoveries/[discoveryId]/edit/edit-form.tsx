@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regions, Confraria, Discovery, DiscoveryType } from '@/lib/data';
+import { districts, Confraria, Discovery, DiscoveryType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { deleteDiscovery, updateDiscovery } from './actions';
@@ -30,7 +30,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
-  region: z.enum(regions, { required_error: 'Por favor, selecione uma região.'}),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   address: z.string().optional(),
@@ -60,7 +60,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             title: discovery.title,
             description: discovery.description,
             editorial: discovery.editorial,
-            region: discovery.region,
+            district: discovery.district,
             type_id: String(discovery.type_id),
             confraria_id: discovery.confraria_id?.toString() ?? undefined,
             address: discovery.address ?? '',
@@ -146,8 +146,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                     <FormItem><FormLabel>Editorial</FormLabel><FormControl><Textarea rows={6} {...field} /></FormControl><FormDescription>O texto principal da descoberta.</FormDescription><FormMessage /></FormItem>
                                 )}/>
                                 <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="region" render={({ field }) => (
-                                    <FormItem><FormLabel>Região</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                <FormField control={form.control} name="district" render={({ field }) => (
+                                    <FormItem><FormLabel>Distrito</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="type_id" render={({ field }) => (
                                     <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
@@ -179,4 +179,3 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
         </div>
     );
 }
-

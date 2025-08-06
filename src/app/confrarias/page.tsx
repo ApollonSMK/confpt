@@ -46,7 +46,7 @@ export default async function ConfrariasPage() {
         As guardiãs da tradição e do sabor. Conheça as irmandades que partilham o seu conhecimento e paixão por Portugal.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {confrarias.map((confraria) => (
           <ConfrariaCard key={confraria.id} confraria={confraria} />
         ))}

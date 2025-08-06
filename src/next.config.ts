@@ -17,12 +17,6 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '4mb',
     },
-    // This is required to allow the Next.js dev server to be accessed from
-    // the Firebase Studio preview pane.
-    allowedDevOrigins: [
-      'https://*.cloudworkstations.dev',
-      'https://*.firebase.studio',
-    ],
   },
   images: {
     remotePatterns: [

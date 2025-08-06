@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -52,11 +53,6 @@ const recipeSchema = z.object({
     status: z.enum(['draft', 'published']),
 });
 
-const galleryImageSchema = z.object({
-    confraria_id: z.number(),
-    description: z.string().optional(),
-    image: z.instanceof(File),
-});
 
 async function checkPermissions(confrariaId: number) {
     const supabase = createServerClient();
@@ -437,54 +433,53 @@ export async function upsertRecipe(formData: FormData) {
 
 export async function addGalleryImage(formData: FormData) {
     'use server';
-    const supabaseService = createServiceRoleClient();
 
-    const values = {
-        confraria_id: Number(formData.get('confraria_id')),
-        description: formData.get('description') as string,
-        image: formData.get('image') as File,
-    };
-
-    const parsedData = galleryImageSchema.safeParse(values);
-    if (!parsedData.success || !parsedData.data.image || parsedData.data.image.size === 0) {
-        return { error: 'Dados da imagem inválidos ou imagem em falta.' };
-    }
-
-    const { confraria_id, description, image } = parsedData.data;
-
-    await checkPermissions(confraria_id);
-
-    const fileExtension = image.name.split('.').pop();
-    const fileName = `gallery/${confraria_id}/${nanoid()}.${fileExtension}`;
-
-    const { error: uploadError } = await supabaseService.storage
-        .from('public-images')
-        .upload(fileName, image);
-
-    if (uploadError) {
-        console.error('Error uploading gallery image:', uploadError);
-        return { error: 'Não foi possível carregar a imagem.' };
-    }
-
-    const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
+    const confrariaId = Number(formData.get('confraria_id'));
+    const description = formData.get('description') as string;
+    const image = formData.get('image') as File;
     
-    const { error: dbError } = await supabaseService.from('confraria_gallery_images').insert({
-        confraria_id,
-        image_url: publicUrl,
-        description: description || null,
-    });
-
-    if (dbError) {
-        // Optional: delete the uploaded file if DB insert fails
-        await supabaseService.storage.from('public-images').remove([fileName]);
-        console.error("Error saving gallery image to DB:", dbError);
-        return { error: `Erro ao guardar a imagem: ${dbError.message}` };
+    if (!image || image.size === 0) {
+        return { error: 'Por favor, selecione uma imagem para carregar.' };
     }
+    
+    try {
+        await checkPermissions(confrariaId);
+        const supabaseService = createServiceRoleClient();
 
-    revalidatePath(`/confrarias/${confraria_id}`);
-    revalidatePath(`/confrarias/${confraria_id}/manage`);
+        const fileExtension = image.name.split('.').pop();
+        const fileName = `gallery/${confrariaId}/${nanoid()}.${fileExtension}`;
 
-    return { success: true, message: 'Imagem adicionada à galeria!' };
+        const { error: uploadError } = await supabaseService.storage
+            .from('public-images')
+            .upload(fileName, image);
+
+        if (uploadError) {
+            console.error('Error uploading gallery image:', uploadError);
+            return { error: 'Não foi possível carregar a imagem.' };
+        }
+
+        const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
+        
+        const { error: dbError } = await supabaseService.from('confraria_gallery_images').insert({
+            confraria_id: confrariaId,
+            image_url: publicUrl,
+            description: description || null,
+        });
+
+        if (dbError) {
+            await supabaseService.storage.from('public-images').remove([fileName]);
+            console.error("Error saving gallery image to DB:", dbError);
+            return { error: `Erro ao guardar a imagem: ${dbError.message}` };
+        }
+
+        revalidatePath(`/confrarias/${confrariaId}`);
+        revalidatePath(`/confrarias/${confrariaId}/manage`);
+
+        return { success: true, message: 'Imagem adicionada à galeria!' };
+
+    } catch (e: any) {
+        return { error: e.message };
+    }
 }
 
 export async function deleteGalleryImage(id: number, confrariaId: number) {
@@ -495,6 +490,8 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
+    
+
     
 
     

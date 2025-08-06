@@ -207,8 +207,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         <UtensilsCrossed className="mr-2 h-4 w-4"/>
                         Receitas
                         {recipes.length > 0 && <Badge className="ml-2">{recipes.length}</Badge>}
-                    </TabsTrigger>
-                </TabsList>
+                    </TabsList>
                 
                 <TabsContent value="details" className="mt-6">
                     <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
@@ -522,6 +521,8 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
         setLoading(true);
         const formData = new FormData(event.currentTarget);
         const result = await addGalleryImage(formData);
+        
+        setLoading(false);
         if(result.error) {
             toast({ title: 'Erro', description: result.error, variant: 'destructive' });
         } else {
@@ -529,7 +530,6 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
             formRef.current?.reset();
             onSuccess();
         }
-        setLoading(false);
     }
     
     return (
@@ -638,3 +638,5 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
         </Card>
     );
 }
+
+    

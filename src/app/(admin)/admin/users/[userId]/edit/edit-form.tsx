@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,7 +40,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EditUserFormProps {
     userData: User;
-    sealedDiscoveries: Pick<Discovery, 'id' | 'title' | 'region'>[];
+    sealedDiscoveries: Pick<Discovery, 'id' | 'title' | 'district' | 'slug'>[];
 }
 
 export function EditUserForm({ userData, sealedDiscoveries }: EditUserFormProps) {
@@ -179,7 +180,7 @@ export function EditUserForm({ userData, sealedDiscoveries }: EditUserFormProps)
                         <TableHeader>
                             <TableRow>
                             <TableHead>Descoberta</TableHead>
-                            <TableHead>Região</TableHead>
+                            <TableHead>Distrito</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -190,7 +191,7 @@ export function EditUserForm({ userData, sealedDiscoveries }: EditUserFormProps)
                                         {discovery.title}
                                     </Link>
                                 </TableCell>
-                                <TableCell><Badge variant="secondary">{discovery.region}</Badge></TableCell>
+                                <TableCell><Badge variant="secondary">{discovery.district}</Badge></TableCell>
                             </TableRow>
                             ))}
                         </TableBody>

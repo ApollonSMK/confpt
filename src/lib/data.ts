@@ -83,10 +83,9 @@ export type Event = {
   event_date: string; // Vem como string do Supabase
   location?: string | null;
   district: string;
-  municipality: string;
+  is_public: boolean;
   image_url?: string | null;
   image_hint?: string | null;
-  is_public: boolean;
   confrarias?: {
     name: string;
     seal_url: string;
@@ -188,8 +187,8 @@ export const portugalDistricts = {
     "Viseu": ["Armamar","Carregal do Sal","Castro Daire","Cinfães","Lamego","Mangualde","Moimenta da Beira","Mortágua","Nelas","Oliveira de Frades","Penalva do Castelo","Penedono","Resende","Santa Comba Dão","São João da Pesqueira","São Pedro do Sul","Sátão","Sernancelhe","Tabuaço","Tarouca","Tondela","Vila Nova de Paiva","Viseu","Vouzela"],
     "Madeira": ["Calheta","Câmara de Lobos","Funchal","Machico","Ponta do Sol","Porto Moniz","Porto Santo","Ribeira Brava","Santa Cruz","Santana","São Vicente"],
     "Açores": ["Angra do Heroísmo","Calheta de São Jorge","Corvo","Horta","Lagoa","Lajes das Flores","Lajes do Pico","Madalena","Nordeste","Ponta Delgada","Povoação","Praia da Vitória","Ribeira Grande","Santa Cruz da Graciosa","Santa Cruz das Flores","São Roque do Pico","Velas","Vila do Porto","Vila Franca do Campo"],
-    "Luxemburgo": ["UE"],
-    "Bélgica": ["UE"]
+    "Luxemburgo": ["Luxemburgo"],
+    "Bélgica": ["Bélgica"]
 
   };
 
@@ -258,5 +257,3 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
     progress: progress,
   };
 }
-
-    

@@ -128,7 +128,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                     <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
                                     {article?.image_url && (
                                         <div className="relative h-40 w-full rounded-md overflow-hidden border">
-                                            <Image src={article.image_url} alt="Imagem de capa atual" layout="fill" objectFit="cover" />
+                                            <Image src={article.image_url} alt="Imagem de capa atual" fill objectFit="cover" />
                                         </div>
                                     )}
                                     <FormControl>

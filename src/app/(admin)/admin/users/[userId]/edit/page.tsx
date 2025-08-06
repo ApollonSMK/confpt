@@ -1,4 +1,5 @@
 
+
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
@@ -29,7 +30,7 @@ async function getUser(id: string): Promise<User> {
     return data.user;
 }
 
-async function getSealedDiscoveries(userId: string): Promise<Pick<Discovery, 'id' | 'title' | 'region'>[]> {
+async function getSealedDiscoveries(userId: string): Promise<Pick<Discovery, 'id' | 'title' | 'district' | 'slug'>[]> {
     const supabase = createServiceRoleClient();
 
     const { data: seals, error: sealsError } = await supabase
@@ -45,7 +46,7 @@ async function getSealedDiscoveries(userId: string): Promise<Pick<Discovery, 'id
 
     const { data, error } = await supabase
         .from('discoveries')
-        .select('id, title, region')
+        .select('id, title, district, slug')
         .in('id', discoveryIds);
 
      if (error) {

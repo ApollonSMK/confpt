@@ -648,7 +648,6 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
     const { toast } = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
-    const router = useRouter();
 
 
     const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
@@ -692,12 +691,14 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
 
             const { data: { publicUrl } } = supabase.storage.from('public-images').getPublicUrl(uploadData.path);
             
+            // ATENÇÃO: Esta é a atualização direta do lado do cliente
             const { error: dbError } = await supabase
                 .from('confrarias')
                 .update({ [imageType]: publicUrl })
                 .eq('id', confrariaId);
             
             if (dbError) {
+                // Tenta apagar a imagem se a atualização da BD falhar
                 await supabase.storage.from('public-images').remove([fileName]);
                 throw dbError;
             }
@@ -779,5 +780,3 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         </DialogContent>
     )
 }
-
-    

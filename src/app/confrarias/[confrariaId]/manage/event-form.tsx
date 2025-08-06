@@ -163,7 +163,9 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                         <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                                            <SelectContent>
+                                                {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                            </SelectContent>
                                         </Select>
                                         <FormMessage />
                                     </FormItem>
@@ -228,7 +230,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
                                      {event?.image_url && (
                                         <div className="relative h-40 w-full rounded-md overflow-hidden border">
-                                            <Image src={event.image_url} alt="Imagem de capa atual" layout="fill" objectFit="cover" />
+                                            <Image src={event.image_url} alt="Imagem de capa atual" fill objectFit="cover" />
                                         </div>
                                     )}
                                     <FormControl>

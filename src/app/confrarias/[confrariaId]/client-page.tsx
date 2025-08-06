@@ -21,7 +21,6 @@ import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/crop-image';
 import { Slider } from '@/components/ui/slider';
-import { updateConfrariaImageUrl } from './manage/actions';
 import { createClient } from '@/lib/supabase/client';
 import { nanoid } from 'nanoid';
 
@@ -414,5 +413,3 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
         </div>
     );
 }
-
-    

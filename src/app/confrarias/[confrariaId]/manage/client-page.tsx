@@ -678,7 +678,6 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
             const pathPrefix = imageType === 'seal_url' ? 'selo' : 'capa';
             const fileName = `confrarias/${confrariaId}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
 
-            // 1. Upload directly from client
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('public-images')
                 .upload(fileName, imageBlob, {
@@ -693,20 +692,18 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
 
             const { data: { publicUrl } } = supabase.storage.from('public-images').getPublicUrl(uploadData.path);
             
-            // 2. Update the URL in the database directly from the client
             const { error: dbError } = await supabase
                 .from('confrarias')
                 .update({ [imageType]: publicUrl })
                 .eq('id', confrariaId);
             
             if (dbError) {
-                // If DB update fails, try to remove the uploaded image to avoid orphans
                 await supabase.storage.from('public-images').remove([fileName]);
                 throw dbError;
             }
 
             toast({ title: 'Sucesso!', description: 'Imagem atualizada com sucesso!' });
-            onUploadSuccess(); // This will call router.refresh() from the parent
+            onUploadSuccess();
             
         } catch (e: any) {
             console.error(e);

@@ -498,15 +498,17 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
 
 export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_url' | 'cover_url', newUrl: string) {
     'use server';
-    const supabase = createServerClient();
-    const { error } = await supabase.rpc('update_confraria_image_url', {
-        p_confraria_id: confrariaId,
-        p_image_type: type,
-        p_new_url: newUrl,
-    });
+    await checkPermissions(confrariaId);
+
+    const supabase = createServiceRoleClient();
+    
+    const { error } = await supabase
+        .from('confrarias')
+        .update({ [type]: newUrl })
+        .eq('id', confrariaId);
     
     if (error) {
-        console.error(`[ERROR] Supabase RPC error for ${type}:`, error);
+        console.error(`[ERROR] DB update error for ${type}:`, error);
         return { error: 'Não foi possível atualizar o URL da imagem na base de dados.' };
     }
 
@@ -515,5 +517,4 @@ export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_u
 
     return { success: true, message: "Imagem atualizada com sucesso!" };
 }
-
     

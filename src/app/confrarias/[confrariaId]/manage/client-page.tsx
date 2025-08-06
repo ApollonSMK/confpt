@@ -387,11 +387,11 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         icon={Camera}
                         actions={
                             <Dialog open={isGalleryDialogOpen} onOpenChange={setGalleryDialogOpen}>
-                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagem</Button></DialogTrigger>
+                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagens</Button></DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle className="font-headline text-2xl">Adicionar à Galeria</DialogTitle>
-                                        <DialogDescription>Carregue uma nova imagem para partilhar com a comunidade.</DialogDescription>
+                                        <DialogDescription>Carregue uma ou mais imagens para partilhar com a comunidade.</DialogDescription>
                                     </DialogHeader>
                                     <GalleryImageForm confrariaId={confrariaData.id} onSuccess={handleGalleryFormSuccess} />
                                 </DialogContent>
@@ -565,11 +565,11 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
             <input type="hidden" name="confraria_id" value={confrariaId} />
             <div className="space-y-2">
                 <label htmlFor="gallery-image">Ficheiro da Imagem</label>
-                <Input id="gallery-image" name="image" type="file" required accept="image/png, image/jpeg, image/webp" />
+                <Input id="gallery-image" name="images" type="file" required accept="image/png, image/jpeg, image/webp" multiple />
             </div>
              <div className="space-y-2">
                 <label htmlFor="gallery-description">Descrição (Opcional)</label>
-                <Textarea id="gallery-description" name="description" placeholder="Descreva a imagem ou o momento..."/>
+                <Textarea id="gallery-description" name="description" placeholder="Esta descrição será aplicada a todas as imagens carregadas..."/>
             </div>
             <Button type="submit" disabled={loading} className="w-full">
                 {loading ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />}

@@ -133,7 +133,8 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                     )}
                                     <FormControl>
                                         <Input 
-                                            type="file" 
+                                            type="file"
+                                            name="image"
                                             accept="image/png, image/jpeg, image/webp" 
                                             onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
                                             {...rest}

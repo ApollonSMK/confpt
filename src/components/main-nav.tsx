@@ -107,7 +107,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
             <div className='bg-primary text-primary-foreground p-2 rounded-full shadow-md'>
                 <Grape className="h-6 w-6" />
             </div>
-            <span className="font-bold font-headline text-xl">Confrarias.pt</span>
+            <span className="font-bold font-headline text-xl">Confrarias Portugal</span>
           </Link>
         </div>
         <div className="hidden md:flex flex-1 items-center justify-center space-x-4">
@@ -205,5 +205,3 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
     </header>
   );
 }
-
-    

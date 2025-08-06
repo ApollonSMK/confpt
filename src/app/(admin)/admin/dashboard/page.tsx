@@ -12,13 +12,8 @@ import Link from 'next/link';
 import { LayoutDashboard, Users, Shield, BookOpen, BarChart3, TrendingUp } from 'lucide-react';
 import { subDays, format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
+import { ActivityChart } from './activity-chart';
 
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -144,13 +139,6 @@ export default async function AdminDashboardPage() {
       getDashboardStats()
   ]);
 
-  const chartConfig = {
-      descobertas: {
-        label: "Descobertas",
-        color: "hsl(var(--primary))",
-      },
-    }
-
   return (
     <div className="space-y-8">
       <div>
@@ -203,24 +191,7 @@ export default async function AdminDashboardPage() {
             <CardDescription>Novas descobertas publicadas nos últimos 7 dias.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-             <ChartContainer config={chartConfig} className="w-full h-[300px]">
-                <BarChart data={stats.activityData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    />
-                    <YAxis allowDecimals={false} />
-                    <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent indicator="dot" />}
-                    />
-                    <Bar dataKey="descobertas" fill="var(--color-descobertas)" radius={4} />
-                </BarChart>
-            </ChartContainer>
+             <ActivityChart data={stats.activityData} />
           </CardContent>
         </Card>
 

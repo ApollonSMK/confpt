@@ -11,7 +11,8 @@ async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })
             discoveries (
                 id
             )
-        `);
+        `)
+        .order('name'); // Ordena as confrarias por nome alfabético
 
     if (error) {
         console.error('Error fetching confrarias:', error);
@@ -24,12 +25,6 @@ async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })
         sealHint: c.seal_hint,
         discoveryCount: c.discoveries.length
     })) as (Confraria & { discoveryCount: number })[];
-
-    // Fisher-Yates (aka Knuth) Shuffle Algorithm
-    for (let i = mappedData.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [mappedData[i], mappedData[j]] = [mappedData[j], mappedData[i]];
-    }
 
     return mappedData;
 }
@@ -46,7 +41,7 @@ export default async function ConfrariasPage() {
         As guardiãs da tradição e do sabor. Conheça as irmandades que partilham o seu conhecimento e paixão por Portugal.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {confrarias.map((confraria) => (
           <ConfrariaCard key={confraria.id} confraria={confraria} />
         ))}

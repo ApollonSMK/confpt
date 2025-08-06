@@ -18,12 +18,20 @@ async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })
         return [];
     }
     
-    return data.map(c => ({
+    const mappedData = data.map(c => ({
         ...c,
         sealUrl: c.seal_url,
         sealHint: c.seal_hint,
         discoveryCount: c.discoveries.length
     })) as (Confraria & { discoveryCount: number })[];
+
+    // Fisher-Yates (aka Knuth) Shuffle Algorithm
+    for (let i = mappedData.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mappedData[i], mappedData[j]] = [mappedData[j], mappedData[i]];
+    }
+
+    return mappedData;
 }
 
 export default async function ConfrariasPage() {

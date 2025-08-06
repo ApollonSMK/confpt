@@ -13,7 +13,7 @@ interface ConfrariaCardProps {
 export function ConfrariaCard({ confraria }: ConfrariaCardProps) {
   return (
     <Link href={`/confrarias/${confraria.id}`} className="h-full">
-        <Card className="flex flex-col h-full text-center items-center p-4 transition-transform transform hover:-translate-y-1 duration-300 hover:shadow-xl border-2 border-transparent hover:border-primary/50">
+        <Card className="flex flex-col h-full text-center items-center p-4 transition-transform transform hover:-translate-y-1 duration-300 hover:shadow-xl border-2 border-transparent hover:border-primary">
         <CardHeader>
             <div className="mx-auto mb-4">
                 <Image

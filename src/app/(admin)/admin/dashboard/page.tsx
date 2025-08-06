@@ -84,7 +84,7 @@ async function getPendingSubmissions(): Promise<Submission[]> {
 async function getDashboardStats() {
     const supabaseService = createServiceRoleClient();
     const today = new Date();
-    const sevenDaysAgo = subDays(today, 7).toISOString();
+    const sevenDaysAgo = subDays(today, 7).toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
     const [
         { count: userCount, error: userError },
@@ -95,7 +95,7 @@ async function getDashboardStats() {
         supabaseService.from('profiles').select('*', { count: 'exact', head: true }),
         supabaseService.from('confrarias').select('*', { count: 'exact', head: true }),
         supabaseService.from('discoveries').select('*', { count: 'exact', head: true }),
-        supabaseService.from('discoveries').select('created_at').gte('created_at', sevenDaysAgo)
+        supabaseService.from('discoveries').select('date').gte('date', sevenDaysAgo)
     ]);
     
     if (userError) console.error("Error fetching user count:", userError);
@@ -114,7 +114,7 @@ async function getDashboardStats() {
 
     if (recentDiscoveries) {
         for (const discovery of recentDiscoveries) {
-            const discoveryDate = format(new Date(discovery.created_at), 'dd/MM');
+            const discoveryDate = format(new Date(discovery.date), 'dd/MM');
             const dayEntry = activityData.find(d => d.date === discoveryDate);
             if (dayEntry) {
                 dayEntry.descobertas++;

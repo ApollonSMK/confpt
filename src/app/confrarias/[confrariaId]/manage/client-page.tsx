@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle, deleteEvent } from './actions';
+import { addGalleryImage, deleteGalleryImage, deleteArticle, deleteEvent, deleteRecipe } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { districts } from '@/lib/data';
@@ -76,6 +76,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
 
     const [isDeletingArticle, setIsDeletingArticle] = useState<number | null>(null);
     const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
+    const [isDeletingRecipe, setIsDeletingRecipe] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
 
      useEffect(() => {
@@ -125,6 +126,18 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
         setArticleDialogOpen(false);
         router.refresh();
     };
+    
+    const handleDeleteArticle = async (article: Article) => {
+        setIsDeletingArticle(article.id);
+        const result = await deleteArticle(article.id, confrariaData.id);
+        if (result.error) {
+            toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Publicação Apagada', description: `"${article.title}" foi apagada com sucesso.`});
+            router.refresh();
+        }
+        setIsDeletingArticle(null);
+    }
 
     const handleEditRecipeClick = (recipe: Recipe) => {
         setSelectedRecipe(recipe);
@@ -141,6 +154,18 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
         router.refresh();
     };
 
+    const handleDeleteRecipe = async (recipe: Recipe) => {
+        setIsDeletingRecipe(recipe.id);
+        const result = await deleteRecipe(recipe.id, confrariaData.id);
+        if (result.error) {
+            toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Receita Apagada', description: `A receita "${recipe.title}" foi apagada.` });
+            router.refresh();
+        }
+        setIsDeletingRecipe(null);
+    };
+
     const handleGalleryFormSuccess = () => {
         setGalleryDialogOpen(false);
         router.refresh();
@@ -154,18 +179,6 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
             toast({ title: 'Sucesso', description: `Imagem removida da galeria.` });
             router.refresh();
         }
-    }
-    
-    const handleDeleteArticle = async (article: Article) => {
-        setIsDeletingArticle(article.id);
-        const result = await deleteArticle(article.id, confrariaData.id);
-        if (result.error) {
-            toast({ title: 'Erro ao Apagar', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Publicação Apagada', description: `"${article.title}" foi apagada com sucesso.`});
-            router.refresh();
-        }
-        setIsDeletingArticle(null);
     }
 
 
@@ -207,7 +220,8 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         <UtensilsCrossed className="mr-2 h-4 w-4"/>
                         Receitas
                         {recipes.length > 0 && <Badge className="ml-2">{recipes.length}</Badge>}
-                    </TabsList>
+                    </TabsTrigger>
+                </TabsList>
                 
                 <TabsContent value="details" className="mt-6">
                     <TabContentCard title="Editar Detalhes" description="Atualize as informações públicas da sua confraria que todos podem ver." icon={PenSquare}>
@@ -448,8 +462,22 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                             <TableCell className="font-medium">{recipe.title}</TableCell>
                                             <TableCell>{new Date(recipe.created_at).toLocaleDateString()}</TableCell>
                                             <TableCell><Badge variant={recipe.status === 'published' ? 'default' : 'secondary'}>{recipe.status === 'published' ? 'Publicada' : 'Rascunho'}</Badge></TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-2">
                                                 <Button variant="outline" size="icon" onClick={() => handleEditRecipeClick(recipe)}><Edit className="h-4 w-4"/></Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon" disabled={isDeletingRecipe === recipe.id}>
+                                                            {isDeletingRecipe === recipe.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Apagar Receita?</AlertDialogTitle><AlertDialogDescription>Tem a certeza que quer apagar a receita &quot;{recipe.title}&quot;? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteRecipe(recipe)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -526,7 +554,7 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
         if(result.error) {
             toast({ title: 'Erro', description: result.error, variant: 'destructive' });
         } else {
-            toast({ title: 'Sucesso', description: result.message });
+            toast({ title: 'Sucesso!', description: result.message });
             formRef.current?.reset();
             onSuccess();
         }
@@ -638,5 +666,3 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
         </Card>
     );
 }
-
-    

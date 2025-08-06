@@ -431,6 +431,24 @@ export async function upsertRecipe(formData: FormData) {
     return { success: true, message: id ? 'Receita atualizada!' : 'Receita criada!' };
 }
 
+export async function deleteRecipe(recipeId: number, confrariaId: number) {
+    'use server';
+    await checkPermissions(confrariaId);
+
+    const supabaseService = createServiceRoleClient();
+    const { error } = await supabaseService.from('recipes').delete().eq('id', recipeId);
+    
+    if (error) {
+        console.error("Error deleting recipe:", error);
+        return { error: 'Ocorreu um erro ao apagar a receita.' };
+    }
+
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+
+    return { success: true };
+}
+
 export async function addGalleryImage(formData: FormData) {
     'use server';
 
@@ -490,8 +508,3 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
-    
-
-    
-
-    

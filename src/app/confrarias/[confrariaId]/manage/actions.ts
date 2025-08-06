@@ -55,7 +55,7 @@ const recipeSchema = z.object({
 const galleryImageSchema = z.object({
     confraria_id: z.number(),
     description: z.string().optional(),
-    image: z.any(),
+    image: z.instanceof(File),
 });
 
 async function checkPermissions(confrariaId: number) {
@@ -495,4 +495,6 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
+    
+
     

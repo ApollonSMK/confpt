@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -52,12 +53,12 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
           .from('confrarias')
           .select('id')
           .eq('responsible_user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (data) {
           setManagedConfrariaId(data.id);
         }
-         if (error && error.code !== 'PGRST116') { // Ignore 'exact one row' error
+         if (error) {
             console.error("Error fetching managed confraria:", error);
         }
       }
@@ -204,3 +205,5 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
     </header>
   );
 }
+
+    

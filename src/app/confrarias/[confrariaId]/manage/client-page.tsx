@@ -610,7 +610,7 @@ const CoverUploader = ({ confraria, onUploadSuccess }: { confraria: ConfrariaDat
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
                 <div className="aspect-video w-full relative rounded-md overflow-hidden bg-muted">
-                    <Image src={confraria.cover_url} alt="Capa atual" layout="fill" objectFit="cover" />
+                    <Image src={confraria.cover_url} alt="Capa atual" fill sizes="50vw" className="object-cover" />
                 </div>
                 <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild><Button><Camera className="mr-2" />Alterar Capa</Button></DialogTrigger>
@@ -775,3 +775,5 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         </DialogContent>
     )
 }
+
+    

@@ -93,3 +93,5 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
 }
 
     
+
+    

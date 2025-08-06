@@ -15,10 +15,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['Playfair Display', 'serif'],
-        code: ['monospace'],
-        parchment: ['Uncial Antiqua', 'cursive'],
+        body: ['var(--font-pt-sans)', 'sans-serif'],
+        headline: ['var(--font-playfair-display)', 'serif'],
+        parchment: ['var(--font-uncial-antiqua)', 'cursive'],
       },
       colors: {
         background: 'hsl(var(--background))',

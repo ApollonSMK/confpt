@@ -495,26 +495,4 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true, message: 'Imagem removida.' };
 }
-
-export async function updateConfrariaImageUrl(confrariaId: number, type: 'seal_url' | 'cover_url', newUrl: string) {
-    'use server';
-    await checkPermissions(confrariaId);
-
-    const supabase = createServiceRoleClient();
-    
-    const { error } = await supabase
-        .from('confrarias')
-        .update({ [type]: newUrl })
-        .eq('id', confrariaId);
-    
-    if (error) {
-        console.error(`[ERROR] DB update error for ${type}:`, error);
-        return { error: 'Não foi possível atualizar o URL da imagem na base de dados.' };
-    }
-
-    revalidatePath(`/confrarias/${confrariaId}`);
-    revalidatePath(`/confrarias/${confrariaId}/manage`);
-
-    return { success: true, message: "Imagem atualizada com sucesso!" };
-}
     

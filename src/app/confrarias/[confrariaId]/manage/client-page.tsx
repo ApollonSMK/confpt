@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle, updateConfrariaImageUrl, deleteEvent } from './actions';
+import { addGalleryImage, deleteGalleryImage, deleteArticle, deleteEvent } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { districts } from '@/lib/data';
@@ -647,6 +647,9 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const { toast } = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
+    const supabase = createClient();
+    const router = useRouter();
+
 
     const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
         setCroppedAreaPixels(croppedAreaPixels);
@@ -667,7 +670,6 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
         if (!imageSrc || !croppedAreaPixels) return;
         setLoading(true);
         try {
-            const supabase = createClient();
             const imageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
             if (!imageBlob) {
                 throw new Error("Could not crop image.");
@@ -676,7 +678,7 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
             const pathPrefix = imageType === 'seal_url' ? 'selo' : 'capa';
             const fileName = `confrarias/${confrariaId}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
 
-            // Upload directly from client
+            // 1. Upload directly from client
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('public-images')
                 .upload(fileName, imageBlob, {
@@ -691,16 +693,21 @@ const ImageCropModal = ({ open, onOpenChange, confrariaId, onUploadSuccess, imag
 
             const { data: { publicUrl } } = supabase.storage.from('public-images').getPublicUrl(uploadData.path);
             
-            // Now call a simplified server action to update the DB
-            const result = await updateConfrariaImageUrl(confrariaId, imageType, publicUrl);
+            // 2. Update the URL in the database directly from the client
+            const { error: dbError } = await supabase
+                .from('confrarias')
+                .update({ [imageType]: publicUrl })
+                .eq('id', confrariaId);
             
-            if (result.error) {
-                toast({ title: 'Erro', description: result.error, variant: 'destructive' });
-            } else {
-                toast({ title: 'Sucesso!', description: result.message });
-                onUploadSuccess();
+            if (dbError) {
+                // If DB update fails, try to remove the uploaded image to avoid orphans
+                await supabase.storage.from('public-images').remove([fileName]);
+                throw dbError;
             }
 
+            toast({ title: 'Sucesso!', description: 'Imagem atualizada com sucesso!' });
+            onUploadSuccess(); // This will call router.refresh() from the parent
+            
         } catch (e: any) {
             console.error(e);
             toast({ title: 'Erro no Upload', description: e.message || 'Ocorreu um erro inesperado.', variant: 'destructive' });

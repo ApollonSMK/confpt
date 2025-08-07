@@ -3,7 +3,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,15 +18,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { districts, type Confraria, DiscoveryType, portugalDistricts } from '@/lib/data';
+import { districts, type Confraria, DiscoveryType, portugalDistricts, amenities } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Globe, Shield, Image as ImageIcon, Phone, CheckSquare } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Checkbox } from './ui/checkbox';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5; // In MB
+
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
 
 const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
@@ -35,7 +42,10 @@ const submissionSchema = z.object({
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
-  links: z.string().url('URL inválido').optional().or(z.literal('')),
+  address: z.string().optional(),
+  website: z.string().url('URL do website inválido').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 // We add the image schema for client-side validation
@@ -70,13 +80,21 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       municipality: undefined,
       type_id: undefined,
       confrariaId: 'null',
-      links: '',
+      address: '',
+      website: '',
+      phone: '',
+      amenities: [],
       image: undefined,
     },
   });
 
-  const { trigger, watch, setValue, formState: { errors } } = form;
+  const { trigger, watch, setValue, control } = form;
   const selectedDistrict = watch('district');
+
+  const { fields, append, remove } = useFieldArray({
+      control,
+      name: "amenities"
+  });
 
   useEffect(() => {
     if (selectedDistrict && portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]) {
@@ -122,7 +140,8 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   }
 
   return (
-    <Form form={form} onSubmit={onSubmit}>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       {step === 1 && (
           <Card>
               <CardHeader>
@@ -244,44 +263,63 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                           </FormItem>
                           )}
                       />
-                  </div>
-                    <FormField
-                      control={form.control}
-                      name="confrariaId"
-                      render={({ field }) => (
-                          <FormItem>
-                          <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Relevante para a Confraria (Opcional)</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
+                      <FormField
+                          control={form.control}
+                          name="confrariaId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Confraria Relevante</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
                                   <SelectTrigger>
-                                  <SelectValue placeholder="Associe a uma confraria existente" />
+                                    <SelectValue placeholder="Associe a uma confraria" />
                                   </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                  <SelectItem value="null">Nenhuma (contribuição comunitária)</SelectItem>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="null">Nenhuma (comunitária)</SelectItem>
                                   {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                              </SelectContent>
+                                </SelectContent>
                               </Select>
-                          <FormDescription>Se esta descoberta tem uma ligação especial com alguma confraria, indique-a aqui. Isto ajuda os nossos curadores a organizar o conteúdo.</FormDescription>
-                          <FormMessage />
-                          </FormItem>
-                      )}
-                      />
+                            </FormItem>
+                          )}
+                        />
+                  </div>
                   <FormField
                       control={form.control}
-                      name="links"
+                      name="address"
                       render={({ field }) => (
                           <FormItem>
-                          <FormLabel className="flex items-center gap-2"><LinkIcon className="h-4 w-4"/>Link de Referência (Opcional)</FormLabel>
-                          <FormControl>
-                              <Input placeholder="https://exemplo.com" {...field} />
-                          </FormControl>
-                          <FormDescription>Website oficial, artigo de jornal, redes sociais, etc.</FormDescription>
+                          <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Morada (Opcional)</FormLabel>
+                          <FormControl><Input placeholder="Rua, número, código postal" {...field} /></FormControl>
                           <FormMessage />
                           </FormItem>
                       )}
                       />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4"/>Website (Opcional)</FormLabel>
+                            <FormControl><Input placeholder="https://exemplo.com" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2"><Phone className="h-4 w-4"/>Telefone (Opcional)</FormLabel>
+                            <FormControl><Input placeholder="Contacto telefónico" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                  </div>
+                   <FormField
                       control={form.control}
                       name="image"
                       render={({ field: { onChange, ...rest } }) => (
@@ -300,6 +338,42 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                           </FormItem>
                       )}
                       />
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2"><CheckSquare className="h-4 w-4"/>Comodidades (Opcional)</FormLabel>
+                      <FormDescription>Selecione as comodidades que se aplicam a esta descoberta, se for o caso.</FormDescription>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                          {amenities.map((amenity) => (
+                              <FormField
+                                  key={amenity.id}
+                                  control={form.control}
+                                  name="amenities"
+                                  render={() => {
+                                      return (
+                                      <FormItem
+                                          key={amenity.id}
+                                          className="flex flex-row items-start space-x-3 space-y-0"
+                                      >
+                                          <FormControl>
+                                          <Checkbox
+                                              checked={fields.some(a => a.id === amenity.id)}
+                                              onCheckedChange={(checked) => {
+                                              return checked
+                                                  ? append(amenity)
+                                                  : remove(fields.findIndex(a => a.id === amenity.id))
+                                              }}
+                                          />
+                                          </FormControl>
+                                          <FormLabel className="font-normal">
+                                              {amenity.label}
+                                          </FormLabel>
+                                      </FormItem>
+                                      )
+                                  }}
+                              />
+                          ))}
+                      </div>
+                      <FormMessage />
+                  </FormItem>
               </CardContent>
               <CardFooter className="flex justify-between">
                     <Button type="button" variant="ghost" onClick={() => setStep(1)}>
@@ -312,7 +386,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
               </CardFooter>
           </Card>
       )}
+      </form>
     </Form>
   );
 }
-

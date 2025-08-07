@@ -3,10 +3,16 @@
 
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
-import { districts } from '@/lib/data';
+import { districts, type Amenity } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
+
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
 
 // Schema is now defined in the client component to avoid exporting non-functions from a "use server" file.
 const submissionSchema = z.object({
@@ -16,7 +22,10 @@ const submissionSchema = z.object({
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
-  links: z.string().url('URL inválido').optional().or(z.literal('')),
+  address: z.string().optional(),
+  website: z.string().url('URL inválido').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 
@@ -34,10 +43,11 @@ export async function createSubmission(
     
     const parsedData = submissionSchema.safeParse(values);
     if (!parsedData.success) {
+        console.error("Submission validation errors:", parsedData.error.errors);
         return { error: 'Dados inválidos.' };
     }
 
-    const { title, editorial, district, municipality, type_id, confrariaId, links } = parsedData.data;
+    const { title, editorial, district, municipality, type_id, confrariaId, address, website, phone, amenities } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -74,7 +84,11 @@ export async function createSubmission(
             municipality,
             type: parseInt(type_id, 10),
             confraria_id: confrariaId && confrariaId !== 'null' ? parseInt(confrariaId, 10) : null,
-            links: links || null,
+            links: website || null, // Keeping 'links' field for now in DB
+            website: website || null,
+            address: address || null,
+            phone: phone || null,
+            amenities: amenities || null,
             status: 'Pendente',
             date: formattedDate,
             image_url: imageUrl,

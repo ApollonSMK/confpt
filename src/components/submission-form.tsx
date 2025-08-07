@@ -98,7 +98,13 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
 
     setLoading(true);
 
-    const submissionFormData = new FormData(event.currentTarget);
+    if (!formRef.current) {
+        setLoading(false);
+        toast({ title: "Erro no Formulário", description: "Ocorreu um erro inesperado. Por favor, tente novamente.", variant: "destructive" });
+        return;
+    }
+
+    const submissionFormData = new FormData(formRef.current);
     
     const result = await createSubmission(submissionFormData);
     

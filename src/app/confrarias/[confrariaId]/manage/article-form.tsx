@@ -123,7 +123,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                         <FormField
                             control={form.control}
                             name="image"
-                            render={({ field: { onChange, ...rest } }) => (
+                            render={({ field: { onChange, value, ...rest } }) => (
                                 <FormItem>
                                     <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
                                     {article?.image_url && (
@@ -137,7 +137,6 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                             name="image"
                                             accept="image/png, image/jpeg, image/webp" 
                                             onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
-                                            {...rest}
                                         />
                                     </FormControl>
                                     <FormDescription>Uma imagem de capa torna a sua publicação mais apelativa. Tamanho máximo: {MAX_IMAGE_SIZE}MB.</FormDescription>
@@ -146,7 +145,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                             )}
                         />
                         {/* Hidden fields */}
-                        <input type="hidden" name="id" value={form.getValues('id')} />
+                        <input type="hidden" name="id" value={form.getValues('id') || ''} />
                         <input type="hidden" name="confraria_id" value={form.getValues('confraria_id')} />
                         <input type="hidden" name="author_id" value={form.getValues('author_id')} />
                     </CardContent>

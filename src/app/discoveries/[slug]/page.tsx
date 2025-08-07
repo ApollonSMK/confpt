@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText, Star, Wifi, Car, Wheelchair } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText, Star, Wifi, Car, Accessibility } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
@@ -155,7 +155,7 @@ async function getMapboxApiKey(): Promise<string> {
 const amenityIcons: { [key: string]: LucideIcon } = {
   wifi: Wifi,
   parking: Car,
-  accessible: Wheelchair,
+  accessible: Accessibility,
   default: Star,
 };
 

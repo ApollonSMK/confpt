@@ -16,6 +16,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MapboxDisplay } from '@/components/mapbox-display';
 
 
 type DiscoveryPageProps = {
@@ -136,6 +137,21 @@ async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser
     }) as TestimonialWithUser[];
 }
 
+async function getMapboxApiKey(): Promise<string> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'mapbox_api_key')
+        .single();
+    
+    if (error || !data) {
+        console.error("Could not fetch Mapbox API key:", error);
+        return '';
+    }
+    return data.value || '';
+}
+
 const amenityIcons: { [key: string]: LucideIcon } = {
   wifi: Wifi,
   parking: Car,
@@ -155,9 +171,10 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     notFound();
   }
   
-  const [testimonials, relatedDiscoveries] = await Promise.all([
+  const [testimonials, relatedDiscoveries, mapboxApiKey] = await Promise.all([
     getTestimonials(discovery.id),
-    discoveries.filter(d => d.district === discovery.district && d.id !== discovery.id).slice(0, 5)
+    discoveries.filter(d => d.district === discovery.district && d.id !== discovery.id).slice(0, 5),
+    getMapboxApiKey()
   ]);
 
   const confraria = discovery.confrarias;
@@ -265,13 +282,8 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                 <CardContent>
                      {discovery.contextualData?.address ? (
                         <>
-                           <div className="relative aspect-video w-full rounded-md overflow-hidden border mb-4">
-                                <Image 
-                                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(discovery.contextualData.address)}&zoom=15&size=600x340&maptype=roadmap&markers=color:red%7C${encodeURIComponent(discovery.contextualData.address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                                    alt={`Mapa de ${discovery.title}`}
-                                    fill
-                                    className="object-cover"
-                                />
+                           <div className="mb-4">
+                                <MapboxDisplay apiKey={mapboxApiKey} address={discovery.contextualData.address} title={discovery.title} />
                             </div>
                             <p className="flex items-start gap-2 text-muted-foreground"><MapPin className="h-4 w-4 text-primary mt-1 shrink-0" /> <span>{discovery.contextualData.address}</span></p>
                         </>

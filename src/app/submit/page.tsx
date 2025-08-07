@@ -1,36 +1,9 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubmissionForm } from '@/components/submission-form';
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import type { Submission, Confraria, DiscoveryType } from '@/lib/data';
+import type { Confraria, DiscoveryType } from '@/lib/data';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import Link from 'next/link';
-
-async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
-    if (!userId) {
-        console.warn('No userId provided to getSubmissionsForUser');
-        return [];
-    }
-    const supabase = createServerClient();
-    const { data, error } = await supabase.from('submissions').select('*, discovery_types(name)').eq('user_id', userId).order('date', { ascending: false });
-    
-    if (error) {
-        console.error('Error fetching submissions for user:', error);
-        return [];
-    }
-
-    return data.map(s => ({
-        ...s,
-        type: (s as any).discovery_types.name,
-        discoveryTitle: s.discovery_title,
-    })) as Submission[];
-}
-
 
 async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })[]> {
     const supabase = createServerClient();
@@ -74,8 +47,7 @@ export default async function SubmitPage() {
     redirect('/login?redirect=/submit');
   }
 
-  const [userSubmissions, confrarias, discoveryTypes] = await Promise.all([
-    getSubmissionsForUser(user.id),
+  const [confrarias, discoveryTypes] = await Promise.all([
     getConfrarias(),
     getDiscoveryTypes()
   ]);
@@ -89,65 +61,7 @@ export default async function SubmitPage() {
                 Ajude a enriquecer o nosso mapa de tesouros. Sugira um produto, lugar ou pessoa que mereça ser conhecido.
             </p>
         </div>
-
-
-        <Tabs defaultValue="suggest" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="suggest">Sugerir Descoberta</TabsTrigger>
-            <TabsTrigger value="submissions">Minhas Submissões ({userSubmissions.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="suggest" className="mt-6">
-            <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
-          </TabsContent>
-          <TabsContent value="submissions" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Histórico de Submissões</CardTitle>
-                <CardDescription>
-                  Acompanhe o estado das suas sugestões.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {userSubmissions.length > 0 ? (
-                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Descoberta</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="text-right">Estado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {userSubmissions.map((submission) => (
-                        <TableRow key={submission.id}>
-                          <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
-                          <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge
-                              className={cn({
-                                'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
-                                'bg-red-100 text-red-800 border-red-300': submission.status === 'Rejeitado',
-                                'bg-yellow-100 text-yellow-800 border-yellow-300': submission.status === 'Pendente',
-                              })}
-                              variant="outline"
-                            >
-                              {submission.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Você ainda não fez nenhuma submissão. Tem um tesouro para partilhar?
-                  </p>
-                )}
-                
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2, Calendar, Pencil } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2, Pencil } from 'lucide-react';
 import { getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
@@ -16,6 +16,7 @@ import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promise<Discovery[]> {
     const { data: seals, error: sealsError } = await supabase
@@ -286,44 +287,52 @@ export default function ProfilePage() {
                         Minhas Submissões
                     </CardTitle>
                     <CardDescription>
-                        O seu historial de contribuições para a comunidade.
+                        O seu historial de contribuições para a comunidade. Vá a <Link href="/submit" className="text-primary hover:underline">Partilhar Descoberta</Link> para fazer uma nova submissão.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                      {userSubmissions.length > 0 ? (
-                        <div className="space-y-4">
-                            {userSubmissions.map((submission) => (
-                                <Card key={submission.id} className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4">
-                                    <div className='flex-grow'>
-                                        <p className="font-bold">{submission.discoveryTitle}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Enviado a {new Date(submission.date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <Badge
-                                            className={cn('w-fit', {
-                                                'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
-                                                'bg-red-100 text-red-800 border-red-300': submission.status === 'Rejeitado',
-                                                'bg-yellow-100 text-yellow-800 border-yellow-300': submission.status === 'Pendente',
-                                            })}
-                                            variant="outline"
-                                        >
-                                            {submission.status}
-                                        </Badge>
-                                        {submission.status === 'Pendente' && (
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/profile/submission/${submission.id}/edit`}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> Editar
-                                                </Link>
-                                            </Button>
-                                        )}
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {userSubmissions.map((submission) => (
+                                    <TableRow key={submission.id}>
+                                        <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
+                                        <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                className={cn({
+                                                    'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
+                                                    'bg-red-100 text-red-800 border-red-300': submission.status === 'Rejeitado',
+                                                    'bg-yellow-100 text-yellow-800 border-yellow-300': submission.status === 'Pendente',
+                                                })}
+                                                variant="outline"
+                                            >
+                                                {submission.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {submission.status === 'Pendente' && (
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/profile/submission/${submission.id}/edit`}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Editar
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                      ) : (
-                         <p className="text-muted-foreground">Você ainda não fez nenhuma submissão. Tem um tesouro para <Link href="/submit" className="text-primary hover:underline">partilhar</Link>?</p>
+                         <p className="text-muted-foreground text-center py-6">Você ainda não fez nenhuma submissão. Tem um tesouro para <Link href="/submit" className="text-primary hover:underline">partilhar</Link>?</p>
                      )}
                 </CardContent>
             </Card>

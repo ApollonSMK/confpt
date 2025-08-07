@@ -194,19 +194,6 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <header className="mb-8">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">{discovery.title}</h1>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
-            <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-primary" />{discovery.district}</span>
-            <span className="flex items-center gap-1"><Tag className="h-4 w-4 text-primary" />{discovery.type}</span>
-            {discovery.seal_count > 0 && (
-                <span className="flex items-center gap-1">
-                    <Award className="h-4 w-4 text-primary" />
-                    <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}</span>
-                </span>
-            )}
-        </div>
-      </header>
       
       {discovery.images && discovery.images.length > 0 ? (
             <Carousel className="w-full mb-8">
@@ -247,6 +234,19 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
              </div>
         )}
 
+      <header className="mb-8">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">{discovery.title}</h1>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+            <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-primary" />{discovery.district}</span>
+            <span className="flex items-center gap-1"><Tag className="h-4 w-4 text-primary" />{discovery.type}</span>
+            {discovery.seal_count > 0 && (
+                <span className="flex items-center gap-1">
+                    <Award className="h-4 w-4 text-primary" />
+                    <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}</span>
+                </span>
+            )}
+        </div>
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         <div className="lg:col-span-2">

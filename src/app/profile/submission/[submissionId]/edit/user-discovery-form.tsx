@@ -131,7 +131,7 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form} onSubmit={onSubmit}>
+        <Form form={form} onSubmit={onSubmit}>
           <div className="space-y-6">
             <FormField
               control={form.control}
@@ -256,27 +256,30 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 )}
                 />
             <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Imagem Principal</FormLabel>
-                        {discovery.imageUrl && (
-                            <div className="relative h-40 w-full max-w-sm rounded-md overflow-hidden border">
-                                <Image src={discovery.imageUrl} alt="Imagem atual da descoberta" fill style={{ objectFit: 'cover' }} />
-                            </div>
-                        )}
-                        <FormControl>
-                            <Input 
-                                type="file" 
-                                accept="image/png, image/jpeg, image/webp" 
-                                onChange={e => field.onChange(e.target.files ? e.target.files[0] : null)}
-                            />
-                        </FormControl>
-                        <FormDescription>Pode substituir a imagem principal carregando uma nova. Máx {MAX_IMAGE_SIZE}MB.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}
+              control={form.control}
+              name="image"
+              render={({ field }) => {
+                const { value, ...rest } = field;
+                return (
+                  <FormItem>
+                    <FormLabel>Imagem Principal</FormLabel>
+                    {discovery.imageUrl && (
+                      <div className="relative h-40 w-full max-w-sm rounded-md overflow-hidden border">
+                        <Image src={discovery.imageUrl} alt="Imagem atual da descoberta" fill style={{ objectFit: 'cover' }} />
+                      </div>
+                    )}
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>Pode substituir a imagem principal carregando uma nova. Máx {MAX_IMAGE_SIZE}MB.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <div className="flex justify-between items-center pt-4">
               <Button asChild variant="ghost">

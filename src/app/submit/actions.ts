@@ -17,7 +17,7 @@ const submissionSchema = z.object({
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('URL inválido').optional().or(z.literal('')),
-  image: z.any().optional(),
+  image: z.instanceof(File).optional(),
 });
 
 export async function createSubmission(formData: FormData) {
@@ -28,6 +28,8 @@ export async function createSubmission(formData: FormData) {
         return { error: "Utilizador não autenticado. Por favor, faça login." };
     }
 
+    const imageFile = formData.get('image');
+
     const values = {
         title: formData.get('title'),
         editorial: formData.get('editorial'),
@@ -36,7 +38,7 @@ export async function createSubmission(formData: FormData) {
         type_id: formData.get('type_id'),
         confrariaId: formData.get('confrariaId'),
         links: formData.get('links'),
-        image: formData.get('image'),
+        image: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
     };
     
     // Server-side validation

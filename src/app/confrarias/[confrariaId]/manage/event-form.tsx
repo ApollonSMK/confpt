@@ -46,9 +46,6 @@ const formSchema = z.object({
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   is_public: z.boolean().default(true),
-  image: z.any()
-    .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
-    .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -80,7 +77,6 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             district: event?.district || confrariaRegion,
             municipality: event?.municipality || '',
             is_public: event?.is_public ?? true,
-            image: undefined,
         },
     });
 
@@ -264,7 +260,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                            <div className="space-y-2">
+                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
                                 {event?.image_url && (
                                     <div className="relative h-40 w-full rounded-md overflow-hidden border">
@@ -279,7 +275,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     />
                                 </FormControl>
                                 <FormDescription>Uma boa imagem promove melhor o seu evento. Tamanho máximo: {MAX_IMAGE_SIZE}MB.</FormDescription>
-                            </div>
+                            </FormItem>
                         </CardContent>
                         <CardFooter className="flex justify-between">
                             <Button type="button" variant="ghost" onClick={() => setStep(1)}>

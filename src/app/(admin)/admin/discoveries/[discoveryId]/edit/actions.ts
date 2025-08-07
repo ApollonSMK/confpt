@@ -7,6 +7,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service';
 import { districts } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { nanoid } from 'nanoid';
 
 async function checkAdmin() {
   const supabase = createServerClient();
@@ -19,7 +20,12 @@ async function checkAdmin() {
   }
 }
 
-// We don't need discoveryTypes here anymore, as it will be fetched from DB
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
+
 const formSchema = z.object({
   id: z.number(),
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
@@ -28,11 +34,10 @@ const formSchema = z.object({
   district: z.enum(districts),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
-  // image_url and image_hint are no longer direct fields.
-  // They will be handled separately if we add gallery management in the admin.
   address: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 export async function updateDiscovery(values: z.infer<typeof formSchema>) {
@@ -66,9 +71,6 @@ export async function updateDiscovery(values: z.infer<typeof formSchema>) {
         console.error("Error updating discovery:", error);
         return { error: `Erro ao atualizar descoberta: ${error.message}` };
     }
-    
-    // Note: Image updates would need a separate mechanism here.
-    // For now, we only update the textual data.
 
     revalidatePath('/admin/discoveries');
     revalidatePath(`/discoveries/${slug}`);
@@ -92,4 +94,90 @@ export async function deleteDiscovery(id: number) {
     revalidatePath('/discoveries');
 
     redirect('/admin/discoveries');
+}
+
+
+export async function addDiscoveryImage(formData: FormData) {
+    'use server';
+
+    const discoveryId = Number(formData.get('discoveryId'));
+    const image = formData.get('image') as File;
+    const imageHint = formData.get('imageHint') as string;
+    const slug = formData.get('slug') as string;
+
+    if (!image || image.size === 0) {
+        return { error: 'Nenhuma imagem selecionada.' };
+    }
+
+    await checkAdmin();
+    const supabaseService = createServiceRoleClient();
+
+    const fileExtension = image.name.split('.').pop();
+    const fileName = `discoveries/${discoveryId}/${nanoid()}.${fileExtension}`;
+
+    const { error: uploadError } = await supabaseService.storage
+        .from('public-images')
+        .upload(fileName, image);
+
+    if (uploadError) {
+        console.error(`Error uploading gallery image:`, uploadError);
+        return { error: `Falha ao carregar a imagem.` };
+    }
+
+    const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(fileName);
+
+    const { error: dbError } = await supabaseService
+        .from('discovery_images')
+        .insert({
+            discovery_id: discoveryId,
+            image_url: publicUrl,
+            image_hint: imageHint || 'discovery gallery image'
+        });
+    
+    if (dbError) {
+        console.error("Error saving gallery image to DB:", dbError);
+        // Clean up stored file
+        await supabaseService.storage.from('public-images').remove([fileName]);
+        return { error: `Erro ao guardar a imagem na galeria.` };
+    }
+
+    revalidatePath(`/admin/discoveries/${discoveryId}/edit`);
+    revalidatePath(`/discoveries/${slug}`);
+
+    return { success: true, message: 'Imagem adicionada à galeria!' };
+}
+
+export async function deleteDiscoveryImage(imageId: number, discoveryId: number, slug: string) {
+    'use server';
+    await checkAdmin();
+
+    const supabase = createServiceRoleClient();
+    
+    const { data: image, error: fetchError } = await supabase
+        .from('discovery_images')
+        .select('image_url')
+        .eq('id', imageId)
+        .single();
+    
+    if (fetchError || !image) {
+        return { error: 'Imagem não encontrada.'};
+    }
+
+    const { error: deleteDbError } = await supabase
+        .from('discovery_images')
+        .delete()
+        .eq('id', imageId);
+    
+    if (deleteDbError) {
+        return { error: 'Erro ao apagar a imagem da galeria.' };
+    }
+
+    // Delete file from storage
+    const filePath = image.image_url.substring(image.image_url.lastIndexOf(`discoveries/`));
+    await supabase.storage.from('public-images').remove([filePath]);
+    
+    revalidatePath(`/admin/discoveries/${discoveryId}/edit`);
+    revalidatePath(`/discoveries/${slug}`);
+
+    return { success: true };
 }

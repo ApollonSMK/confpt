@@ -1,14 +1,21 @@
 
 
-import { Shield, ShieldCheck, ShieldHalf, Star, Gem, LucideIcon } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldHalf, Star, Gem, LucideIcon, Wifi, Car, Wheelchair } from 'lucide-react';
 
 
 // Tipos principais baseados no esquema do Supabase
 
 export type DiscoveryImage = {
+  id: number;
   imageUrl: string;
   imageHint?: string;
 };
+
+export type Amenity = {
+  id: string;
+  label: string;
+  icon: string;
+}
 
 export type Discovery = {
   id: number;
@@ -25,6 +32,7 @@ export type Discovery = {
   address?: string | null;
   website?: string | null;
   phone?: string | null;
+  amenities?: Amenity[] | null;
   confrarias?: Confraria; // Relação opcional
   confrariaId: number; // Para compatibilidade com componentes existentes
   imageUrl: string; // Para compatibilidade - será a primeira imagem da galeria
@@ -83,6 +91,7 @@ export type Event = {
   event_date: string; // Vem como string do Supabase
   location?: string | null;
   district: string;
+  municipality?: string | null;
   is_public: boolean;
   image_url?: string | null;
   image_hint?: string | null;
@@ -257,3 +266,12 @@ export function getUserRank(sealedDiscoveriesCount: number, approvedSubmissionsC
     progress: progress,
   };
 }
+
+export const amenities: Amenity[] = [
+  { id: 'wifi', label: 'Wi-Fi Gratuito', icon: 'wifi' },
+  { id: 'parking', label: 'Estacionamento', icon: 'parking' },
+  { id: 'accessible', label: 'Acessível (Cadeira de Rodas)', icon: 'accessible' },
+  { id: 'pets', label: 'Aceita Animais', icon: 'default' }, // Usando 'default' por falta de ícone específico
+  { id: 'outdoor_seating', label: 'Mesas ao ar livre', icon: 'default' },
+  { id: 'takeaway', label: 'Take-Away', icon: 'default' },
+];

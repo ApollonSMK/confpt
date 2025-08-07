@@ -24,9 +24,10 @@ async function getDiscovery(id: number): Promise<Discovery> {
         .select(`
             *, 
             discovery_types(id, name),
-            discovery_images(image_url, image_hint, sort_order)
+            discovery_images(id, image_url, image_hint, sort_order)
         `)
         .eq('id', id)
+        .order('sort_order', { referencedTable: 'discovery_images', ascending: true })
         .single();
 
     if (error || !data) {
@@ -35,6 +36,7 @@ async function getDiscovery(id: number): Promise<Discovery> {
     }
     
     const images = (data.discovery_images as any[]).map(img => ({
+        id: img.id,
         imageUrl: img.image_url,
         imageHint: img.image_hint,
     }));

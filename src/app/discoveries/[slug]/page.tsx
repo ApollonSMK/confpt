@@ -1,16 +1,16 @@
 
 
 import Image from 'next/image';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText, Star, Wifi, Car, Wheelchair } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
 import { Button } from '@/components/ui/button';
-import type { Discovery, TestimonialWithUser, DiscoveryImage } from '@/lib/data';
+import type { Discovery, TestimonialWithUser, DiscoveryImage, Amenity } from '@/lib/data';
 import { DiscoveryTestimonials } from '@/components/discovery-testimonials';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -37,6 +37,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
                 seal_hint
             ),
             discovery_images (
+                id,
                 image_url,
                 image_hint
             ),
@@ -65,6 +66,7 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
     
     return data.map((d: any) => {
         const images = (d.discovery_images || []).map((img: any) => ({
+            id: img.id,
             imageUrl: img.image_url,
             imageHint: img.image_hint,
         }));
@@ -92,7 +94,6 @@ async function getDiscoveries(user_id?: string): Promise<Discovery[]> {
 async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser[]> {
     const supabase = createServiceRoleClient(); 
     
-    // 1. Fetch testimonials for the discovery
     const { data: testimonialsData, error: testimonialsError } = await supabase
         .from('testimonials')
         .select('id, content, created_at, user_id')
@@ -108,24 +109,20 @@ async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser
         return [];
     }
 
-    // 2. Extract user IDs and fetch user data using the RPC function
     const userIds = testimonialsData.map(t => t.user_id);
     const { data: usersData, error: usersError } = await supabase
         .rpc('get_user_emails_by_ids', { p_user_ids: userIds });
 
     if (usersError) {
         console.error('Error fetching users for testimonials:', usersError);
-        // Return testimonials without user info if user fetch fails
         return testimonialsData.map(t => ({
             ...t,
             user: { id: t.user_id, full_name: 'Anónimo', avatar_url: null }
         })) as TestimonialWithUser[];
     }
 
-    // 3. Create a map for easy lookup
     const usersById = new Map(usersData.map((u: any) => [u.id, u]));
 
-    // 4. Combine testimonials with user data
     return testimonialsData.map((t: any) => {
         const user = usersById.get(t.user_id);
         return {
@@ -138,6 +135,13 @@ async function getTestimonials(discoveryId: number): Promise<TestimonialWithUser
         };
     }) as TestimonialWithUser[];
 }
+
+const amenityIcons: { [key: string]: LucideIcon } = {
+  wifi: Wifi,
+  parking: Car,
+  accessible: Wheelchair,
+  default: Star,
+};
 
 
 export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
@@ -164,7 +168,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
       <input type="hidden" name="discoveryId" value={discovery.id} />
       <input type="hidden" name="hasSealed" value={String(discovery.user_has_sealed)} />
       <input type="hidden" name="slug" value={discovery.slug} />
-      <Button type="submit" variant={discovery.user_has_sealed ? 'secondary' : 'default'} size="lg">
+      <Button type="submit" variant={discovery.user_has_sealed ? 'secondary' : 'default'} size="lg" className="w-full">
         <Award className="mr-2 h-5 w-5" />
         {discovery.user_has_sealed ? 'Remover Selo' : 'Conceder Selo'}
       </Button>
@@ -173,118 +177,153 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-        <div className="lg:col-span-3">
-           <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden">
-                <Image
-                    src={mainImage.imageUrl}
-                    alt={discovery.title}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={mainImage.imageHint}
-                    priority
-                />
-            </div>
-        </div>
-        <div className="lg:col-span-2">
-           <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">{discovery.title}</h1>
-          <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="secondary" className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" />{discovery.district}</Badge>
-              <Badge variant="secondary" className="text-sm flex items-center gap-1"><Tag className="h-3 w-3" />{discovery.type}</Badge>
-               {discovery.seal_count > 0 && (
-                <Badge variant="outline" className="text-sm flex items-center gap-1 text-primary border-primary/50">
-                    <Award className="h-3 w-3" />
+      <header className="mb-8">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">{discovery.title}</h1>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+            <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-primary" />{discovery.district}</span>
+            <span className="flex items-center gap-1"><Tag className="h-4 w-4 text-primary" />{discovery.type}</span>
+            {discovery.seal_count > 0 && (
+                <span className="flex items-center gap-1">
+                    <Award className="h-4 w-4 text-primary" />
                     <span>{discovery.seal_count} {discovery.seal_count === 1 ? 'Selo' : 'Selos'}</span>
-                </Badge>
-              )}
-          </div>
-          
-          {confraria && (
-            <Link href={`/confrarias/${confraria.id}`} className="inline-block w-full">
-                <Card className="mb-6 hover:bg-accent/50 transition-colors">
-                <CardHeader className='flex-row items-center gap-4'>
-                    <Image src={confraria.sealUrl} alt={confraria.name} width={60} height={60} className="rounded-full bg-muted p-1" data-ai-hint={confraria.sealHint} />
-                    <div>
-                        <p className="text-sm font-medium text-primary flex items-center gap-2"><Shield className="h-4 w-4"/> Recomendado por:</p>
-                        <p className="font-semibold">{confraria.name}</p>
-                    </div>
-                </CardHeader>
-                </Card>
-            </Link>
-          )}
-
-          {discovery.contextualData && (
-             <Card className="mb-6 bg-transparent border-none shadow-none">
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Informações</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-muted-foreground">
-                    {discovery.contextualData.address && <p className="flex items-start gap-2"><MapPin className="h-4 w-4 text-primary mt-1 shrink-0" /> <span>{discovery.contextualData.address}</span></p>}
-                    {discovery.contextualData.website && <p className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> <a href={discovery.contextualData.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary break-all">{discovery.contextualData.website}</a></p>}
-                    {discovery.contextualData.phone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {discovery.contextualData.phone}</p>}
-                </CardContent>
-             </Card>
-          )}
-
-          {user && (
-            <div className="mt-6">
-              <SealButton />
-            </div>
-          )}
+                </span>
+            )}
         </div>
-      </div>
+      </header>
       
-      <div className="mt-12">
-          <Tabs defaultValue="discovery" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="discovery"><NotebookText className="mr-2 h-4 w-4"/>A Descoberta</TabsTrigger>
-                    <TabsTrigger value="gallery"><Camera className="mr-2 h-4 w-4"/>Galeria</TabsTrigger>
-                    <TabsTrigger value="testimonials"><MessageSquareQuote className="mr-2 h-4 w-4"/>Testemunhos</TabsTrigger>
-                </TabsList>
-              <TabsContent value="discovery" className="mt-6">
-                <div className="prose max-w-none">
-                    <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
-                    <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
-                </div>
-              </TabsContent>
-               <TabsContent value="gallery" className="mt-6">
-                 {discovery.images && discovery.images.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {discovery.images.map((image, index) => (
-                            <Dialog key={index}>
+      {discovery.images && discovery.images.length > 0 ? (
+            <Carousel className="w-full mb-8">
+                <CarouselContent>
+                    {discovery.images.map((image, index) => (
+                        <CarouselItem key={index}>
+                            <Dialog>
                                 <DialogTrigger asChild>
-                                    <Card className="overflow-hidden cursor-pointer group">
-                                        <div className="aspect-square relative">
-                                            <Image src={image.imageUrl} alt={`${discovery.title} - Imagem ${index + 1}`} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
-                                        </div>
-                                    </Card>
+                                    <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden cursor-pointer">
+                                        <Image
+                                            src={image.imageUrl}
+                                            alt={`${discovery.title} - Imagem ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            data-ai-hint={image.imageHint}
+                                            priority={index === 0}
+                                        />
+                                    </div>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-3xl">
-                                    <DialogTitle className="sr-only">Imagem da galeria ampliada</DialogTitle>
-                                    <DialogDescription className="sr-only">
-                                        {image.imageHint ? `${image.imageHint} - Imagem da galeria para ${discovery.title}` : `Imagem da galeria para ${discovery.title}`}
-                                    </DialogDescription>
-                                    <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1200} height={800} className="rounded-md object-contain"/>
+                                <DialogContent className="max-w-4xl p-2">
+                                     <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1600} height={900} className="rounded-md object-contain"/>
                                 </DialogContent>
                             </Dialog>
-                        ))}
-                    </div>
-                ) : (
-                    <Card>
-                        <CardContent className="p-6 text-center text-muted-foreground">
-                            Ainda não foram adicionadas imagens a esta descoberta.
-                        </CardContent>
-                    </Card>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                {discovery.images.length > 1 && (
+                    <>
+                        <CarouselPrevious className="left-4" />
+                        <CarouselNext className="right-4" />
+                    </>
                 )}
-              </TabsContent>
-              <TabsContent value="testimonials" className="mt-6">
-                <DiscoveryTestimonials
-                    discoveryId={discovery.id}
-                    user={user}
-                    initialTestimonials={testimonials}
-                />
-              </TabsContent>
-          </Tabs>
+            </Carousel>
+        ) : (
+             <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden mb-8">
+                <Image src={mainImage.imageUrl} alt={discovery.title} fill className="object-cover" data-ai-hint={mainImage.imageHint} priority />
+             </div>
+        )}
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="lg:col-span-2">
+            <Tabs defaultValue="discovery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                        <TabsTrigger value="discovery"><NotebookText className="mr-2 h-4 w-4"/>A Descoberta</TabsTrigger>
+                        <TabsTrigger value="testimonials"><MessageSquareQuote className="mr-2 h-4 w-4"/>Testemunhos</TabsTrigger>
+                    </TabsList>
+                <TabsContent value="discovery" className="mt-6">
+                    <div className="prose max-w-none">
+                        <h2 className="font-headline text-3xl font-bold mb-4 border-b pb-2">A Nossa Descoberta</h2>
+                        <p className="text-lg leading-relaxed whitespace-pre-wrap font-body text-foreground/90">{discovery.editorial}</p>
+                    </div>
+                </TabsContent>
+                <TabsContent value="testimonials" className="mt-6">
+                    <DiscoveryTestimonials
+                        discoveryId={discovery.id}
+                        user={user}
+                        initialTestimonials={testimonials}
+                    />
+                </TabsContent>
+            </Tabs>
+        </div>
+
+        <aside className="lg:col-span-1 space-y-8 sticky top-24 self-start">
+             {user && (
+                <div className="mt-6">
+                <SealButton />
+                </div>
+            )}
+            
+             <Card>
+                <CardHeader><CardTitle className="font-headline text-2xl">Localização</CardTitle></CardHeader>
+                <CardContent>
+                     {discovery.contextualData?.address ? (
+                        <>
+                           <div className="relative aspect-video w-full rounded-md overflow-hidden border mb-4">
+                                <Image 
+                                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(discovery.contextualData.address)}&zoom=15&size=600x340&maptype=roadmap&markers=color:red%7C${encodeURIComponent(discovery.contextualData.address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                                    alt={`Mapa de ${discovery.title}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <p className="flex items-start gap-2 text-muted-foreground"><MapPin className="h-4 w-4 text-primary mt-1 shrink-0" /> <span>{discovery.contextualData.address}</span></p>
+                        </>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">A morada não foi especificada.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+             {discovery.amenities && discovery.amenities.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle className="font-headline text-2xl">Comodidades</CardTitle></CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                        {discovery.amenities.map(amenity => {
+                            const Icon = amenityIcons[amenity.icon] || amenityIcons.default;
+                            return (
+                                <div key={amenity.id} className="flex items-center gap-2">
+                                    <Icon className="h-5 w-5 text-primary"/>
+                                    <span className="text-sm font-medium">{amenity.label}</span>
+                                </div>
+                            );
+                        })}
+                    </CardContent>
+                </Card>
+            )}
+
+
+            {confraria && (
+                <Link href={`/confrarias/${confraria.id}`} className="block">
+                    <Card className="hover:bg-accent/50 transition-colors">
+                    <CardHeader className='flex-row items-center gap-4'>
+                        <Image src={confraria.sealUrl} alt={confraria.name} width={60} height={60} className="rounded-full bg-muted p-1" data-ai-hint={confraria.sealHint} />
+                        <div>
+                            <p className="text-sm font-medium text-primary flex items-center gap-2"><Shield className="h-4 w-4"/> Recomendado por:</p>
+                            <p className="font-semibold">{confraria.name}</p>
+                        </div>
+                    </CardHeader>
+                    </Card>
+                </Link>
+            )}
+
+             {discovery.contextualData && (
+                <Card>
+                    <CardHeader><CardTitle className="font-headline text-2xl">Contactos</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-muted-foreground">
+                        {discovery.contextualData.website && <p className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> <a href={discovery.contextualData.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary break-all">{discovery.contextualData.website}</a></p>}
+                        {discovery.contextualData.phone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {discovery.contextualData.phone}</p>}
+                        {!discovery.contextualData.website && !discovery.contextualData.phone && <p className="text-sm">Não foram fornecidos contactos.</p>}
+                    </CardContent>
+                </Card>
+            )}
+        </aside>
       </div>
 
       {relatedDiscoveries.length > 0 && (

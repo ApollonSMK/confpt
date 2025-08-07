@@ -2,7 +2,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,14 +16,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { districts, Confraria, Discovery, DiscoveryType } from '@/lib/data';
+import { districts, Confraria, Discovery, DiscoveryType, amenities, type Amenity } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2 } from 'lucide-react';
-import { deleteDiscovery, updateDiscovery } from './actions';
-import { useState } from 'react';
+import { Loader2, Trash2, Camera, PlusCircle } from 'lucide-react';
+import { deleteDiscovery, updateDiscovery, addDiscoveryImage, deleteDiscoveryImage } from './actions';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Checkbox } from '@/components/ui/checkbox';
+
+
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
 
 const formSchema = z.object({
   id: z.number(),
@@ -36,6 +44,7 @@ const formSchema = z.object({
   address: z.string().optional(),
   website: z.string().url("URL do website inválido.").optional().or(z.literal('')),
   phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 
@@ -49,7 +58,6 @@ interface EditDiscoveryFormProps {
 
 export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: EditDiscoveryFormProps) {
     const { toast } = useToast();
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
@@ -66,7 +74,13 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             address: discovery.address ?? '',
             website: discovery.website ?? '',
             phone: discovery.phone ?? '',
+            amenities: discovery.amenities || [],
         },
+    });
+    
+    const { fields, append, remove } = useFieldArray({
+      control: form.control,
+      name: "amenities"
     });
 
     async function onSubmit(values: FormValues) {
@@ -102,40 +116,40 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 md:py-16">
+        <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
             <div className="max-w-2xl mx-auto">
-                <Card>
-                    <CardHeader className="flex flex-row justify-between items-start">
-                        <div>
-                            <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
-                            <CardDescription>
-                               Atualize os detalhes da descoberta. A gestão da galeria de imagens será adicionada em breve.
-                            </CardDescription>
-                        </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Isto irá apagar permanentemente a descoberta e todos os seus dados associados.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-                                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Sim, apagar descoberta
-                                </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardHeader>
-                    <CardContent>
-                        <FormProvider {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <Card>
+                            <CardHeader className="flex flex-row justify-between items-start">
+                                <div>
+                                    <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
+                                    <CardDescription>
+                                    Atualize os detalhes da descoberta.
+                                    </CardDescription>
+                                </div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação não pode ser desfeita. Isto irá apagar permanentemente a descoberta e todos os seus dados associados.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                                            {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Sim, apagar descoberta
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
                                 <FormField control={form.control} name="title" render={({ field }) => (
                                     <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
@@ -166,16 +180,148 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                 <FormField control={form.control} name="phone" render={({ field }) => (
                                     <FormItem><FormLabel>Telefone (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
+
+                                 <FormItem>
+                                    <FormLabel>Comodidades</FormLabel>
+                                    <FormDescription>Selecione as comodidades que esta descoberta oferece.</FormDescription>
+                                    <div className="grid grid-cols-2 gap-4 pt-2">
+                                        {amenities.map((amenity) => (
+                                            <FormField
+                                                key={amenity.id}
+                                                control={form.control}
+                                                name="amenities"
+                                                render={({ field }) => {
+                                                    return (
+                                                    <FormItem
+                                                        key={amenity.id}
+                                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                                    >
+                                                        <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.some(a => a.id === amenity.id)}
+                                                            onCheckedChange={(checked) => {
+                                                            return checked
+                                                                ? append(amenity)
+                                                                : remove(fields.findIndex(a => a.id === amenity.id))
+                                                            }}
+                                                        />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            {amenity.label}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    )
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
                                 
                                 <Button type="submit" size="lg" disabled={loading} className="w-full">
                                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Guardar Alterações
                                 </Button>
-                            </form>
-                        </FormProvider>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
+                    </form>
+                </FormProvider>
+                 <ImageGalleryManager discovery={discovery} />
             </div>
+
+           
         </div>
     );
+}
+
+
+function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const handleAddImage = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+
+        const formData = new FormData(e.currentTarget);
+        const result = await addDiscoveryImage(formData);
+
+        if (result.error) {
+            toast({ title: "Erro", description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso', description: result.message });
+            formRef.current?.reset();
+        }
+        setLoading(false);
+    }
+
+    const handleDeleteImage = async (id: number) => {
+        const result = await deleteDiscoveryImage(id, discovery.id, discovery.slug);
+        if (result.error) {
+            toast({ title: 'Erro', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Sucesso', description: 'Imagem removida.' });
+        }
+    }
+
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl flex items-center gap-2"><Camera/>Gerir Galeria de Imagens</CardTitle>
+                <CardDescription>Adicione e remova imagens da galeria desta descoberta.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                 <form ref={formRef} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-semibold">Adicionar Nova Imagem</h3>
+                    <input type="hidden" name="discoveryId" value={discovery.id} />
+                    <input type="hidden" name="slug" value={discovery.slug} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormItem>
+                            <FormLabel>Ficheiro</FormLabel>
+                            <FormControl><Input type="file" name="image" required /></FormControl>
+                        </FormItem>
+                        <FormItem>
+                            <FormLabel>Dica de Imagem (IA)</FormLabel>
+                            <FormControl><Input name="imageHint" placeholder="Ex: prato comida" /></FormControl>
+                        </FormItem>
+                    </div>
+                     <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="animate-spin mr-2" />}
+                        <PlusCircle/> Adicionar
+                    </Button>
+                </form>
+
+                <div className="space-y-4">
+                    <h3 className="font-semibold">Imagens Atuais</h3>
+                    {discovery.images.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {discovery.images.map((image, index) => (
+                                <div key={index} className="relative group">
+                                    <Image src={image.imageUrl} alt={image.imageHint || `Imagem ${index + 1}`} width={200} height={200} className="rounded-md object-cover aspect-square"/>
+                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="icon"><Trash2 /></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader><AlertDialogTitle>Apagar Imagem?</AlertDialogTitle><AlertDialogDescription>Esta ação é irreversível.</AlertDialogDescription></AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteImage((image as any).id)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                     </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Ainda não há imagens na galeria.</p>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    )
 }

@@ -235,7 +235,18 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                         {confraria.articles && confraria.articles.length > 0 ? (
                                             <div className="space-y-6">
                                                 {confraria.articles.map(article => (
-                                                    <Card key={article.id} className="border-l-4 border-primary">
+                                                    <Card key={article.id} className="border-l-4 border-primary overflow-hidden">
+                                                        {article.image_url && (
+                                                            <div className="aspect-video relative w-full">
+                                                                <Image
+                                                                    src={article.image_url}
+                                                                    alt={article.title}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                    data-ai-hint={article.image_hint ?? 'article cover'}
+                                                                />
+                                                            </div>
+                                                        )}
                                                         <CardHeader>
                                                             <CardTitle className="font-headline text-2xl">{article.title}</CardTitle>
                                                             <CardDescription className="flex items-center gap-2 pt-2 text-sm">

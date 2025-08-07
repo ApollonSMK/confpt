@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, Camera, NotebookText, Star, Wifi, Car, Accessibility } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, NotebookText, Star, Wifi, Car, Accessibility } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
@@ -196,29 +196,37 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
     <div className="container mx-auto px-4 py-8 md:py-16">
         
         {discovery.images && discovery.images.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                {discovery.images.map((image, index) => (
-                    <Dialog key={image.id}>
-                        <DialogTrigger asChild>
-                            <Card className="overflow-hidden cursor-pointer group">
-                                <div className="aspect-square relative">
-                                    <Image
-                                        src={image.imageUrl}
-                                        alt={`${discovery.title} - Imagem ${index + 1}`}
-                                        fill
-                                        className="object-contain transition-transform duration-300 group-hover:scale-110"
-                                        data-ai-hint={image.imageHint}
-                                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                    />
-                                </div>
-                            </Card>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl p-2">
-                             <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1600} height={900} className="rounded-md object-contain"/>
-                        </DialogContent>
-                    </Dialog>
-                ))}
-            </div>
+            <Carousel opts={{ align: 'start', loop: true }} className="w-full mb-8">
+                <CarouselContent>
+                    {discovery.images.map((image, index) => (
+                        <CarouselItem key={image.id} className="basis-full md:basis-1/2 lg:basis-1/4">
+                            <div className="p-1 h-full">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Card className="overflow-hidden cursor-pointer group h-full">
+                                            <div className="aspect-square relative">
+                                                <Image
+                                                    src={image.imageUrl}
+                                                    alt={`${discovery.title} - Imagem ${index + 1}`}
+                                                    fill
+                                                    className="object-contain transition-transform duration-300 group-hover:scale-110"
+                                                    data-ai-hint={image.imageHint}
+                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                                />
+                                            </div>
+                                        </Card>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-4xl p-2">
+                                        <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1600} height={900} className="rounded-md object-contain"/>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden sm:flex" />
+                <CarouselNext className="hidden sm:flex" />
+            </Carousel>
         ) : (
              <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden mb-8">
                 <Image src={mainImage.imageUrl} alt={discovery.title} fill className="object-cover" data-ai-hint={mainImage.imageHint} priority />

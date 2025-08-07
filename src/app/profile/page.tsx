@@ -180,48 +180,6 @@ export default async function ProfilePage() {
       <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                        <Award className="h-7 w-7 text-primary"/>
-                        Minhas Descobertas Seladas
-                    </CardTitle>
-                    <CardDescription>
-                        As descobertas que você visitou, provou e aprovou com o seu selo de confrade.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {sealedDiscoveries.length > 0 ? (
-                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {sealedDiscoveries.map(discovery => (
-                                <DiscoveryCard key={discovery.id} discovery={discovery} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground">Você ainda não concedeu nenhum selo. Explore as <Link href="/discoveries" className="text-primary hover:underline">descobertas</Link> e comece a sua jornada!</p>
-                    )}
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
-                        <BarChart2 className="h-7 w-7 text-primary"/>
-                        Selos por Distrito
-                    </CardTitle>
-                    <CardDescription>
-                       Uma visão geral das suas explorações por todo o país.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {chartData.length > 0 ? (
-                        <ProfileRegionChart data={chartData} />
-                     ) : (
-                         <p className="text-muted-foreground">Conceda selos para ver as suas estatísticas por distrito.</p>
-                     )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
                      <CardTitle className="font-headline text-3xl flex items-center gap-3">
                         <FileText className="h-7 w-7 text-primary"/>
                         Minhas Submissões
@@ -276,7 +234,50 @@ export default async function ProfilePage() {
                      )}
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                        <Award className="h-7 w-7 text-primary"/>
+                        Minhas Descobertas Seladas
+                    </CardTitle>
+                    <CardDescription>
+                        As descobertas que você visitou, provou e aprovou com o seu selo de confrade.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {sealedDiscoveries.length > 0 ? (
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {sealedDiscoveries.map(discovery => (
+                                <DiscoveryCard key={discovery.id} discovery={discovery} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground">Você ainda não concedeu nenhum selo. Explore as <Link href="/discoveries" className="text-primary hover:underline">descobertas</Link> e comece a sua jornada!</p>
+                    )}
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl flex items-center gap-3">
+                        <BarChart2 className="h-7 w-7 text-primary"/>
+                        Selos por Distrito
+                    </CardTitle>
+                    <CardDescription>
+                       Uma visão geral das suas explorações por todo o país.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {chartData.length > 0 ? (
+                        <ProfileRegionChart data={chartData} />
+                     ) : (
+                         <p className="text-muted-foreground">Conceda selos para ver as suas estatísticas por distrito.</p>
+                     )}
+                </CardContent>
+            </Card>
         </div>
     </div>
   );
 }
+

@@ -194,8 +194,8 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      
-      {discovery.images && discovery.images.length > 0 ? (
+        
+        {discovery.images && discovery.images.length > 0 ? (
             <Carousel className="w-full mb-8">
                 <CarouselContent className="h-96">
                     {discovery.images.map((image, index) => (
@@ -207,7 +207,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                                             src={image.imageUrl}
                                             alt={`${discovery.title} - Imagem ${index + 1}`}
                                             fill
-                                            className="object-cover"
+                                            className="object-contain"
                                             data-ai-hint={image.imageHint}
                                             priority={index === 0}
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

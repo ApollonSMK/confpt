@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DiscoveryCard } from '@/components/discovery-card';
-import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, NotebookText, Star, Wifi, Car, Accessibility } from 'lucide-react';
+import { MapPin, Tag, Globe, Phone, Award, Shield, MessageSquareQuote, NotebookText, Star, Wifi, Car, Accessibility, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { toggleSeal } from './actions';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogTitle } 
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapboxDisplay } from '@/components/mapbox-display';
+import { cn } from '@/lib/utils';
 
 
 type DiscoveryPageProps = {
@@ -178,7 +179,19 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   ]);
 
   const confraria = discovery.confrarias;
-  const mainImage = discovery.images && discovery.images.length > 0 ? discovery.images[0] : { imageUrl: 'https://placehold.co/1200x800.png', imageHint: 'placeholder' };
+  const imageCount = discovery.images?.length || 0;
+
+  // Dynamic classes for the carousel item
+  let itemClass = "basis-full"; // Default for 1 image or mobile
+  if (imageCount === 2) {
+    itemClass = "basis-full md:basis-1/2";
+  } else if (imageCount === 3) {
+    itemClass = "basis-full md:basis-1/2 lg:basis-1/3";
+  } else if (imageCount >= 4) {
+    itemClass = "basis-full md:basis-1/2 lg:basis-1/4";
+  }
+  
+  const showCarouselNav = imageCount > 4;
 
   const SealButton = () => (
     <form action={toggleSeal}>
@@ -195,11 +208,11 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
         
-        {discovery.images && discovery.images.length > 0 ? (
-            <Carousel opts={{ align: 'start', loop: true }} className="w-full mb-8">
+        {imageCount > 0 ? (
+            <Carousel opts={{ align: 'start' }} className="w-full mb-8">
                 <CarouselContent>
                     {discovery.images.map((image, index) => (
-                        <CarouselItem key={image.id} className="basis-full md:basis-1/2 lg:basis-1/4">
+                        <CarouselItem key={image.id} className={itemClass}>
                             <div className="p-1 h-full">
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -211,7 +224,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                                                     fill
                                                     className="object-contain transition-transform duration-300 group-hover:scale-110"
                                                     data-ai-hint={image.imageHint}
-                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                                 />
                                             </div>
                                         </Card>
@@ -224,12 +237,12 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                         </CarouselItem>
                     ))}
                 </CarouselContent>
-                <CarouselPrevious className="hidden sm:flex" />
-                <CarouselNext className="hidden sm:flex" />
+                {showCarouselNav && <CarouselPrevious className="hidden sm:flex" />}
+                {showCarouselNav && <CarouselNext className="hidden sm:flex" />}
             </Carousel>
         ) : (
              <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden mb-8">
-                <Image src={mainImage.imageUrl} alt={discovery.title} fill className="object-cover" data-ai-hint={mainImage.imageHint} priority />
+                <Image src={'https://placehold.co/1200x800.png'} alt={discovery.title} fill className="object-cover" data-ai-hint={'placeholder'} priority />
              </div>
         )}
 

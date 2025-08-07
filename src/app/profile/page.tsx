@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Award, FileText, BarChart2, Calendar } from 'lucide-react';
+import { MapPin, Award, FileText, BarChart2, Calendar, Pencil } from 'lucide-react';
 import { getUserRank, type Discovery, type Submission, type UserRankInfo } from '@/lib/data';
 import Link from 'next/link';
 import { DiscoveryCard } from '@/components/discovery-card';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promise<Discovery[]> {
     const { data: seals, error: sealsError } = await supabase
@@ -290,17 +291,16 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                      {userSubmissions.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="space-y-4">
                             {userSubmissions.map((submission) => (
-                                <Card key={submission.id} className="flex flex-col justify-between">
-                                    <CardHeader>
-                                        <CardTitle className="text-lg">{submission.discoveryTitle}</CardTitle>
-                                        <CardDescription className="flex items-center gap-2 pt-1">
-                                            <Calendar className="h-4 w-4" />
-                                            {new Date(submission.date).toLocaleDateString()}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
+                                <Card key={submission.id} className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4">
+                                    <div className='flex-grow'>
+                                        <p className="font-bold">{submission.discoveryTitle}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Enviado a {new Date(submission.date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
                                         <Badge
                                             className={cn('w-fit', {
                                                 'bg-green-100 text-green-800 border-green-300': submission.status === 'Aprovado',
@@ -311,7 +311,14 @@ export default function ProfilePage() {
                                         >
                                             {submission.status}
                                         </Badge>
-                                    </CardContent>
+                                        {submission.status === 'Pendente' && (
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/profile/submission/${submission.id}/edit`}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </div>
                                 </Card>
                             ))}
                         </div>

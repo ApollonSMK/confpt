@@ -11,20 +11,25 @@ async function getConfrarias(): Promise<(Confraria & { discoveryCount: number })
             discoveries (
                 id
             )
-        `)
-        .order('name'); // Ordena as confrarias por nome alfabético
+        `);
 
     if (error) {
         console.error('Error fetching confrarias:', error);
         return [];
     }
     
-    const mappedData = data.map(c => ({
+    let mappedData = data.map(c => ({
         ...c,
         sealUrl: c.seal_url,
         sealHint: c.seal_hint,
         discoveryCount: c.discoveries.length
     })) as (Confraria & { discoveryCount: number })[];
+    
+    // Randomize the array order (Fisher-Yates shuffle)
+    for (let i = mappedData.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mappedData[i], mappedData[j]] = [mappedData[j], mappedData[i]];
+    }
 
     return mappedData;
 }

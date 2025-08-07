@@ -140,7 +140,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   }
 
   return (
-    <Form form={form} onSubmit={onSubmit} className="space-y-6">
+    <Form form={form} onSubmit={onSubmit}>
         {step === 1 && (
             <Card>
                 <CardHeader>
@@ -321,20 +321,23 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                      <FormField
                         control={form.control}
                         name="image"
-                        render={({ field: { onChange, value, ...rest } }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        type="file" 
-                                        accept="image/png, image/jpeg, image/webp" 
-                                        onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
-                                    />
-                                </FormControl>
-                                <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+                        render={({ field }) => {
+                            const { value, ...rest } = field;
+                            return (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="file" 
+                                            accept="image/png, image/jpeg, image/webp" 
+                                            onChange={e => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )
+                        }}
                         />
                       <FormItem>
                         <FormLabel className="flex items-center gap-2"><CheckSquare className="h-4 w-4"/>Comodidades (Opcional)</FormLabel>
@@ -345,7 +348,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                                     key={amenity.id}
                                     control={control}
                                     name="amenities"
-                                    render={() => {
+                                    render={({ field }) => {
                                         return (
                                         <FormItem
                                             key={amenity.id}
@@ -353,7 +356,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                                         >
                                             <FormControl>
                                             <Checkbox
-                                                checked={fields.some(a => a.id === amenity.id)}
+                                                checked={field.value?.some(a => a.id === amenity.id)}
                                                 onCheckedChange={(checked) => {
                                                 return checked
                                                     ? append(amenity)

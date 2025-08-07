@@ -109,7 +109,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary-foreground/20 bg-primary/95 text-primary-foreground backdrop-blur supports-[backdrop-filter]:bg-primary/60">
+    <header className="sticky top-0 z-50 w-full border-b border-primary-foreground/20 bg-primary text-primary-foreground">
       <div className="container flex h-20 items-center">
         <div className="mr-4 flex items-center">
           <Link href="/" className="flex items-center space-x-2">
@@ -121,7 +121,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
         </div>
 
         <div className="hidden md:flex flex-1 items-center justify-center space-x-4">
-           {isMounted && <NavContent />}
+           {isMounted ? <NavContent /> : <div className="h-6 w-96 rounded-md" />}
         </div>
         
         <div className="flex items-center justify-end space-x-2 ml-auto">

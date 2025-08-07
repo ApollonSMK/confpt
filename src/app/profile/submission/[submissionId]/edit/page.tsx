@@ -1,59 +1,74 @@
 
-
 'use server';
 
 import { createServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import type { Submission, Confraria, DiscoveryType } from "@/lib/data";
-import { EditSubmissionForm } from "./edit-form";
+import type { Submission, Confraria, DiscoveryType, Discovery } from "@/lib/data";
+import { UserDiscoveryForm } from "./user-discovery-form";
 
+// This page now handles editing an approved discovery.
+// It fetches the full discovery data based on the submission.
 
-async function getSubmissionForEdit(submissionId: number, userId: string) {
-    const supabase = createServerClient();
+async function getDiscoveryFromSubmission(submissionId: number, userId: string): Promise<Discovery> {
+    const supabaseService = createServiceRole_client();
 
-    const { data: submission, error } = await supabase
+    // First, verify the user owns the submission
+    const { data: submission, error: submissionError } = await supabaseService
         .from('submissions')
-        .select('*')
+        .select('discovery_title, user_id, status')
         .eq('id', submissionId)
-        .eq('user_id', userId) // RLS check
         .single();
     
-    if (error || !submission) {
-        console.error("Error fetching submission for edit or not found:", error);
+    if (submissionError || !submission) {
+        console.error("Submission not found for editing:", submissionError);
         notFound();
     }
-    
-    // Allow editing for 'Pendente' or 'Aprovado'
-    if (submission.status === 'Rejeitado') {
-        console.warn(`User ${userId} tried to edit a rejected submission ${submissionId}`);
-        redirect('/profile');
+
+    if (submission.user_id !== userId) {
+        console.error(`User ${userId} attempted to edit submission ${submissionId} owned by ${submission.user_id}`);
+        notFound();
     }
 
-    return submission as Submission;
-}
-
-// Find the corresponding discovery if the submission was approved
-async function findDiscoveryBySubmission(submission: Submission) {
     if (submission.status !== 'Aprovado') {
-        return null;
+        // This page is only for approved discoveries.
+        // A separate logic branch could be made for pending submissions if needed.
+        redirect('/profile?error=not_approved');
     }
-    // This is a bit fragile as it relies on the title being unique.
-    // A better approach would be to store the discovery_id on the submission upon approval.
-    const supabase = createServiceRoleClient();
-    const { data, error } = await supabase
+
+    // Now, find the corresponding discovery. This assumes the title is a unique enough identifier.
+    // A better long-term solution would be to store discovery_id on the submission upon approval.
+    const { data: discovery, error: discoveryError } = await supabaseService
         .from('discoveries')
-        .select('id')
+        .select(`
+            *,
+            discovery_types(id, name),
+            discovery_images(id, image_url, image_hint)
+        `)
         .eq('title', submission.discovery_title)
         .limit(1)
         .single();
-    
-    if (error || !data) {
-        console.error(`Could not find a discovery for approved submission ${submission.id}`, error);
-        return null;
+
+    if (discoveryError || !discovery) {
+        console.error(`Could not find a discovery for approved submission ${submissionId}`, discoveryError);
+        // Maybe the title was changed by an admin.
+        notFound();
     }
-    
-    return data.id;
+
+    const images = (discovery.discovery_images as any[]).map(img => ({
+        id: img.id,
+        imageUrl: img.image_url,
+        imageHint: img.image_hint,
+    }));
+
+    return {
+        ...discovery,
+        type: (discovery.discovery_types as any).name,
+        type_id: (discovery.discovery_types as any).id,
+        images: images,
+        imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
+        imageHint: images[0]?.imageHint || 'placeholder',
+    } as Discovery;
 }
 
 
@@ -72,7 +87,7 @@ async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
 }
 
 
-export default async function EditSubmissionPage({ params }: { params: { submissionId: string } }) {
+export default async function UserEditDiscoveryPage({ params }: { params: { submissionId: string } }) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -85,25 +100,9 @@ export default async function EditSubmissionPage({ params }: { params: { submiss
         notFound();
     }
     
-    const submission = await getSubmissionForEdit(submissionId, user.id);
-
-    // If the submission is approved, redirect to the admin discovery edit page
-    if (submission.status === 'Aprovado') {
-        const discoveryId = await findDiscoveryBySubmission(submission);
-        if (discoveryId) {
-            // Redirecting to the main discovery edit page.
-            // RLS on the `discoveries` table itself is not configured for user edits,
-            // so this will rely on the user being an admin or responsible for a confraria.
-            // For a full user-edit feature, this would need a different edit page
-            // with appropriate security checks.
-            redirect(`/admin/discoveries/${discoveryId}/edit`);
-        } else {
-             // If we can't find the discovery, we can't edit. Show an error or redirect.
-            redirect('/profile?error=discovery_not_found');
-        }
-    }
+    // If the submission is approved, we fetch the DISCOVERY data
+    const discovery = await getDiscoveryFromSubmission(submissionId, user.id);
     
-    // If pending, show the submission edit form
     const [confrarias, discoveryTypes] = await Promise.all([
         getConfrarias(),
         getDiscoveryTypes(),
@@ -112,8 +111,23 @@ export default async function EditSubmissionPage({ params }: { params: { submiss
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
             <div className="max-w-2xl mx-auto">
-                 <EditSubmissionForm submission={submission} confrarias={confrarias} discoveryTypes={discoveryTypes} />
+                 <UserDiscoveryForm discovery={discovery} confrarias={confrarias} discoveryTypes={discoveryTypes} />
             </div>
         </div>
     );
 }
+
+// Helper function because createServiceRoleClient is not available on the client
+const createServiceRole_client = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Supabase URL or Service Role Key is not set in .env.local');
+  }
+
+  // We use the normal Supabase client here, but with the service role key.
+  // This is safe because this code only runs on the server.
+  const { createClient } = require('@supabase/supabase-js');
+  return createClient(supabaseUrl, supabaseServiceRoleKey);
+};

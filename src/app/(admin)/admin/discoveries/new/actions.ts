@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service';
-import { districts } from '@/lib/data';
+import { districts, type Amenity } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -19,6 +19,12 @@ async function checkAdmin() {
   }
 }
 
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
+
 const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
@@ -31,6 +37,7 @@ const formSchema = z.object({
   address: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 export async function createDiscovery(values: z.infer<typeof formSchema>) {

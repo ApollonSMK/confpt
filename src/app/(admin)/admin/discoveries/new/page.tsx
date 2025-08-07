@@ -2,7 +2,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,13 +17,20 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { districts, Confraria, DiscoveryType } from '@/lib/data';
+import { districts, Confraria, DiscoveryType, amenities, type Amenity } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { createDiscovery } from './actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const amenitySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string(),
+});
 
 const formSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
@@ -37,6 +44,7 @@ const formSchema = z.object({
   address: z.string().optional(),
   website: z.string().url("URL do website inválido.").optional().or(z.literal('')),
   phone: z.string().optional(),
+  amenities: z.array(amenitySchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -76,7 +84,13 @@ export default function NewDiscoveryPage() {
             address: '',
             website: '',
             phone: '',
+            amenities: [],
         },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "amenities"
     });
 
     async function onSubmit(values: FormValues) {
@@ -148,6 +162,43 @@ export default function NewDiscoveryPage() {
                                 <FormField control={form.control} name="phone" render={({ field }) => (
                                     <FormItem><FormLabel>Telefone (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
+
+                                 <FormItem>
+                                    <FormLabel>Comodidades</FormLabel>
+                                    <FormDescription>Selecione as comodidades que esta descoberta oferece.</FormDescription>
+                                    <div className="grid grid-cols-2 gap-4 pt-2">
+                                        {amenities.map((amenity) => (
+                                            <FormField
+                                                key={amenity.id}
+                                                control={form.control}
+                                                name="amenities"
+                                                render={({ field }) => {
+                                                    return (
+                                                    <FormItem
+                                                        key={amenity.id}
+                                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                                    >
+                                                        <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.some(a => a.id === amenity.id)}
+                                                            onCheckedChange={(checked) => {
+                                                            return checked
+                                                                ? append(amenity)
+                                                                : remove(fields.findIndex(a => a.id === amenity.id))
+                                                            }}
+                                                        />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            {amenity.label}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    )
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
                                 
                                 <Button type="submit" size="lg" disabled={loading} className="w-full">
                                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -70,7 +70,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             editorial: discovery.editorial,
             district: discovery.district,
             type_id: String(discovery.type_id),
-            confraria_id: discovery.confraria_id?.toString() ?? undefined,
+            confraria_id: discovery.confraria_id?.toString() ?? 'null',
             address: discovery.address ?? '',
             website: discovery.website ?? '',
             phone: discovery.phone ?? '',
@@ -93,8 +93,10 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 description: result.error,
                 variant: "destructive"
             });
-            setLoading(false);
         }
+        // Always set loading to false, as a successful update will redirect
+        // and unmount the component anyway. This handles the case where redirect fails.
+        setLoading(false);
     }
     
     async function handleDelete() {
@@ -117,8 +119,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
-            <div className="max-w-2xl mx-auto space-y-8">
-                <FormProvider {...form}>
+             <FormProvider {...form}>
+                <div className="max-w-2xl mx-auto space-y-8">
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <Card>
                             <CardHeader className="flex flex-row justify-between items-start">
@@ -226,8 +228,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                         </Card>
                     </form>
                     <ImageGalleryManager discovery={discovery} />
-                </FormProvider>
-            </div>
+                </div>
+            </FormProvider>
         </div>
     );
 }

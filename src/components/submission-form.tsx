@@ -25,6 +25,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import Image from 'next/image';
+import { AddressAutocomplete } from './address-autocomplete';
 
 const MAX_IMAGE_SIZE = 5; // In MB
 const MAX_IMAGES = 5; // Max number of images in the gallery
@@ -60,9 +61,10 @@ type FormValues = z.infer<typeof clientSchema>;
 interface SubmissionFormProps {
   confrarias: Confraria[];
   discoveryTypes: DiscoveryType[];
+  mapboxApiKey: string;
 }
 
-export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormProps) {
+export function SubmissionForm({ confrarias, discoveryTypes, mapboxApiKey }: SubmissionFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -292,7 +294,11 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Morada (Opcional)</FormLabel>
-                            <FormControl><Input placeholder="Rua, número, código postal" {...field} /></FormControl>
+                             <AddressAutocomplete 
+                                apiKey={mapboxApiKey} 
+                                onSelect={(address) => setValue('address', address)}
+                                initialValue={field.value}
+                             />
                             <FormMessage />
                             </FormItem>
                         )}
@@ -324,7 +330,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                      <FormField
                         control={control}
                         name="images"
-                        render={({ field }) => (
+                        render={({ field: { onChange, value, ...rest } }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><Camera className="h-4 w-4"/>Galeria de Imagens (Opcional)</FormLabel>
                                 <FormControl>
@@ -400,5 +406,3 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
     </Form>
   );
 }
-
-    

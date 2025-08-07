@@ -39,6 +39,21 @@ async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
     return data as DiscoveryType[];
 }
 
+async function getMapboxApiKey(): Promise<string> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'mapbox_api_key')
+        .single();
+    
+    if (error || !data) {
+        console.warn("Could not fetch Mapbox API key:", error);
+        return '';
+    }
+    return data.value || '';
+}
+
 export default async function SubmitPage() {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -47,9 +62,10 @@ export default async function SubmitPage() {
     redirect('/login?redirect=/submit');
   }
 
-  const [confrarias, discoveryTypes] = await Promise.all([
+  const [confrarias, discoveryTypes, mapboxApiKey] = await Promise.all([
     getConfrarias(),
-    getDiscoveryTypes()
+    getDiscoveryTypes(),
+    getMapboxApiKey(),
   ]);
 
   return (
@@ -61,7 +77,7 @@ export default async function SubmitPage() {
                 Ajude a enriquecer o nosso mapa de tesouros. Sugira um produto, lugar ou pessoa que mereça ser conhecido.
             </p>
         </div>
-        <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} />
+        <SubmissionForm confrarias={confrarias} discoveryTypes={discoveryTypes} mapboxApiKey={mapboxApiKey} />
       </div>
     </div>
   );

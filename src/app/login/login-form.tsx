@@ -1,11 +1,13 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
@@ -79,7 +81,7 @@ export function LoginForm({ isSignUp }: LoginFormProps) {
   }
 
   return (
-    <FormProvider {...form}>
+    <Form form={form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
           {isSignUp && (
@@ -166,6 +168,6 @@ export function LoginForm({ isSignUp }: LoginFormProps) {
           </Button>
         </CardFooter>
       </form>
-    </FormProvider>
+    </Form>
   );
 }

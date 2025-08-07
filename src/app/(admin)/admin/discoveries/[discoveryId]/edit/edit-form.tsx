@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +7,7 @@ import { useForm, FormProvider, Controller, useFieldArray } from 'react-hook-for
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -94,8 +96,6 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 variant: "destructive"
             });
         }
-        // Always set loading to false, as a successful update will redirect
-        // and unmount the component anyway. This handles the case where redirect fails.
         setLoading(false);
     }
     
@@ -119,8 +119,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
-             <FormProvider {...form}>
-                <div className="max-w-2xl mx-auto space-y-8">
+            <div className="max-w-2xl mx-auto space-y-8">
+                <FormProvider {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <Card>
                             <CardHeader className="flex flex-row justify-between items-start">
@@ -227,31 +227,40 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                             </CardContent>
                         </Card>
                     </form>
-                    <ImageGalleryManager discovery={discovery} />
-                </div>
-            </FormProvider>
+                </FormProvider>
+                <ImageGalleryManager discovery={discovery} />
+            </div>
         </div>
     );
 }
 
+const imageHintSchema = z.object({
+    imageHint: z.string().optional()
+})
 
 function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
+    
+    const form = useForm<z.infer<typeof imageHintSchema>>({
+        resolver: zodResolver(imageHintSchema),
+        defaultValues: {
+            imageHint: ""
+        }
+    })
 
-    const handleAddImage = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleAddImage = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setLoading(true);
 
-        const formData = new FormData(e.currentTarget);
+        const formData = new FormData(event.currentTarget);
         const result = await addDiscoveryImage(formData);
 
         if (result.error) {
             toast({ title: "Erro", description: result.error, variant: 'destructive' });
         } else {
             toast({ title: 'Sucesso', description: result.message });
-            formRef.current?.reset();
+            form.reset();
         }
         setLoading(false);
     }
@@ -273,25 +282,33 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                 <CardDescription>Adicione e remova imagens da galeria desta descoberta.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <form ref={formRef} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
-                    <h3 className="font-semibold">Adicionar Nova Imagem</h3>
-                    <input type="hidden" name="discoveryId" value={discovery.id} />
-                    <input type="hidden" name="slug" value={discovery.slug} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormItem>
-                            <FormLabel>Ficheiro</FormLabel>
-                            <FormControl><Input type="file" name="image" required /></FormControl>
-                        </FormItem>
-                        <FormItem>
-                            <FormLabel>Dica de Imagem (IA)</FormLabel>
-                            <FormControl><Input name="imageHint" placeholder="Ex: prato comida" /></FormControl>
-                        </FormItem>
-                    </div>
-                     <Button type="submit" disabled={loading}>
-                        {loading && <Loader2 className="animate-spin mr-2" />}
-                        <PlusCircle/> Adicionar
-                    </Button>
-                </form>
+                <Form {...form}>
+                    <form onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
+                        <h3 className="font-semibold">Adicionar Nova Imagem</h3>
+                        <input type="hidden" name="discoveryId" value={discovery.id} />
+                        <input type="hidden" name="slug" value={discovery.slug} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormItem>
+                                <FormLabel>Ficheiro</FormLabel>
+                                <FormControl><Input type="file" name="image" required /></FormControl>
+                            </FormItem>
+                            <FormField
+                                control={form.control}
+                                name="imageHint"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Dica de Imagem (IA)</FormLabel>
+                                        <FormControl><Input placeholder="Ex: prato comida" {...field} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <Button type="submit" disabled={loading}>
+                            {loading && <Loader2 className="animate-spin mr-2" />}
+                            <PlusCircle/> Adicionar
+                        </Button>
+                    </form>
+                </Form>
 
                 <div className="space-y-4">
                     <h3 className="font-semibold">Imagens Atuais</h3>

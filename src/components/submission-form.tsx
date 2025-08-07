@@ -140,8 +140,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Form form={form} onSubmit={onSubmit} className="space-y-6">
         {step === 1 && (
             <Card>
                 <CardHeader>
@@ -385,7 +384,6 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                 </CardFooter>
             </Card>
         )}
-      </form>
     </Form>
   );
 }

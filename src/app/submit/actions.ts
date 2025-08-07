@@ -8,8 +8,8 @@ import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
 
-// Schema is now shared between client and server for consistency
-export const submissionSchema = z.object({
+// Schema is now defined in the client component to avoid exporting non-functions from a "use server" file.
+const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
@@ -18,6 +18,7 @@ export const submissionSchema = z.object({
   confrariaId: z.string().optional(),
   links: z.string().url('URL inválido').optional().or(z.literal('')),
 });
+
 
 // The action now accepts the parsed data and the optional image separately
 export async function createSubmission(
@@ -31,9 +32,12 @@ export async function createSubmission(
         return { error: "Utilizador não autenticado. Por favor, faça login." };
     }
     
-    // Validation is now implicitly handled by the form on the client,
-    // but we can re-validate here for safety if needed. The structure is already correct.
-    const { title, editorial, district, municipality, type_id, confrariaId, links } = values;
+    const parsedData = submissionSchema.safeParse(values);
+    if (!parsedData.success) {
+        return { error: 'Dados inválidos.' };
+    }
+
+    const { title, editorial, district, municipality, type_id, confrariaId, links } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

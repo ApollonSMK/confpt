@@ -20,12 +20,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { districts, type Confraria, DiscoveryType, portugalDistricts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
-import { createSubmission, submissionSchema } from '@/app/submit/actions';
+import { createSubmission } from '@/app/submit/actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5; // In MB
+
+const submissionSchema = z.object({
+  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+  editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  confrariaId: z.string().optional(),
+  links: z.string().url('URL inválido').optional().or(z.literal('')),
+});
 
 // We add the image schema for client-side validation
 const clientSchema = submissionSchema.extend({

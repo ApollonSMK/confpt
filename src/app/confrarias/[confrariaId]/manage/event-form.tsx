@@ -66,6 +66,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
     const [step, setStep] = useState(1);
     const formRef = useRef<HTMLFormElement>(null);
     const [municipalities, setMunicipalities] = useState<string[]>([]);
+    const [imageFile, setImageFile] = useState<File | null>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -77,7 +78,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
             district: event?.district || confrariaRegion,
-            municipality: event?.municipality || undefined,
+            municipality: event?.municipality || '',
             is_public: event?.is_public ?? true,
             image: undefined,
         },
@@ -117,6 +118,10 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
         setLoading(true);
 
         const formData = new FormData(formRef.current!);
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+        
         const result = await upsertEvent(formData);
 
         if (result && result.error) {
@@ -259,30 +264,22 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                            <FormField
-                                control={form.control}
-                                name="image"
-                                render={({ field: { onChange, ...rest } }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
-                                     {event?.image_url && (
-                                        <div className="relative h-40 w-full rounded-md overflow-hidden border">
-                                            <Image src={event.image_url} alt="Imagem de capa atual" fill objectFit="cover" />
-                                        </div>
-                                    )}
-                                    <FormControl>
-                                        <Input 
-                                            type="file"
-                                            name="image"
-                                            accept="image/png, image/jpeg, image/webp" 
-                                            onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
-                                            {...rest}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>Uma boa imagem promove melhor o seu evento. Tamanho máximo: {MAX_IMAGE_SIZE}MB.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
+                            <div className="space-y-2">
+                                <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem de Capa</FormLabel>
+                                {event?.image_url && (
+                                    <div className="relative h-40 w-full rounded-md overflow-hidden border">
+                                        <Image src={event.image_url} alt="Imagem de capa atual" fill objectFit="cover" />
+                                    </div>
+                                )}
+                                <FormControl>
+                                    <Input 
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        onChange={e => setImageFile(e.target.files ? e.target.files[0] : null)}
+                                    />
+                                </FormControl>
+                                <FormDescription>Uma boa imagem promove melhor o seu evento. Tamanho máximo: {MAX_IMAGE_SIZE}MB.</FormDescription>
+                            </div>
                         </CardContent>
                         <CardFooter className="flex justify-between">
                             <Button type="button" variant="ghost" onClick={() => setStep(1)}>

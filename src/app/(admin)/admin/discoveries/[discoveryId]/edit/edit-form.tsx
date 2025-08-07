@@ -119,8 +119,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
-            <div className="max-w-2xl mx-auto space-y-8">
-                 <Form form={form} onSubmit={onSubmit} className="space-y-8">
+             <div className="max-w-2xl mx-auto space-y-8">
+                <Form form={form} onSubmit={onSubmit}>
                     <Card>
                         <CardHeader className="flex flex-row justify-between items-start">
                             <div>
@@ -182,7 +182,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                                 <FormItem><FormLabel>Telefone (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
 
-                             <FormItem>
+                                <FormItem>
                                 <FormLabel>Comodidades</FormLabel>
                                 <FormDescription>Selecione as comodidades que esta descoberta oferece.</FormDescription>
                                 <div className="grid grid-cols-2 gap-4 pt-2">
@@ -247,11 +247,18 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
         }
     })
 
-    const handleAddImage = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleAddImage = async (values: z.infer<typeof imageHintSchema>) => {
         setLoading(true);
 
-        const formData = new FormData(event.currentTarget);
+        const formElement = form.control._formRef.current;
+        if (!formElement) {
+            setLoading(false);
+            return;
+        }
+
+        const formData = new FormData(formElement);
+        formData.set('imageHint', values.imageHint || '');
+
         const result = await addDiscoveryImage(formData);
 
         if (result.error) {
@@ -272,7 +279,6 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
         }
     }
 
-
     return (
         <Card>
             <CardHeader>
@@ -280,33 +286,31 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                 <CardDescription>Adicione e remova imagens da galeria desta descoberta.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <FormProvider {...form}>
-                    <form onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
-                        <h3 className="font-semibold">Adicionar Nova Imagem</h3>
-                        <input type="hidden" name="discoveryId" value={discovery.id} />
-                        <input type="hidden" name="slug" value={discovery.slug} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormItem>
-                                <FormLabel>Ficheiro</FormLabel>
-                                <FormControl><Input type="file" name="image" required /></FormControl>
-                            </FormItem>
-                            <FormField
-                                control={form.control}
-                                name="imageHint"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Dica de Imagem (IA)</FormLabel>
-                                        <FormControl><Input placeholder="Ex: prato comida" {...field} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="animate-spin mr-2" />}
-                            <PlusCircle/> Adicionar
-                        </Button>
-                    </form>
-                </FormProvider>
+                 <Form form={form} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-semibold">Adicionar Nova Imagem</h3>
+                    <input type="hidden" name="discoveryId" value={discovery.id} />
+                    <input type="hidden" name="slug" value={discovery.slug} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormItem>
+                            <FormLabel>Ficheiro</FormLabel>
+                            <FormControl><Input type="file" name="image" required /></FormControl>
+                        </FormItem>
+                        <FormField
+                            control={form.control}
+                            name="imageHint"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Dica de Imagem (IA)</FormLabel>
+                                    <FormControl><Input placeholder="Ex: prato comida" {...field} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                    <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="animate-spin mr-2" />}
+                        <PlusCircle/> Adicionar
+                    </Button>
+                </Form>
 
                 <div className="space-y-4">
                     <h3 className="font-semibold">Imagens Atuais</h3>

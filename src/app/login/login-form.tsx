@@ -81,93 +81,91 @@ export function LoginForm({ isSignUp }: LoginFormProps) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <CardContent className="space-y-4">
-          {isSignUp && (
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Completo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Seu nome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+    <Form form={form} onSubmit={onSubmit} className="space-y-4">
+      <CardContent className="space-y-4">
+        {isSignUp && (
           <FormField
             control={form.control}
-            name="email"
+            name="full_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Nome Completo</FormLabel>
                 <FormControl>
-                  <Input placeholder="seu@email.com" type="email" {...field} />
+                  <Input placeholder="Seu nome" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Senha</FormLabel>
-                <div className="relative">
-                    <FormControl>
-                    <Input placeholder="********" type={showPassword ? 'text' : 'password'} {...field} className="pr-10" />
-                    </FormControl>
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-primary"
-                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                    >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           {isSignUp && (
-             <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Confirmar Senha</FormLabel>
-                     <div className="relative">
-                        <FormControl>
-                        <Input placeholder="********" type={showConfirmPassword ? 'text' : 'password'} {...field} className="pr-10"/>
-                        </FormControl>
-                        <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-primary"
-                            aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                        >
-                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
-                    </div>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
+        )}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="seu@email.com" type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </CardContent>
-        <CardFooter className="flex-col gap-4">
-          <Button type="submit" className={cn("w-full", isSignUp && "mt-4")} size="lg" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSignUp ? 'Criar Conta' : 'Entrar'}
-          </Button>
-        </CardFooter>
-      </form>
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <div className="relative">
+                  <FormControl>
+                  <Input placeholder="********" type={showPassword ? 'text' : 'password'} {...field} className="pr-10" />
+                  </FormControl>
+                  <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-primary"
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+          {isSignUp && (
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Confirmar Senha</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                      <Input placeholder="********" type={showConfirmPassword ? 'text' : 'password'} {...field} className="pr-10"/>
+                      </FormControl>
+                      <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-primary"
+                          aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                  </div>
+                  <FormMessage />
+              </FormItem>
+              )}
+          />
+        )}
+      </CardContent>
+      <CardFooter className="flex-col gap-4">
+        <Button type="submit" className={cn("w-full", isSignUp && "mt-4")} size="lg" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSignUp ? 'Criar Conta' : 'Entrar'}
+        </Button>
+      </CardFooter>
     </Form>
   );
 }

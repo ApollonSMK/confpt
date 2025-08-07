@@ -14,7 +14,6 @@ const amenitySchema = z.object({
   icon: z.string(),
 });
 
-// Schema is now defined in the client component to avoid exporting non-functions from a "use server" file.
 const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
@@ -26,14 +25,11 @@ const submissionSchema = z.object({
   website: z.string().url('URL inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   amenities: z.array(amenitySchema).optional(),
+  images: z.any().optional(), // For client-side validation, not used directly here
 });
 
 
-// The action now accepts the parsed data and the optional image separately
-export async function createSubmission(
-    values: z.infer<typeof submissionSchema>,
-    image?: File
-) {
+export async function createSubmission(values: z.infer<typeof submissionSchema>) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -47,31 +43,35 @@ export async function createSubmission(
         return { error: 'Dados inválidos.' };
     }
 
-    const { title, editorial, district, municipality, type_id, confrariaId, address, website, phone, amenities } = parsedData.data;
+    const { title, editorial, district, municipality, type_id, confrariaId, address, website, phone, amenities, images } = parsedData.data;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     
-    let imageUrl: string | null = null;
-    if (image && image.size > 0) {
+    let galleryImageUrls: string[] | null = null;
+    if (images && images.length > 0) {
         const supabaseService = createServiceRoleClient();
-        const fileExtension = image.name.split('.').pop();
-        const fileName = `submissions/${nanoid()}.${fileExtension}`;
+        galleryImageUrls = [];
         
-        const { error: uploadError } = await supabaseService.storage
-            .from('public-images')
-            .upload(fileName, image);
+        for (const image of Array.from(images as FileList)) {
+            const fileExtension = image.name.split('.').pop();
+            const fileName = `submissions/${nanoid()}.${fileExtension}`;
+            
+            const { error: uploadError } = await supabaseService.storage
+                .from('public-images')
+                .upload(fileName, image);
 
-        if (uploadError) {
-            console.error('Error uploading submission image:', uploadError);
-            return { error: 'Não foi possível carregar a imagem.' };
+            if (uploadError) {
+                console.error('Error uploading submission image:', uploadError);
+                return { error: `Não foi possível carregar a imagem: ${image.name}` };
+            }
+
+            const { data: { publicUrl } } = supabaseService.storage
+                .from('public-images')
+                .getPublicUrl(fileName);
+            
+            galleryImageUrls.push(publicUrl);
         }
-
-        const { data: { publicUrl } } = supabaseService.storage
-            .from('public-images')
-            .getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
     }
 
     const { error: insertError } = await supabase
@@ -84,14 +84,14 @@ export async function createSubmission(
             municipality,
             type: parseInt(type_id, 10),
             confraria_id: confrariaId && confrariaId !== 'null' ? parseInt(confrariaId, 10) : null,
-            links: website || null, // Keeping 'links' field for now in DB
             website: website || null,
             address: address || null,
             phone: phone || null,
             amenities: amenities || null,
             status: 'Pendente',
             date: formattedDate,
-            image_url: imageUrl,
+            image_url: galleryImageUrls ? galleryImageUrls[0] : null, // Main image is the first of the gallery
+            gallery_image_urls: galleryImageUrls, // Store the full gallery
         });
     
     if (insertError) {
@@ -105,3 +105,5 @@ export async function createSubmission(
     
     return { success: true };
 }
+
+    

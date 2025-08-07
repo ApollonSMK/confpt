@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,14 +19,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { districts, type Confraria, DiscoveryType, portugalDistricts, amenities } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Globe, Shield, Image as ImageIcon, Phone, CheckSquare } from 'lucide-react';
+import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Globe, Shield, Image as ImageIcon, Phone, CheckSquare, Trash2, Camera } from 'lucide-react';
 import { createSubmission } from '@/app/submit/actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
+import Image from 'next/image';
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5; // In MB
+const MAX_IMAGES = 5; // Max number of images in the gallery
 
 const amenitySchema = z.object({
   id: z.string(),
@@ -48,14 +48,12 @@ const submissionSchema = z.object({
   amenities: z.array(amenitySchema).optional(),
 });
 
-// We add the image schema for client-side validation
 const clientSchema = submissionSchema.extend({
-    image: z.any()
-        .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
-        .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp.")
-        .optional(),
+    images: z.any()
+      .refine((files) => !files || files.length <= MAX_IMAGES, `Pode carregar no máximo ${MAX_IMAGES} imagens.`)
+      .refine((files) => !files || Array.from(files).every((file: any) => file.size <= MAX_IMAGE_SIZE * 1024 * 1024), `O tamanho máximo por imagem é ${MAX_IMAGE_SIZE}MB.`)
+      .optional(),
 });
-
 
 type FormValues = z.infer<typeof clientSchema>;
 
@@ -69,10 +67,11 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(clientSchema),
-    mode: 'onBlur', // Validate on blur for better user experience
+    mode: 'onBlur',
     defaultValues: {
       title: '',
       editorial: '',
@@ -84,7 +83,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       website: '',
       phone: '',
       amenities: [],
-      image: undefined,
+      images: undefined,
     },
   });
 
@@ -99,7 +98,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   useEffect(() => {
     if (selectedDistrict && portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]) {
         setMunicipalities(portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]);
-        setValue('municipality', ''); // Reset municipality when district changes
+        setValue('municipality', '');
     } else {
         setMunicipalities([]);
     }
@@ -112,15 +111,18 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       }
   }
 
-  // onSubmit now uses the form's values directly
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+        form.setValue("images", files);
+        const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
+        setImagePreviews(newPreviews);
+    }
+  };
+
   async function onSubmit(values: FormValues) {
     setLoading(true);
-
-    const { image, ...submissionData } = values;
-    
-    // We pass the data and the image file separately to the server action
-    const result = await createSubmission(submissionData, image);
-    
+    const result = await createSubmission(values);
     setLoading(false);
 
     if (result.error) {
@@ -135,6 +137,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
             description: "A sua sugestão de descoberta foi enviada com sucesso para revisão.",
         });
         form.reset();
+        setImagePreviews([]);
         setStep(1);
     }
   }
@@ -152,7 +155,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                 </CardHeader>
                 <CardContent className="space-y-6">
                       <FormField
-                        control={form.control}
+                        control={control}
                         name="title"
                         render={({ field }) => (
                             <FormItem>
@@ -165,7 +168,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         )}
                         />
                         <FormField
-                        control={form.control}
+                        control={control}
                         name="editorial"
                         render={({ field }) => (
                             <FormItem>
@@ -203,7 +206,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
-                            control={form.control}
+                            control={control}
                             name="district"
                             render={({ field }) => (
                             <FormItem>
@@ -223,7 +226,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                             )}
                         />
                         <FormField
-                            control={form.control}
+                            control={control}
                             name="municipality"
                             render={({ field }) => (
                             <FormItem>
@@ -243,7 +246,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                             )}
                         />
                         <FormField
-                            control={form.control}
+                            control={control}
                             name="type_id"
                             render={({ field }) => (
                             <FormItem>
@@ -263,7 +266,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                             )}
                         />
                         <FormField
-                            control={form.control}
+                            control={control}
                             name="confrariaId"
                             render={({ field }) => (
                               <FormItem>
@@ -284,7 +287,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                           />
                     </div>
                     <FormField
-                        control={form.control}
+                        control={control}
                         name="address"
                         render={({ field }) => (
                             <FormItem>
@@ -296,7 +299,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                         />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
-                          control={form.control}
+                          control={control}
                           name="website"
                           render={({ field }) => (
                               <FormItem>
@@ -307,7 +310,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                           )}
                           />
                        <FormField
-                          control={form.control}
+                          control={control}
                           name="phone"
                           render={({ field }) => (
                               <FormItem>
@@ -319,25 +322,32 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                           />
                     </div>
                      <FormField
-                        control={form.control}
-                        name="image"
-                        render={({ field }) => {
-                            const { value, ...rest } = field;
-                            return (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="file" 
-                                            accept="image/png, image/jpeg, image/webp" 
-                                            onChange={e => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )
-                        }}
+                        control={control}
+                        name="images"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Camera className="h-4 w-4"/>Galeria de Imagens (Opcional)</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="file" 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        multiple
+                                        onChange={handleFileChange}
+                                    />
+                                </FormControl>
+                                <FormDescription>Pode carregar até {MAX_IMAGES} imagens. A primeira será a imagem de capa. Máx {MAX_IMAGE_SIZE}MB cada.</FormDescription>
+                                <FormMessage />
+                                {imagePreviews.length > 0 && (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-4">
+                                        {imagePreviews.map((src, index) => (
+                                            <div key={index} className="relative aspect-square">
+                                                <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </FormItem>
+                        )}
                         />
                       <FormItem>
                         <FormLabel className="flex items-center gap-2"><CheckSquare className="h-4 w-4"/>Comodidades (Opcional)</FormLabel>
@@ -390,3 +400,5 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
     </Form>
   );
 }
+
+    

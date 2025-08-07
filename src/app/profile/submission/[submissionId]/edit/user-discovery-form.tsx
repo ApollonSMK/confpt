@@ -19,15 +19,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { districts, type Confraria, DiscoveryType, portugalDistricts, Discovery } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Camera } from 'lucide-react';
 import { updateUserDiscovery } from './actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5;
+const MAX_IMAGES = 5;
 
 const editDiscoverySchema = z.object({
   discoveryId: z.number(),
@@ -40,11 +40,10 @@ const editDiscoverySchema = z.object({
   website: z.string().url('URL inválido').optional().or(z.literal('')),
 });
 
-
 const clientSchema = editDiscoverySchema.extend({
-    image: z.any()
-        .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
-        .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp.")
+    images: z.any()
+        .refine((files) => !files || files.length <= MAX_IMAGES, `Pode carregar no máximo ${MAX_IMAGES} imagens.`)
+        .refine((files) => !files || Array.from(files).every((file: any) => file.size <= MAX_IMAGE_SIZE * 1024 * 1024), `O tamanho máximo por imagem é ${MAX_IMAGE_SIZE}MB.`)
         .optional(),
 });
 
@@ -60,6 +59,7 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(clientSchema),
@@ -73,7 +73,7 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
       type_id: String(discovery.type_id),
       confrariaId: String(discovery.confraria_id || 'null'),
       website: discovery.website || '',
-      image: undefined,
+      images: undefined,
     },
   });
 
@@ -97,15 +97,20 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
           setMunicipalities(portugalDistricts[discovery.district as keyof typeof portugalDistricts]);
       }
   }, [discovery.district]);
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+        form.setValue("images", files);
+        const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
+        setImagePreviews(newPreviews);
+    }
+  };
 
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-
-    const { image, ...discoveryData } = values;
-    
-    const result = await updateUserDiscovery(discoveryData, image);
-    
+    const result = await updateUserDiscovery(values);
     setLoading(false);
 
     if (result?.error) {
@@ -257,29 +262,39 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 />
             <FormField
               control={form.control}
-              name="image"
-              render={({ field }) => {
-                const { value, ...rest } = field;
-                return (
-                  <FormItem>
-                    <FormLabel>Imagem Principal</FormLabel>
-                    {discovery.imageUrl && (
-                      <div className="relative h-40 w-full max-w-sm rounded-md overflow-hidden border">
-                        <Image src={discovery.imageUrl} alt="Imagem atual da descoberta" fill style={{ objectFit: 'cover' }} />
-                      </div>
-                    )}
+              name="images"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2"><Camera className="h-4 w-4"/>Adicionar à Galeria</FormLabel>
+                   <FormDescription>As imagens atuais da galeria estão abaixo. Pode adicionar mais aqui. A primeira imagem da galeria será a imagem de capa.</FormDescription>
                     <FormControl>
-                      <Input
-                        type="file"
-                        accept="image/png, image/jpeg, image/webp"
-                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                      />
+                        <Input 
+                            type="file" 
+                            accept="image/png, image/jpeg, image/webp" 
+                            multiple
+                            onChange={handleFileChange}
+                        />
                     </FormControl>
-                    <FormDescription>Pode substituir a imagem principal carregando uma nova. Máx {MAX_IMAGE_SIZE}MB.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+                  <FormMessage />
+                   {(imagePreviews.length > 0 || discovery.images.length > 0) && (
+                       <div className="space-y-2 pt-2">
+                           <h3 className="text-sm font-medium text-muted-foreground">Galeria Atual e Novas Imagens:</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-4">
+                                {discovery.images.map((image, index) => (
+                                    <div key={`current-${index}`} className="relative aspect-square">
+                                        <Image src={image.imageUrl} alt={image.imageHint || 'Imagem existente'} fill className="object-cover rounded-md" />
+                                    </div>
+                                ))}
+                                {imagePreviews.map((src, index) => (
+                                    <div key={`new-${index}`} className="relative aspect-square">
+                                        <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md border-2 border-dashed border-primary" />
+                                    </div>
+                                ))}
+                            </div>
+                       </div>
+                    )}
+                </FormItem>
+              )}
             />
             <div className="flex justify-between items-center pt-4">
               <Button asChild variant="ghost">
@@ -299,3 +314,5 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
     </Card>
   );
 }
+
+    

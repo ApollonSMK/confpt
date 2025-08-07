@@ -210,12 +210,12 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
       
       {discovery.images && discovery.images.length > 0 ? (
             <Carousel className="w-full mb-8">
-                <CarouselContent>
+                <CarouselContent className="h-96">
                     {discovery.images.map((image, index) => (
                         <CarouselItem key={index}>
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <div className="aspect-video relative w-full rounded-lg shadow-lg overflow-hidden cursor-pointer">
+                                    <div className="relative w-full h-full rounded-lg shadow-lg overflow-hidden cursor-pointer">
                                         <Image
                                             src={image.imageUrl}
                                             alt={`${discovery.title} - Imagem ${index + 1}`}
@@ -223,6 +223,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                                             className="object-cover"
                                             data-ai-hint={image.imageHint}
                                             priority={index === 0}
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         />
                                     </div>
                                 </DialogTrigger>

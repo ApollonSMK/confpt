@@ -181,14 +181,13 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
   const confraria = discovery.confrarias;
   const imageCount = discovery.images?.length || 0;
 
-  // Dynamic classes for the carousel item
-  let itemClass = "basis-full"; // Default for 1 image or mobile
+  let itemClass = "basis-full";
   if (imageCount === 2) {
-    itemClass = "basis-full md:basis-1/2";
+    itemClass = "md:basis-1/2";
   } else if (imageCount === 3) {
-    itemClass = "basis-full md:basis-1/2 lg:basis-1/3";
+    itemClass = "md:basis-1/2 lg:basis-1/3";
   } else if (imageCount >= 4) {
-    itemClass = "basis-full md:basis-1/2 lg:basis-1/4";
+    itemClass = "md:basis-1/2 lg:basis-1/4";
   }
   
   const showCarouselNav = imageCount > 4;
@@ -212,7 +211,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
             <Carousel opts={{ align: 'start' }} className="w-full mb-8">
                 <CarouselContent>
                     {discovery.images.map((image, index) => (
-                        <CarouselItem key={image.id} className={itemClass}>
+                        <CarouselItem key={image.id} className={cn("basis-full", itemClass)}>
                             <div className="p-1 h-full">
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -230,6 +229,10 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                                         </Card>
                                     </DialogTrigger>
                                     <DialogContent className="max-w-4xl p-2">
+                                        <DialogTitle className="sr-only">{discovery.title} - Imagem {index + 1}</DialogTitle>
+                                        <DialogDescription className="sr-only">
+                                          {image.imageHint || `Imagem da galeria para a descoberta ${discovery.title}`}
+                                        </DialogDescription>
                                         <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1600} height={900} className="rounded-md object-contain"/>
                                     </DialogContent>
                                 </Dialog>

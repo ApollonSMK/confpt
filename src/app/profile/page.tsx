@@ -217,7 +217,7 @@ export default async function ProfilePage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {submission.status === 'Pendente' && (
+                                            {(submission.status === 'Pendente' || submission.status === 'Aprovado') && (
                                                 <Button asChild variant="outline" size="sm">
                                                     <Link href={`/profile/submission/${submission.id}/edit`}>
                                                         <Pencil className="mr-2 h-4 w-4" /> Editar
@@ -280,4 +280,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-

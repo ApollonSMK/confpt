@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServerClient } from "@/lib/supabase/server";
@@ -23,13 +24,38 @@ async function getSubmissionForEdit(submissionId: number, userId: string) {
         notFound();
     }
     
-    if (submission.status !== 'Pendente') {
-        console.warn(`User ${userId} tried to edit a non-pending submission ${submissionId}`);
+    // Allow editing for 'Pendente' or 'Aprovado'
+    if (submission.status === 'Rejeitado') {
+        console.warn(`User ${userId} tried to edit a rejected submission ${submissionId}`);
         redirect('/profile');
     }
 
     return submission as Submission;
 }
+
+// Find the corresponding discovery if the submission was approved
+async function findDiscoveryBySubmission(submission: Submission) {
+    if (submission.status !== 'Aprovado') {
+        return null;
+    }
+    // This is a bit fragile as it relies on the title being unique.
+    // A better approach would be to store the discovery_id on the submission upon approval.
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('discoveries')
+        .select('id')
+        .eq('title', submission.discovery_title)
+        .limit(1)
+        .single();
+    
+    if (error || !data) {
+        console.error(`Could not find a discovery for approved submission ${submission.id}`, error);
+        return null;
+    }
+    
+    return data.id;
+}
+
 
 async function getConfrarias(): Promise<Confraria[]> {
     const supabase = createServerClient();
@@ -59,8 +85,26 @@ export default async function EditSubmissionPage({ params }: { params: { submiss
         notFound();
     }
     
-    const [submission, confrarias, discoveryTypes] = await Promise.all([
-        getSubmissionForEdit(submissionId, user.id),
+    const submission = await getSubmissionForEdit(submissionId, user.id);
+
+    // If the submission is approved, redirect to the admin discovery edit page
+    if (submission.status === 'Aprovado') {
+        const discoveryId = await findDiscoveryBySubmission(submission);
+        if (discoveryId) {
+            // Redirecting to the main discovery edit page.
+            // RLS on the `discoveries` table itself is not configured for user edits,
+            // so this will rely on the user being an admin or responsible for a confraria.
+            // For a full user-edit feature, this would need a different edit page
+            // with appropriate security checks.
+            redirect(`/admin/discoveries/${discoveryId}/edit`);
+        } else {
+             // If we can't find the discovery, we can't edit. Show an error or redirect.
+            redirect('/profile?error=discovery_not_found');
+        }
+    }
+    
+    // If pending, show the submission edit form
+    const [confrarias, discoveryTypes] = await Promise.all([
         getConfrarias(),
         getDiscoveryTypes(),
     ]);
@@ -73,4 +117,3 @@ export default async function EditSubmissionPage({ params }: { params: { submiss
         </div>
     );
 }
-

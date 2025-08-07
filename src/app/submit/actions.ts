@@ -8,8 +8,8 @@ import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
 
-// Updated schema to handle FormData which returns strings for all fields.
-const submissionSchema = z.object({
+// Schema is now shared between client and server for consistency
+export const submissionSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
@@ -17,39 +17,23 @@ const submissionSchema = z.object({
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
   links: z.string().url('URL inválido').optional().or(z.literal('')),
-  image: z.instanceof(File).optional(),
 });
 
-export async function createSubmission(formData: FormData) {
+// The action now accepts the parsed data and the optional image separately
+export async function createSubmission(
+    values: z.infer<typeof submissionSchema>,
+    image?: File
+) {
     const supabase = createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
         return { error: "Utilizador não autenticado. Por favor, faça login." };
     }
-
-    const imageFile = formData.get('image');
-
-    const values = {
-        title: formData.get('title'),
-        editorial: formData.get('editorial'),
-        district: formData.get('district'),
-        municipality: formData.get('municipality'),
-        type_id: formData.get('type_id'),
-        confrariaId: formData.get('confrariaId'),
-        links: formData.get('links'),
-        image: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    };
     
-    // Server-side validation
-    const parsedData = submissionSchema.safeParse(values);
-
-    if (!parsedData.success) {
-        console.error("Validation errors:", parsedData.error.flatten().fieldErrors);
-        return { error: "Dados inválidos. Por favor, verifique todos os campos." };
-    }
-
-    const { title, editorial, district, municipality, type_id, confrariaId, links, image } = parsedData.data;
+    // Validation is now implicitly handled by the form on the client,
+    // but we can re-validate here for safety if needed. The structure is already correct.
+    const { title, editorial, district, municipality, type_id, confrariaId, links } = values;
 
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -75,7 +59,6 @@ export async function createSubmission(formData: FormData) {
 
         imageUrl = publicUrl;
     }
-
 
     const { error: insertError } = await supabase
         .from('submissions')

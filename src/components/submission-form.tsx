@@ -2,10 +2,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -19,27 +20,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { districts, type Confraria, DiscoveryType, portugalDistricts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Send, ArrowRight, PenSquare, Tag, MapPin, Link as LinkIcon, Shield, Image as ImageIcon } from 'lucide-react';
-import { createSubmission } from '@/app/submit/actions';
-import { useState, useRef, useEffect } from 'react';
+import { createSubmission, submissionSchema } from '@/app/submit/actions';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5; // In MB
 
-const formSchema = z.object({
-  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
-  editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
-  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
-  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
-  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
-  confrariaId: z.string().optional(),
-  links: z.string().url('Por favor, insira um URL válido.').optional().or(z.literal('')),
-  image: z.any()
-    .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
-    .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
+// We add the image schema for client-side validation
+const clientSchema = submissionSchema.extend({
+    image: z.any()
+        .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
+        .refine((file) => !file || file?.type === undefined || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp.")
+        .optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+
+type FormValues = z.infer<typeof clientSchema>;
 
 interface SubmissionFormProps {
   confrarias: Confraria[];
@@ -50,11 +47,11 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const formRef = useRef<HTMLFormElement>(null);
   const [municipalities, setMunicipalities] = useState<string[]>([]);
   
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(clientSchema),
+    mode: 'onBlur', // Validate on blur for better user experience
     defaultValues: {
       title: '',
       editorial: '',
@@ -67,7 +64,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
     },
   });
 
-  const { trigger, getValues, watch, setValue } = form;
+  const { trigger, watch, setValue, formState: { errors } } = form;
   const selectedDistrict = watch('district');
 
   useEffect(() => {
@@ -86,27 +83,14 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
       }
   }
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    
-    // Trigger validation for all fields before submitting
-    const isValid = await trigger();
-    if (!isValid) {
-        toast({ title: "Erro de Validação", description: "Por favor, preencha todos os campos obrigatórios.", variant: "destructive" });
-        return;
-    }
-
+  // onSubmit now uses the form's values directly
+  async function onSubmit(values: FormValues) {
     setLoading(true);
 
-    if (!formRef.current) {
-        setLoading(false);
-        toast({ title: "Erro no Formulário", description: "Ocorreu um erro inesperado. Por favor, tente novamente.", variant: "destructive" });
-        return;
-    }
-
-    const submissionFormData = new FormData(formRef.current);
+    const { image, ...submissionData } = values;
     
-    const result = await createSubmission(submissionFormData);
+    // We pass the data and the image file separately to the server action
+    const result = await createSubmission(submissionData, image);
     
     setLoading(false);
 
@@ -127,8 +111,8 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   }
 
   return (
-    <FormProvider {...form}>
-      <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         
         {step === 1 && (
             <Card>
@@ -291,7 +275,7 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
                      <FormField
                         control={form.control}
                         name="image"
-                        render={({ field: { onChange, value, ...rest } }) => (
+                        render={({ field: { onChange, ...rest } }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
                                 <FormControl>
@@ -320,6 +304,6 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
             </Card>
         )}
       </form>
-    </FormProvider>
+    </Form>
   );
 }

@@ -116,8 +116,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 md:py-16 space-y-8">
-            <div className="max-w-2xl mx-auto">
+        <div className="container mx-auto px-4 py-8 md:py-16">
+            <div className="max-w-2xl mx-auto space-y-8">
                 <FormProvider {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <Card>
@@ -225,11 +225,9 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                             </CardContent>
                         </Card>
                     </form>
+                    <ImageGalleryManager discovery={discovery} />
                 </FormProvider>
-                 <ImageGalleryManager discovery={discovery} />
             </div>
-
-           
         </div>
     );
 }

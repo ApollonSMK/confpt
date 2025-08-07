@@ -86,6 +86,21 @@ async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
     return data as DiscoveryType[];
 }
 
+async function getMapboxApiKey(): Promise<string> {
+    const supabase = createServiceRole_client();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'mapbox_api_key')
+        .single();
+    
+    if (error || !data) {
+        console.warn("Could not fetch Mapbox API key:", error);
+        return '';
+    }
+    return data.value || '';
+}
+
 
 export default async function UserEditDiscoveryPage({ params }: { params: { submissionId: string } }) {
     const supabase = createServerClient();
@@ -101,17 +116,23 @@ export default async function UserEditDiscoveryPage({ params }: { params: { subm
     }
     
     // If the submission is approved, we fetch the DISCOVERY data
-    const discovery = await getDiscoveryFromSubmission(submissionId, user.id);
-    
-    const [confrarias, discoveryTypes] = await Promise.all([
+    const [discovery, confrarias, discoveryTypes, mapboxApiKey] = await Promise.all([
+        getDiscoveryFromSubmission(submissionId, user.id),
         getConfrarias(),
         getDiscoveryTypes(),
+        getMapboxApiKey(),
     ]);
+    
 
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
             <div className="max-w-2xl mx-auto">
-                 <UserDiscoveryForm discovery={discovery} confrarias={confrarias} discoveryTypes={discoveryTypes} />
+                 <UserDiscoveryForm 
+                    discovery={discovery} 
+                    confrarias={confrarias} 
+                    discoveryTypes={discoveryTypes} 
+                    mapboxApiKey={mapboxApiKey}
+                />
             </div>
         </div>
     );

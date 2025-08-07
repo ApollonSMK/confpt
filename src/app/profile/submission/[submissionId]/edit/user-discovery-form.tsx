@@ -19,12 +19,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { districts, type Confraria, DiscoveryType, portugalDistricts, Discovery } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Camera } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Camera, MapPin } from 'lucide-react';
 import { updateUserDiscovery } from './actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AddressAutocomplete } from '@/components/address-autocomplete';
 
 const MAX_IMAGE_SIZE = 5;
 const MAX_IMAGES = 5;
@@ -37,6 +38,7 @@ const editDiscoverySchema = z.object({
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confrariaId: z.string().optional(),
+  address: z.string().optional(),
   website: z.string().url('URL inválido').optional().or(z.literal('')),
 });
 
@@ -53,9 +55,10 @@ interface EditDiscoveryFormProps {
   discovery: Discovery;
   confrarias: Confraria[];
   discoveryTypes: DiscoveryType[];
+  mapboxApiKey: string;
 }
 
-export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: EditDiscoveryFormProps) {
+export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes, mapboxApiKey }: EditDiscoveryFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [municipalities, setMunicipalities] = useState<string[]>([]);
@@ -72,6 +75,7 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
       municipality: discovery.municipality || undefined,
       type_id: String(discovery.type_id),
       confrariaId: String(discovery.confraria_id || 'null'),
+      address: discovery.address || '',
       website: discovery.website || '',
       images: undefined,
     },
@@ -249,6 +253,21 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                 />
             <FormField
                 control={form.control}
+                name="address"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Morada (Opcional)</FormLabel>
+                        <AddressAutocomplete 
+                        apiKey={mapboxApiKey} 
+                        onSelect={(address) => setValue('address', address)}
+                        initialValue={field.value}
+                        />
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
                 name="website"
                 render={({ field }) => (
                     <FormItem>
@@ -314,5 +333,3 @@ export function UserDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
     </Card>
   );
 }
-
-    

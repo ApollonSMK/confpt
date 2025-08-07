@@ -197,22 +197,23 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
         
         {discovery.images && discovery.images.length > 0 ? (
             <Carousel className="w-full mb-8">
-                <CarouselContent className="h-96">
+                <CarouselContent>
                     {discovery.images.map((image, index) => (
-                        <CarouselItem key={index}>
-                            <Dialog>
+                        <CarouselItem key={index} className="basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <div className="relative w-full h-full rounded-lg shadow-lg overflow-hidden cursor-pointer">
-                                        <Image
-                                            src={image.imageUrl}
-                                            alt={`${discovery.title} - Imagem ${index + 1}`}
-                                            fill
-                                            className="object-contain"
-                                            data-ai-hint={image.imageHint}
-                                            priority={index === 0}
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        />
-                                    </div>
+                                    <Card className="overflow-hidden cursor-pointer group">
+                                        <div className="aspect-square relative">
+                                            <Image
+                                                src={image.imageUrl}
+                                                alt={`${discovery.title} - Imagem ${index + 1}`}
+                                                fill
+                                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                                data-ai-hint={image.imageHint}
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            />
+                                        </div>
+                                    </Card>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-4xl p-2">
                                      <Image src={image.imageUrl} alt={image.imageHint || 'Imagem da galeria'} width={1600} height={900} className="rounded-md object-contain"/>
@@ -221,10 +222,10 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                         </CarouselItem>
                     ))}
                 </CarouselContent>
-                {discovery.images.length > 1 && (
+                {discovery.images.length > 4 && (
                     <>
-                        <CarouselPrevious className="left-4" />
-                        <CarouselNext className="right-4" />
+                        <CarouselPrevious className="left-[-1rem] md:left-[-2rem]" />
+                        <CarouselNext className="right-[-1rem] md:right-[-2rem]" />
                     </>
                 )}
             </Carousel>

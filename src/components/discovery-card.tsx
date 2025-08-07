@@ -17,12 +17,12 @@ export function DiscoveryCard({ discovery }: DiscoveryCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-shadow duration-300 hover:shadow-xl border-2 border-transparent hover:border-primary/50">
       <CardHeader>
-        <div className="aspect-[4/3] relative w-full overflow-hidden rounded-md mb-4">
+        <div className="aspect-[4/3] relative w-full overflow-hidden rounded-md mb-4 bg-muted/30">
           <Image
             src={discovery.imageUrl}
             alt={discovery.title}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-contain transition-transform duration-300 group-hover:scale-105"
             data-ai-hint={discovery.imageHint}
           />
         </div>

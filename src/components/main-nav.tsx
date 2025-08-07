@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { createClient } from '@/lib/supabase/client';
+import { Skeleton } from './ui/skeleton';
 
 
 const navLinks = [
@@ -44,6 +45,12 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
   const [managedConfrariaId, setManagedConfrariaId] = useState<number | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
 
   useEffect(() => {
     async function fetchManagedConfraria() {
@@ -64,8 +71,10 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
       }
     }
 
-    fetchManagedConfraria();
-  }, [user]);
+    if (isMounted) {
+        fetchManagedConfraria();
+    }
+  }, [user, isMounted]);
 
   const handleLogout = async () => {
     await logout();
@@ -100,7 +109,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary-foreground/20 bg-primary text-primary-foreground">
+    <header className="sticky top-0 z-50 w-full border-b border-primary-foreground/20 bg-primary/95 text-primary-foreground backdrop-blur supports-[backdrop-filter]:bg-primary/60">
       <div className="container flex h-20 items-center">
         <div className="mr-4 flex items-center">
           <Link href="/" className="flex items-center space-x-2">
@@ -110,82 +119,90 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
             <span className="font-bold font-headline text-xl">Confrarias Portugal</span>
           </Link>
         </div>
+
         <div className="hidden md:flex flex-1 items-center justify-center space-x-4">
-          <NavContent />
+           {isMounted && <NavContent />}
         </div>
+        
         <div className="flex items-center justify-end space-x-2 ml-auto">
-            {user ? (
-                <div className="flex items-center gap-2">
-                    {isAdmin && (
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" asChild>
-                                        <Link href="/admin/dashboard">
-                                            <ShieldCheck className="h-6 w-6 text-secondary" />
-                                        </Link>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Painel Administrativo</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    )}
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="relative h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-secondary focus-visible:ring-secondary">
-                            <Avatar className="h-12 w-12 border-2 border-primary-foreground/50">
-                               <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
-                               <AvatarFallback className="bg-primary/20 text-primary-foreground font-bold">{userInitial}</AvatarFallback>
-                            </Avatar>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end" forceMount>
-                          <DropdownMenuLabel className="font-normal">
-                            <div className="flex flex-col space-y-1">
-                              <p className="text-sm font-medium leading-none">{userFullName || 'Confrade'}</p>
-                              <p className="text-xs leading-none text-muted-foreground">
-                                {user.email}
-                              </p>
-                            </div>
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                           <DropdownMenuItem asChild className="cursor-pointer">
-                                <Link href="/profile">
-                                    <UserCog className="mr-2 h-4 w-4" />
-                                    <span>Meu Painel</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                                <Link href="/submit">
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    <span>Submeter Descoberta</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            {managedConfrariaId && (
-                                <DropdownMenuItem asChild className="cursor-pointer">
-                                    <Link href={`/confrarias/${managedConfrariaId}/manage`}>
-                                        <ShieldQuestion className="mr-2 h-4 w-4" />
-                                        <span>Gerir Confraria</span>
-                                    </Link>
-                                </DropdownMenuItem>
+            {isMounted ? (
+                <>
+                    {user ? (
+                        <div className="flex items-center gap-2">
+                            {isAdmin && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link href="/admin/dashboard">
+                                                    <ShieldCheck className="h-6 w-6 text-secondary" />
+                                                </Link>
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Painel Administrativo</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Sair</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="relative h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-secondary focus-visible:ring-secondary">
+                                    <Avatar className="h-12 w-12 border-2 border-primary-foreground/50">
+                                    <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
+                                    <AvatarFallback className="bg-primary/20 text-primary-foreground font-bold">{userInitial}</AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end" forceMount>
+                                <DropdownMenuLabel className="font-normal">
+                                    <div className="flex flex-col space-y-1">
+                                    <p className="text-sm font-medium leading-none">{userFullName || 'Confrade'}</p>
+                                    <p className="text-xs leading-none text-muted-foreground">
+                                        {user.email}
+                                    </p>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild className="cursor-pointer">
+                                        <Link href="/profile">
+                                            <UserCog className="mr-2 h-4 w-4" />
+                                            <span>Meu Painel</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild className="cursor-pointer">
+                                        <Link href="/submit">
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            <span>Submeter Descoberta</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    {managedConfrariaId && (
+                                        <DropdownMenuItem asChild className="cursor-pointer">
+                                            <Link href={`/confrarias/${managedConfrariaId}/manage`}>
+                                                <ShieldQuestion className="mr-2 h-4 w-4" />
+                                                <span>Gerir Confraria</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Sair</span>
+                                </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    ) : (
+                        <Button asChild variant="secondary">
+                            <Link href="/login">
+                                <UserRound className='mr-2' />
+                                Entrar
+                            </Link>
+                        </Button>
+                    )}
+                </>
             ) : (
-                <Button asChild variant="secondary">
-                    <Link href="/login">
-                        <UserRound className='mr-2' />
-                        Entrar
-                    </Link>
-                </Button>
+                <Skeleton className="h-10 w-24" />
             )}
              <div className="md:hidden">
               <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
@@ -195,8 +212,8 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                     <span className="sr-only">Toggle Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="pt-16">
-                  <NavContent isMobile />
+                <SheetContent side="right" className="pt-16 bg-primary text-primary-foreground border-l-primary-foreground/20">
+                  {isMounted && <NavContent isMobile />}
                 </SheetContent>
               </Sheet>
             </div>

@@ -87,8 +87,8 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
           href={link.href}
           onClick={() => setSheetOpen(false)}
           className={cn(
-            'text-sm font-medium transition-colors hover:text-primary border-b-2 flex items-center gap-2',
-            pathname === link.href ? 'text-primary border-primary' : 'text-muted-foreground border-transparent',
+            'text-sm font-medium transition-colors border-b-2 flex items-center gap-2',
+            pathname === link.href ? 'text-primary-foreground border-secondary' : 'text-primary-foreground/80 border-transparent hover:text-primary-foreground',
             isMobile && 'text-lg p-2 rounded-md w-full justify-start'
           )}
         >
@@ -100,11 +100,11 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-primary-foreground/20 bg-primary text-primary-foreground">
       <div className="container flex h-20 items-center">
         <div className="mr-4 flex items-center">
           <Link href="/" className="flex items-center space-x-2">
-            <div className='bg-primary text-primary-foreground p-2 rounded-full shadow-md'>
+            <div className='bg-primary-foreground/10 p-2 rounded-full shadow-md'>
                 <Grape className="h-6 w-6" />
             </div>
             <span className="font-bold font-headline text-xl">Confrarias Portugal</span>
@@ -122,7 +122,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" asChild>
                                         <Link href="/admin/dashboard">
-                                            <ShieldCheck className="h-6 w-6 text-primary" />
+                                            <ShieldCheck className="h-6 w-6 text-secondary" />
                                         </Link>
                                     </Button>
                                 </TooltipTrigger>
@@ -134,10 +134,10 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                     )}
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="relative h-12 w-12 rounded-full">
-                            <Avatar className="h-12 w-12 border-2 border-primary/50">
+                          <Button variant="ghost" className="relative h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-secondary focus-visible:ring-secondary">
+                            <Avatar className="h-12 w-12 border-2 border-primary-foreground/50">
                                <AvatarImage src={user.user_metadata?.avatar_url} alt={userFullName || user.email} />
-                               <AvatarFallback className="bg-primary/20 text-primary font-bold">{userInitial}</AvatarFallback>
+                               <AvatarFallback className="bg-primary/20 text-primary-foreground font-bold">{userInitial}</AvatarFallback>
                             </Avatar>
                           </Button>
                         </DropdownMenuTrigger>
@@ -180,7 +180,7 @@ export function MainNav({ user, isAdmin }: MainNavProps) {
                       </DropdownMenu>
                 </div>
             ) : (
-                <Button asChild>
+                <Button asChild variant="secondary">
                     <Link href="/login">
                         <UserRound className='mr-2' />
                         Entrar

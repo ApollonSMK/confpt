@@ -81,7 +81,7 @@ export function LoginForm({ isSignUp }: LoginFormProps) {
   }
 
   return (
-    <Form form={form}>
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
           {isSignUp && (

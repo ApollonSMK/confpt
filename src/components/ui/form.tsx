@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -19,18 +20,22 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 interface FormProps<TFieldValues extends FieldValues>
-  extends React.ComponentPropsWithoutRef<'form'> {
+  extends Omit<React.ComponentPropsWithoutRef<'form'>, 'onSubmit'> {
   form: UseFormReturn<TFieldValues>;
+  onSubmit: (values: TFieldValues) => void;
 }
 
 const Form = <TFieldValues extends FieldValues>({
   form,
+  onSubmit,
   children,
   ...props
 }: FormProps<TFieldValues>) => {
   return (
     <FormProvider {...form}>
-      <form {...props}>{children}</form>
+      <form onSubmit={form.handleSubmit(onSubmit)} {...props}>
+        {children}
+      </form>
     </FormProvider>
   );
 };

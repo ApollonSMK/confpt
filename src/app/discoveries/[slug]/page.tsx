@@ -208,7 +208,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
                                                 src={image.imageUrl}
                                                 alt={`${discovery.title} - Imagem ${index + 1}`}
                                                 fill
-                                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                                className="object-contain transition-transform duration-300 group-hover:scale-110"
                                                 data-ai-hint={image.imageHint}
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                             />

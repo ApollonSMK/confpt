@@ -1,9 +1,7 @@
 
-'use client';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { redirect } from 'next/navigation';
+import { createServerClient } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +12,11 @@ import { DiscoveryCard } from '@/components/discovery-card';
 import { cn } from '@/lib/utils';
 import { ProfileRegionChart } from './profile-region-chart';
 import type { User } from '@supabase/supabase-js';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
-async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promise<Discovery[]> {
+async function getSealedDiscoveriesForUser(userId: string): Promise<Discovery[]> {
+    const supabase = createServerClient();
     const { data: seals, error: sealsError } = await supabase
         .from('seals')
         .select('discovery_id')
@@ -34,19 +32,10 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
         .from('discoveries')
         .select(`
             *,
-            confrarias (
-                id,
-                name,
-                seal_url,
-                seal_hint
-            ),
+            confrarias (id, name, seal_url, seal_hint),
             discovery_images(image_url, image_hint),
-            discovery_seal_counts (
-                seal_count
-            ),
-            discovery_types (
-                name
-            )
+            discovery_seal_counts (seal_count),
+            discovery_types (name)
         `)
         .in('id', discoveryIds);
 
@@ -69,18 +58,14 @@ async function getSealedDiscoveriesForUser(supabase: any, userId: string): Promi
         imageUrl: images[0]?.imageUrl || 'https://placehold.co/600x400.png',
         imageHint: images[0]?.imageHint || 'placeholder',
         images: images,
-        contextualData: {
-            address: d.address,
-            website: d.website,
-            phone: d.phone
-        },
         confrarias: d.confrarias ? { ...d.confrarias, sealUrl: d.confrarias.seal_url, sealHint: d.confrarias.seal_hint } : undefined,
         seal_count: d.discovery_seal_counts[0]?.seal_count || 0,
         user_has_sealed: userSeals.has(d.id),
     }}) as unknown as Discovery[];
 }
 
-async function getSubmissionsForUser(supabase: any, userId: string): Promise<Submission[]> {
+async function getSubmissionsForUser(userId: string): Promise<Submission[]> {
+    const supabase = createServerClient();
     if (!userId) {
         return [];
     }
@@ -93,11 +78,11 @@ async function getSubmissionsForUser(supabase: any, userId: string): Promise<Sub
 
     return data.map((s: any) => ({
         ...s,
-        discoveryTitle: s.discovery_title,
+        discovery_title: s.discovery_title,
+        discoveryTitle: s.discovery_title, // compatibility
         type: s.discovery_types?.name || 'Tipo Desconhecido',
     })) as Submission[];
 }
-
 
 function processRegionData(discoveries: Discovery[]) {
     if (!discoveries || discoveries.length === 0) return [];
@@ -113,69 +98,24 @@ function processRegionData(discoveries: Discovery[]) {
     return Object.values(regionCounts).sort((a, b) => b.selos - a.selos);
 }
 
-export default function ProfilePage() {
-    const [user, setUser] = useState<User | null>(null);
-    const [sealedDiscoveries, setSealedDiscoveries] = useState<Discovery[]>([]);
-    const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
-    const [rankInfo, setRankInfo] = useState<UserRankInfo | null>(null);
-    const [loading, setLoading] = useState(true);
+export default async function ProfilePage() {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-    useEffect(() => {
-        const supabase = createClient();
+  if (!user) {
+    redirect('/login');
+  }
 
-        async function fetchData() {
-            const { data: { user } } = await supabase.auth.getUser();
+  const [sealedDiscoveries, userSubmissions] = await Promise.all([
+    getSealedDiscoveriesForUser(user.id),
+    getSubmissionsForUser(user.id),
+  ]);
 
-            if (!user) {
-                redirect('/login');
-                return;
-            }
-            setUser(user);
-
-            const [sealedData, submissionsData] = await Promise.all([
-                getSealedDiscoveriesForUser(supabase, user.id),
-                getSubmissionsForUser(supabase, user.id),
-            ]);
-
-            setSealedDiscoveries(sealedData);
-            setUserSubmissions(submissionsData);
-
-            const approvedSubmissionsCount = submissionsData.filter(s => s.status === 'Aprovado').length;
-            const sealedDiscoveriesCount = sealedData.length;
-            setRankInfo(getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount));
-
-            setLoading(false);
-        }
-
-        fetchData();
-    }, []);
-
-    if (loading || !user || !rankInfo) {
-        return (
-            <div className="container mx-auto px-4 py-8 md:py-16">
-                <div className="flex flex-col md:flex-row items-center gap-6 mb-12">
-                    <Skeleton className="h-28 w-28 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-10 w-64" />
-                        <Skeleton className="h-8 w-40" />
-                        <Skeleton className="h-6 w-80" />
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
-                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
-                    <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
-                </div>
-                 <Skeleton className="h-96 w-full" />
-            </div>
-        );
-    }
-    
   const approvedSubmissionsCount = userSubmissions.filter(s => s.status === 'Aprovado').length;
   const sealedDiscoveriesCount = sealedDiscoveries.length;
-  const { rankName, rankIconName } = rankInfo;
-  const RankIcon = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, user.user_metadata?.rank_override).rankIcon;
-
+  const rankInfo = getUserRank(sealedDiscoveriesCount, approvedSubmissionsCount, user.user_metadata?.rank_override);
+  const { rankName } = rankInfo;
+  const RankIcon = rankInfo.rankIcon;
 
   const userFullName = user.user_metadata?.full_name || 'Confrade Anónimo';
   const userDistrict = user.user_metadata?.district || 'Distrito Desconhecido';
@@ -304,7 +244,7 @@ export default function ProfilePage() {
                             <TableBody>
                                 {userSubmissions.map((submission) => (
                                     <TableRow key={submission.id}>
-                                        <TableCell className="font-medium">{submission.discoveryTitle}</TableCell>
+                                        <TableCell className="font-medium">{submission.discovery_title}</TableCell>
                                         <TableCell>{new Date(submission.date).toLocaleDateString()}</TableCell>
                                         <TableCell>
                                             <Badge

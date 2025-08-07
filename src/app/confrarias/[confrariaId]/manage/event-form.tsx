@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Loader2, Upload, Send, ArrowRight, PenSquare, Eye, ArrowLeft } from 'lucide-react';
 import { upsertEvent } from './actions';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Event } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { districts } from '@/lib/data';
+import { districts, portugalDistricts } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Image as ImageIcon } from 'lucide-react';
@@ -43,6 +44,7 @@ const formSchema = z.object({
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   is_public: z.boolean().default(true),
   image: z.any()
     .refine((file) => !file || file?.size === undefined || file.size <= MAX_IMAGE_SIZE * 1024 * 1024, `O tamanho máximo é ${MAX_IMAGE_SIZE}MB.`)
@@ -63,6 +65,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
     const formRef = useRef<HTMLFormElement>(null);
+    const [municipalities, setMunicipalities] = useState<string[]>([]);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -74,15 +77,36 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             event_date: event ? new Date(event.event_date) : undefined,
             location: event?.location || '',
             district: event?.district || confrariaRegion,
+            municipality: event?.municipality || undefined,
             is_public: event?.is_public ?? true,
             image: undefined,
         },
     });
 
-     const { trigger } = form;
+     const { trigger, watch, setValue } = form;
+     const selectedDistrict = watch('district');
+
+     useEffect(() => {
+        if (selectedDistrict && portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]) {
+            setMunicipalities(portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]);
+            const currentMunicipality = form.getValues('municipality');
+            if (!portugalDistricts[selectedDistrict as keyof typeof portugalDistricts].includes(currentMunicipality as string)) {
+                 setValue('municipality', ''); // Reset on district change
+            }
+        } else {
+            setMunicipalities([]);
+        }
+    }, [selectedDistrict, setValue, form]);
+
+    useEffect(() => {
+        // Pre-populate on initial load for editing
+        if (event?.district && portugalDistricts[event.district as keyof typeof portugalDistricts]) {
+             setMunicipalities(portugalDistricts[event.district as keyof typeof portugalDistricts]);
+        }
+    },[event?.district])
 
     const handleNextStep = async () => {
-        const isValid = await trigger(["name", "event_date", "district", "location"]);
+        const isValid = await trigger(["name", "event_date", "district", "municipality", "location"]);
         if (isValid) {
             setStep(2);
         }
@@ -158,13 +182,26 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
-                                <FormField control={form.control} name="district" render={({ field }) => (
+                                <div/>
+                                 <FormField control={form.control} name="district" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="municipality" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Concelho</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione o concelho" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

@@ -24,6 +24,7 @@ const eventFormSchema = z.object({
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   is_public: z.boolean().default(true),
   image: z.any().optional(), // for the file upload
 });
@@ -129,6 +130,7 @@ export async function upsertEvent(formData: FormData) {
         event_date: new Date(formData.get('event_date') as string),
         location: formData.get('location') as string,
         district: formData.get('district') as any,
+        municipality: formData.get('municipality') as string,
         is_public: formData.get('is_public') === 'true',
         image: formData.get('image') as File,
     };
@@ -140,7 +142,7 @@ export async function upsertEvent(formData: FormData) {
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, district, image, is_public } = parsedData.data;
+    const { id, confraria_id, name, description, event_date, location, district, municipality, image, is_public } = parsedData.data;
 
     // Check permissions before upserting
     await checkPermissions(confraria_id);
@@ -178,6 +180,7 @@ export async function upsertEvent(formData: FormData) {
         event_date: event_date.toISOString(),
         location: location || null,
         district,
+        municipality: municipality || null,
         is_public,
         image_url: imageUrl || 'https://placehold.co/600x400.png',
         image_hint: 'event placeholder',

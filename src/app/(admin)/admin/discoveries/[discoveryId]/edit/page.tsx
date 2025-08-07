@@ -72,6 +72,21 @@ async function getDiscoveryTypes(): Promise<DiscoveryType[]> {
     return data as DiscoveryType[];
 }
 
+async function getMapboxApiKey(): Promise<string> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'mapbox_api_key')
+        .single();
+    
+    if (error || !data) {
+        console.warn("Could not fetch Mapbox API key:", error);
+        return '';
+    }
+    return data.value || '';
+}
+
 
 export default async function EditDiscoveryPage({ params }: { params: { discoveryId: string } }) {
     await checkAdmin();
@@ -80,13 +95,19 @@ export default async function EditDiscoveryPage({ params }: { params: { discover
         notFound();
     }
     
-    const [discoveryData, confrarias, discoveryTypes] = await Promise.all([
+    const [discoveryData, confrarias, discoveryTypes, mapboxApiKey] = await Promise.all([
         getDiscovery(discoveryId),
         getConfrarias(),
         getDiscoveryTypes(),
+        getMapboxApiKey(),
     ]);
 
     return (
-        <EditDiscoveryForm discovery={discoveryData} confrarias={confrarias} discoveryTypes={discoveryTypes} />
+        <EditDiscoveryForm 
+            discovery={discoveryData} 
+            confrarias={confrarias} 
+            discoveryTypes={discoveryTypes}
+            mapboxApiKey={mapboxApiKey}
+        />
     );
 }

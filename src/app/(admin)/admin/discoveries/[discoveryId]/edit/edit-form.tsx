@@ -18,15 +18,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { districts, Confraria, Discovery, DiscoveryType, amenities, type Amenity } from '@/lib/data';
+import { districts, Confraria, Discovery, DiscoveryType, amenities, type Amenity, portugalDistricts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Camera, PlusCircle } from 'lucide-react';
 import { deleteDiscovery, updateDiscovery, addDiscoveryImage, deleteDiscoveryImage } from './actions';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AddressAutocomplete } from '@/components/address-autocomplete';
 
 
 const amenitySchema = z.object({
@@ -41,6 +42,7 @@ const formSchema = z.object({
   description: z.string().min(3, 'A descrição curta deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'O editorial deve ter pelo menos 10 caracteres.'),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
   confraria_id: z.string().optional(),
   address: z.string().optional(),
@@ -56,12 +58,14 @@ interface EditDiscoveryFormProps {
     discovery: Discovery;
     confrarias: Confraria[];
     discoveryTypes: DiscoveryType[];
+    mapboxApiKey: string;
 }
 
-export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: EditDiscoveryFormProps) {
+export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapboxApiKey }: EditDiscoveryFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [municipalities, setMunicipalities] = useState<string[]>([]);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -70,7 +74,8 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
             title: discovery.title,
             description: discovery.description,
             editorial: discovery.editorial,
-            district: discovery.district,
+            district: discovery.district as any,
+            municipality: discovery.municipality,
             type_id: String(discovery.type_id),
             confraria_id: discovery.confraria_id?.toString() ?? 'null',
             address: discovery.address ?? '',
@@ -84,6 +89,28 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
       control: form.control,
       name: "amenities"
     });
+
+    const { watch, setValue } = form;
+    const selectedDistrict = watch('district');
+
+    useEffect(() => {
+        if (selectedDistrict && portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]) {
+            setMunicipalities(portugalDistricts[selectedDistrict as keyof typeof portugalDistricts]);
+            const currentMunicipality = form.getValues('municipality');
+            if (!portugalDistricts[selectedDistrict as keyof typeof portugalDistricts].includes(currentMunicipality as string)) {
+                 setValue('municipality', '');
+            }
+        } else {
+            setMunicipalities([]);
+        }
+    }, [selectedDistrict, setValue, form]);
+
+    useEffect(() => {
+        if (discovery.district && portugalDistricts[discovery.district as keyof typeof portugalDistricts]) {
+            setMunicipalities(portugalDistricts[discovery.district as keyof typeof portugalDistricts]);
+        }
+    }, [discovery.district]);
+
 
     async function onSubmit(values: FormValues) {
         setLoading(true);
@@ -164,17 +191,47 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes }: Edi
                             <FormField control={form.control} name="district" render={({ field }) => (
                                 <FormItem><FormLabel>Distrito</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                             )}/>
+                            <FormField control={form.control} name="municipality" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Concelho</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o concelho" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                            </div>
                             <FormField control={form.control} name="type_id" render={({ field }) => (
                                 <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                             )}/>
-                            </div>
                             <FormField control={form.control} name="confraria_id" render={({ field }) => (
                                 <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                             )}/>
                             
-                            <FormField control={form.control} name="address" render={({ field }) => (
-                                <FormItem><FormLabel>Morada (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
+                            <FormField
+                                control={form.control}
+                                name="address"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Morada (Opcional)</FormLabel>
+                                    <FormControl>
+                                        <AddressAutocomplete
+                                            apiKey={mapboxApiKey}
+                                            onSelect={(address) => setValue('address', address)}
+                                            initialValue={field.value}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                             <FormField control={form.control} name="website" render={({ field }) => (
                                 <FormItem><FormLabel>Website (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -33,7 +32,7 @@ const Form = <TFieldValues extends FieldValues>({
 }: FormProps<TFieldValues>) => {
   return (
     <FormProvider {...form}>
-      <form onSubmit={form?.handleSubmit(onSubmit)} {...props}>
+      <form onSubmit={form.handleSubmit(onSubmit)} {...props}>
         {children}
       </form>
     </FormProvider>
@@ -67,13 +66,14 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useFormContext();
+  const form = useFormContext(); // Change here: get the whole form object
 
-  const fieldState = getFieldState(fieldContext.name, formState);
-
-  if (!fieldContext) {
+  if (!form || !fieldContext) { // Add check for form object
     throw new Error('useFormField should be used within <FormField>');
   }
+
+  const { getFieldState, formState } = form; // Destructure from the form object
+  const fieldState = getFieldState(fieldContext.name, formState);
 
   const { id } = itemContext;
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -121,199 +122,197 @@ export function SubmissionForm({ confrarias, discoveryTypes }: SubmissionFormPro
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        
-        {step === 1 && (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                        <span>Passo 1: A Descoberta Essencial</span>
-                        <span className="text-sm font-normal text-muted-foreground">1 de 2</span>
-                    </CardTitle>
-                    <CardDescription>Comece pelo mais importante: o nome e a história que tornam este lugar, produto ou pessoa especial.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                     <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="flex items-center gap-2"><PenSquare className="h-4 w-4"/>Título da Descoberta</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Ex: O segredo das amêijoas à Bulhão Pato" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={form.control}
-                        name="editorial"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="flex items-center gap-2"><PenSquare className="h-4 w-4"/>Descrição Editorial</FormLabel>
-                            <FormControl>
-                                <Textarea
-                                placeholder="Descreva a sua descoberta de forma poética e pessoal..."
-                                rows={8}
-                                {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>Conte-nos porque é que esta descoberta é especial. Pense nisto como uma página de uma revista.</FormDescription>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                </CardContent>
-                <CardFooter>
-                    <Button type="button" onClick={handleNextStep} size="lg" className="ml-auto">
-                        Continuar <ArrowRight className="ml-2"/>
-                    </Button>
-                </CardFooter>
-            </Card>
-        )}
-
-        {step === 2 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                        <span>Passo 2: Detalhes e Contexto</span>
-                        <span className="text-sm font-normal text-muted-foreground">2 de 2</span>
-                    </CardTitle>
-                    <CardDescription>Agora, ajude-nos a categorizar e a dar mais informações sobre a sua descoberta.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                            control={form.control}
-                            name="district"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o distrito" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="municipality"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Concelho</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o concelho" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="type_id"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><Tag className="h-4 w-4"/>Tipo</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                     <FormField
-                        control={form.control}
-                        name="confrariaId"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Relevante para a Confraria (Opcional)</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Associe a uma confraria existente" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="null">Nenhuma (contribuição comunitária)</SelectItem>
-                                    {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                            <FormDescription>Se esta descoberta tem uma ligação especial com alguma confraria, indique-a aqui. Isto ajuda os nossos curadores a organizar o conteúdo.</FormDescription>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
+    <Form form={form} onSubmit={onSubmit}>
+      {step === 1 && (
+          <Card>
+              <CardHeader>
+                  <CardTitle className="font-headline text-2xl flex items-center justify-between">
+                      <span>Passo 1: A Descoberta Essencial</span>
+                      <span className="text-sm font-normal text-muted-foreground">1 de 2</span>
+                  </CardTitle>
+                  <CardDescription>Comece pelo mais importante: o nome e a história que tornam este lugar, produto ou pessoa especial.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                     <FormField
-                        control={form.control}
-                        name="links"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="flex items-center gap-2"><LinkIcon className="h-4 w-4"/>Link de Referência (Opcional)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="https://exemplo.com" {...field} />
-                            </FormControl>
-                            <FormDescription>Website oficial, artigo de jornal, redes sociais, etc.</FormDescription>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                     <FormField
-                        control={form.control}
-                        name="image"
-                        render={({ field: { onChange, ...rest } }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        type="file" 
-                                        accept="image/png, image/jpeg, image/webp" 
-                                        onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
-                                        {...rest}
-                                    />
-                                </FormControl>
-                                <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                     <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-                        Voltar
-                    </Button>
-                    <Button type="submit" size="lg" disabled={loading}>
-                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Enviar para Revisão
-                    </Button>
-                </CardFooter>
-            </Card>
-        )}
-      </form>
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel className="flex items-center gap-2"><PenSquare className="h-4 w-4"/>Título da Descoberta</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Ex: O segredo das amêijoas à Bulhão Pato" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                      control={form.control}
+                      name="editorial"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel className="flex items-center gap-2"><PenSquare className="h-4 w-4"/>Descrição Editorial</FormLabel>
+                          <FormControl>
+                              <Textarea
+                              placeholder="Descreva a sua descoberta de forma poética e pessoal..."
+                              rows={8}
+                              {...field}
+                              />
+                          </FormControl>
+                          <FormDescription>Conte-nos porque é que esta descoberta é especial. Pense nisto como uma página de uma revista.</FormDescription>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+              </CardContent>
+              <CardFooter>
+                  <Button type="button" onClick={handleNextStep} size="lg" className="ml-auto">
+                      Continuar <ArrowRight className="ml-2"/>
+                  </Button>
+              </CardFooter>
+          </Card>
+      )}
+
+      {step === 2 && (
+            <Card>
+              <CardHeader>
+                  <CardTitle className="font-headline text-2xl flex items-center justify-between">
+                      <span>Passo 2: Detalhes e Contexto</span>
+                      <span className="text-sm font-normal text-muted-foreground">2 de 2</span>
+                  </CardTitle>
+                  <CardDescription>Agora, ajude-nos a categorizar e a dar mais informações sobre a sua descoberta.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                          control={form.control}
+                          name="district"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Distrito</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o distrito" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="municipality"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Concelho</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o concelho" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="type_id"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel className="flex items-center gap-2"><Tag className="h-4 w-4"/>Tipo</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  {discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                  </div>
+                    <FormField
+                      control={form.control}
+                      name="confrariaId"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel className="flex items-center gap-2"><Shield className="h-4 w-4"/>Relevante para a Confraria (Opcional)</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Associe a uma confraria existente" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem value="null">Nenhuma (contribuição comunitária)</SelectItem>
+                                  {confrarias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                              </SelectContent>
+                              </Select>
+                          <FormDescription>Se esta descoberta tem uma ligação especial com alguma confraria, indique-a aqui. Isto ajuda os nossos curadores a organizar o conteúdo.</FormDescription>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                  <FormField
+                      control={form.control}
+                      name="links"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel className="flex items-center gap-2"><LinkIcon className="h-4 w-4"/>Link de Referência (Opcional)</FormLabel>
+                          <FormControl>
+                              <Input placeholder="https://exemplo.com" {...field} />
+                          </FormControl>
+                          <FormDescription>Website oficial, artigo de jornal, redes sociais, etc.</FormDescription>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                    <FormField
+                      control={form.control}
+                      name="image"
+                      render={({ field: { onChange, ...rest } }) => (
+                          <FormItem>
+                              <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Imagem Autêntica (Opcional)</FormLabel>
+                              <FormControl>
+                                  <Input 
+                                      type="file" 
+                                      accept="image/png, image/jpeg, image/webp" 
+                                      onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
+                                      {...rest}
+                                  />
+                              </FormControl>
+                              <FormDescription>Uma boa imagem faz toda a diferença. O tamanho máximo é de {MAX_IMAGE_SIZE}MB.</FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                    <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+                      Voltar
+                  </Button>
+                  <Button type="submit" size="lg" disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      Enviar para Revisão
+                  </Button>
+              </CardFooter>
+          </Card>
+      )}
     </Form>
   );
 }
+

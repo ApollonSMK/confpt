@@ -33,7 +33,7 @@ const Form = <TFieldValues extends FieldValues>({
 }: FormProps<TFieldValues>) => {
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} {...props}>
+      <form onSubmit={form?.handleSubmit(onSubmit)} {...props}>
         {children}
       </form>
     </FormProvider>

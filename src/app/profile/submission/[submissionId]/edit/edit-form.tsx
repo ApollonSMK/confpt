@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { districts, type Confraria, DiscoveryType, portugalDistricts, Submission } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
-import { updateSubmission, editSubmissionSchema } from './actions';
+import { updateSubmission } from './actions';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -28,6 +28,19 @@ import Image from 'next/image';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5;
+
+// Schema is now defined in the client component
+const editSubmissionSchema = z.object({
+  id: z.number(),
+  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+  editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
+  district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.' }),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.' }),
+  type_id: z.string({ required_error: 'Por favor, selecione um tipo.'}),
+  confrariaId: z.string().optional(),
+  links: z.string().url('URL inválido').optional().or(z.literal('')),
+});
+
 
 const clientSchema = editSubmissionSchema.extend({
     image: z.any()
@@ -119,7 +132,7 @@ export function EditSubmissionForm({ submission, confrarias, discoveryTypes }: E
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
+        <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
@@ -259,7 +272,6 @@ export function EditSubmissionForm({ submission, confrarias, discoveryTypes }: E
                                 type="file" 
                                 accept="image/png, image/jpeg, image/webp" 
                                 onChange={e => onChange(e.target.files ? e.target.files[0] : null)}
-                                {...rest}
                             />
                         </FormControl>
                         <FormDescription>Pode substituir a imagem existente carregando uma nova. Máx {MAX_IMAGE_SIZE}MB.</FormDescription>
@@ -280,9 +292,8 @@ export function EditSubmissionForm({ submission, confrarias, discoveryTypes }: E
               </Button>
             </div>
           </form>
-        </Form>
+        </FormProvider>
       </CardContent>
     </Card>
   );
 }
-

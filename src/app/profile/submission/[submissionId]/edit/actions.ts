@@ -9,7 +9,8 @@ import { createServiceRoleClient } from '@/lib/supabase/service';
 import { nanoid } from 'nanoid';
 import { redirect } from 'next/navigation';
 
-export const editSubmissionSchema = z.object({
+// Schema for data received by the server action
+const submissionActionSchema = z.object({
   id: z.number(),
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
   editorial: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.'),
@@ -22,7 +23,7 @@ export const editSubmissionSchema = z.object({
 
 
 export async function updateSubmission(
-    values: z.infer<typeof editSubmissionSchema>,
+    values: z.infer<typeof submissionActionSchema>,
     image?: File
 ) {
     const supabase = createServerClient();
@@ -32,7 +33,12 @@ export async function updateSubmission(
         return { error: "Utilizador não autenticado." };
     }
     
-    const { id, title, editorial, district, municipality, type_id, confrariaId, links } = values;
+    const parsedData = submissionActionSchema.safeParse(values);
+    if (!parsedData.success) {
+        return { error: 'Dados inválidos.' };
+    }
+
+    const { id, title, editorial, district, municipality, type_id, confrariaId, links } = parsedData.data;
 
     // Check ownership
     const { data: existingSubmission, error: fetchError } = await supabase

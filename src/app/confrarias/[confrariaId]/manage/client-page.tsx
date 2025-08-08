@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { deleteArticle, deleteEvent, deleteRecipe, deleteGalleryImage } from './actions';
+import { addGalleryImage, deleteArticle, deleteEvent, deleteRecipe, deleteGalleryImage } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { districts } from '@/lib/data';
@@ -26,14 +26,13 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { RecipeForm } from './recipe-form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useFormStatus } from 'react-dom';
 
 
 const ImageCropModal = dynamic(() => import('./image-upload-modals').then(mod => mod.ImageCropModal), {
-    ssr: false,
-    loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin"/></div>
-});
-
-const GalleryImageCropModal = dynamic(() => import('./image-upload-modals').then(mod => mod.GalleryImageCropModal), {
     ssr: false,
     loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin"/></div>
 });
@@ -67,7 +66,6 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
     const [isEventDialogOpen, setEventDialogOpen] = useState(false);
     const [isArticleDialogOpen, setArticleDialogOpen] = useState(false);
     const [isRecipeDialogOpen, setRecipeDialogOpen] = useState(false);
-    const [isGalleryDialogOpen, setGalleryDialogOpen] = useState(false);
     
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -163,11 +161,6 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
             router.refresh();
         }
         setIsDeletingRecipe(null);
-    };
-
-    const handleGalleryFormSuccess = () => {
-        setGalleryDialogOpen(false);
-        router.refresh();
     };
     
     const handleDeleteGalleryImage = async (id: number) => {
@@ -385,48 +378,41 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         title="Gestão da Galeria" 
                         description="Adicione ou remova imagens da galeria pública da sua confraria." 
                         icon={Camera}
-                        actions={
-                            <Dialog open={isGalleryDialogOpen} onOpenChange={setGalleryDialogOpen}>
-                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagem</Button></DialogTrigger>
-                                <Suspense fallback={<p>A carregar...</p>}>
-                                    <GalleryImageCropModal 
-                                        open={isGalleryDialogOpen}
-                                        onOpenChange={setGalleryDialogOpen}
-                                        confrariaId={confrariaData.id} 
-                                        onUploadSuccess={handleGalleryFormSuccess} 
-                                    />
-                                </Suspense>
-                            </Dialog>
-                        }
                     >
-                        {galleryImages.length > 0 ? (
-                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {galleryImages.map(image => (
-                                    <Card key={image.id} className="group relative">
-                                        <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={300} height={300} className="rounded-md object-cover aspect-square" />
-                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                             <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="icon"><Trash2 /></Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Apagar Imagem?</AlertDialogTitle><AlertDialogDescription>Esta ação é irreversível. A imagem será removida permanentemente.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteGalleryImage(image.id)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        ) : (
-                             <div className="text-center py-12 text-muted-foreground">
-                                <p className="font-semibold text-lg">Galeria Vazia.</p>
-                                <p>Comece a adicionar imagens para criar a memória visual da sua confraria.</p>
-                            </div>
-                        )}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div>
+                                <h3 className="font-headline text-xl mb-4">Imagens Atuais</h3>
+                                {galleryImages.length > 0 ? (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {galleryImages.map(image => (
+                                            <Card key={image.id} className="group relative">
+                                                <Image src={image.image_url} alt={image.description || 'Imagem da galeria'} width={300} height={300} className="rounded-md object-cover aspect-square" />
+                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="destructive" size="icon"><Trash2 /></Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Apagar Imagem?</AlertDialogTitle><AlertDialogDescription>Esta ação é irreversível. A imagem será removida permanentemente.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteGalleryImage(image.id)} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 text-muted-foreground border rounded-lg">
+                                        <p className="font-semibold text-lg">Galeria Vazia.</p>
+                                        <p>Adicione imagens para começar.</p>
+                                    </div>
+                                )}
+                             </div>
+                            <GalleryImageForm confrariaId={confrariaData.id} />
+                         </div>
                     </TabContentCard>
                 </TabsContent>
 
@@ -496,6 +482,71 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
 
             </Tabs>
         </div>
+    );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full">
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+      Adicionar Imagens
+    </Button>
+  );
+}
+
+
+function GalleryImageForm({ confrariaId }: { confrariaId: number }) {
+    const { toast } = useToast();
+    const router = useRouter();
+    const formRef = useRef<HTMLFormElement>(null);
+    const [isPending, startTransition] = useTransition();
+
+    const clientAction = async (formData: FormData) => {
+        startTransition(async () => {
+            const result = await addGalleryImage(formData);
+
+            if (result?.error) {
+                toast({
+                    title: "Erro ao adicionar imagem",
+                    description: result.error,
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Sucesso!",
+                    description: "Imagem(ns) adicionada(s) à galeria.",
+                });
+                formRef.current?.reset();
+                router.refresh();
+            }
+        });
+    };
+
+    return (
+        <form ref={formRef} action={clientAction}>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-xl">Adicionar Imagens</CardTitle>
+                    <CardDescription>Carregue uma ou mais imagens para a galeria.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <input type="hidden" name="confrariaId" value={confrariaId} />
+                    <div className="space-y-2">
+                        <Label htmlFor="images">Ficheiros de Imagem</Label>
+                        <Input id="images" name="images" type="file" multiple required />
+                         <p className="text-xs text-muted-foreground">Pode selecionar múltiplos ficheiros. Limite: 4MB por imagem.</p>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="description">Descrição (Opcional)</Label>
+                        <Textarea id="description" name="description" placeholder="Descrição para estas imagens..." />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <SubmitButton />
+                </CardFooter>
+            </Card>
+        </form>
     );
 }
 

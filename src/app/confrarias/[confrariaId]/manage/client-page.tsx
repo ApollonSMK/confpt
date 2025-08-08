@@ -58,10 +58,11 @@ export type ManageConfrariaPageProps = {
     recipes: Recipe[];
     galleryImages: ConfrariaGalleryImage[];
     user: User;
+    mapboxApiKey: string;
 }
 
 // Client component to handle state and interactions
-export function ClientManagePage({ confrariaData, events, articles, recipes, galleryImages, user }: ManageConfrariaPageProps) {
+export function ClientManagePage({ confrariaData, events, articles, recipes, galleryImages, user, mapboxApiKey }: ManageConfrariaPageProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
@@ -254,6 +255,7 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                         confrariaRegion={confrariaData.district} 
                                         event={selectedEvent} 
                                         onSuccess={handleEventFormSuccess}
+                                        mapboxApiKey={mapboxApiKey}
                                     />
                                 </DialogContent>
                             </Dialog>

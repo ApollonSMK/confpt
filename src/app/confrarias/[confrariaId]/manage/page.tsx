@@ -10,6 +10,21 @@ import type { Event, Article, Recipe, ConfrariaGalleryImage } from '@/lib/data';
 import { ClientManagePage, type ManageConfrariaPageProps } from './client-page';
 
 
+async function getMapboxApiKey(): Promise<string> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'mapbox_api_key')
+        .single();
+    
+    if (error || !data) {
+        console.warn("Could not fetch Mapbox API key:", error);
+        return '';
+    }
+    return data.value || '';
+}
+
 async function getConfrariaAndRelatedData(id: number, user: User) {
     const supabaseService = createServiceRoleClient();
 
@@ -76,7 +91,13 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         notFound();
     }
     
-    const { confrariaData, events, articles, recipes, galleryImages } = await getConfrariaAndRelatedData(confrariaId, user);
+    const [
+        { confrariaData, events, articles, recipes, galleryImages },
+        mapboxApiKey
+    ] = await Promise.all([
+        getConfrariaAndRelatedData(confrariaId, user),
+        getMapboxApiKey()
+    ]);
     
     const pageProps: ManageConfrariaPageProps = {
         confrariaData: confrariaData as any,
@@ -85,6 +106,7 @@ export default async function ManageConfrariaPage({ params }: { params: { confra
         recipes,
         galleryImages,
         user,
+        mapboxApiKey
     };
 
     return (

@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import { AddressAutocomplete } from '@/components/address-autocomplete';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5; // In MB
@@ -55,9 +56,10 @@ interface EventFormProps {
     confrariaRegion: (typeof districts)[number];
     event?: Event | null;
     onSuccess?: () => void;
+    mapboxApiKey: string;
 }
 
-export function EventForm({ confrariaId, confrariaRegion, event = null, onSuccess }: EventFormProps) {
+export function EventForm({ confrariaId, confrariaRegion, event = null, onSuccess, mapboxApiKey }: EventFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
@@ -209,13 +211,23 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                                     </FormItem>
                                 )}/>
                             </div>
-                            <FormField control={form.control} name="location" render={({ field }) => (
-                                <FormItem>
+                             <FormField
+                                control={form.control}
+                                name="location"
+                                render={({ field }) => (
+                                    <FormItem>
                                     <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4"/>Localização Exata</FormLabel>
-                                    <FormControl><Input {...field} placeholder="Ex: Caves do Vinho do Porto, Gaia" /></FormControl>
+                                    <FormControl>
+                                        <AddressAutocomplete
+                                            apiKey={mapboxApiKey}
+                                            onSelect={(address) => setValue('location', address)}
+                                            initialValue={field.value}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
-                                </FormItem>
-                            )}/>
+                                    </FormItem>
+                                )}
+                            />
                         </CardContent>
                         <CardFooter>
                             <Button type="button" onClick={handleNextStep} size="lg" className="ml-auto">

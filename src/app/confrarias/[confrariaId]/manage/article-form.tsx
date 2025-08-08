@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, Save, BookText, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, Save, BookText, Image as ImageIcon, Bold, Italic } from 'lucide-react';
 import { upsertArticle } from './actions';
 import { useState, useRef } from 'react';
 import type { Article } from '@/lib/data';
@@ -51,6 +51,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
     const [loading, setLoading] = useState(false);
     const [statusToSave, setStatusToSave] = useState<'draft' | 'published'>('draft');
     const formRef = useRef<HTMLFormElement>(null);
+    const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -63,6 +64,26 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
             image: undefined,
         },
     });
+
+    const handleFormatClick = (formatType: 'bold' | 'italic') => {
+        const textarea = contentTextareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        const formatChars = formatType === 'bold' ? '**' : '*';
+        const newText = `${textarea.value.substring(0, start)}${formatChars}${selectedText}${formatChars}${textarea.value.substring(end)}`;
+
+        form.setValue('content', newText, { shouldValidate: true });
+        
+        // Focus and select the text again for better UX
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + formatChars.length, end + formatChars.length);
+        }, 0);
+    };
+
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -114,7 +135,25 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Conteúdo</FormLabel>
-                                    <FormControl><Textarea rows={12} placeholder="Escreva aqui o seu artigo, notícia ou história..." {...field} /></FormControl>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-1 rounded-t-md border border-b-0 p-2 bg-muted">
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleFormatClick('bold')} title="Negrito">
+                                                <Bold className="h-4 w-4" />
+                                            </Button>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleFormatClick('italic')} title="Itálico">
+                                                <Italic className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <FormControl>
+                                            <Textarea
+                                                ref={contentTextareaRef}
+                                                rows={12}
+                                                placeholder="Escreva aqui o seu artigo, notícia ou história..."
+                                                {...field}
+                                                className="rounded-t-none"
+                                                />
+                                        </FormControl>
+                                    </div>
                                     <FormDescription>Pode usar <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Markdown</a> para formatar o texto (ex: **negrito**, *itálico*).</FormDescription>
                                     <FormMessage />
                                 </FormItem>

@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { z } from 'zod';
@@ -485,6 +484,7 @@ export async function addCroppedGalleryImage({
         confraria_id: confrariaId,
         image_url: publicUrl,
         description: description || null,
+        sort_order: 0,
     });
 
     if (dbError) {
@@ -506,17 +506,15 @@ export async function addGalleryImage(formData: FormData) {
     const description = formData.get('description') as string;
     
     if (!confrariaId) return { error: 'ID da confraria em falta.' };
-    if (!images || images.length === 0) return { error: 'Nenhuma imagem selecionada.' };
+    
+    const validImages = images.filter(image => image instanceof File && image.size > 0);
+    if (validImages.length === 0) return { error: 'Nenhuma imagem válida selecionada.' };
+
 
     await checkPermissions(confrariaId);
     const supabaseService = createServiceRoleClient();
     
-    for (const image of images) {
-        if (!(image instanceof File) || image.size === 0) {
-            console.warn("Item ignorado não era um ficheiro válido:", image);
-            continue;
-        }
-
+    for (const image of validImages) {
         const fileName = `gallery/${confrariaId}/${nanoid()}.${image.name.split('.').pop()}`;
 
         const { error: uploadError } = await supabaseService.storage
@@ -547,8 +545,8 @@ export async function addGalleryImage(formData: FormData) {
         }
     }
     
-    revalidatePath(`/confrarias/${confrariaId}`);
     revalidatePath(`/confrarias/${confrariaId}/manage`);
+    revalidatePath(`/confrarias/${confrariaId}`);
 
     return { success: true, message: "Imagens adicionadas com sucesso!" };
 }
@@ -581,8 +579,6 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     }
 
     revalidatePath(`/confrarias/${confrariaId}/manage`);
+    revalidatePath(`/confrarias/${confrariaId}`);
     return { success: true, message: 'Imagem removida.' };
 }
-
-
-    

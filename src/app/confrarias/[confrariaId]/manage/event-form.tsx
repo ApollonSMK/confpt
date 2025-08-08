@@ -42,7 +42,7 @@ const formSchema = z.object({
   name: z.string().min(3, 'O nome do evento deve ter pelo menos 3 caracteres.'),
   description: z.string().optional(),
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
-  location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.'),
+  location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.').optional().or(z.literal('')),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
   is_public: z.boolean().default(true),
@@ -309,5 +309,3 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
         </FormProvider>
     );
 }
-
-    

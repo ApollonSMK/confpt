@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -21,11 +20,12 @@ const eventFormSchema = z.object({
   name: z.string().min(3, 'O nome do evento deve ter pelo menos 3 caracteres.'),
   description: z.string().optional(),
   event_date: z.coerce.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
-  location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.').optional().or(z.literal('')),
+  location: z.string().optional(),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
-  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}).optional().or(z.literal('')),
+  municipality: z.string().optional(),
   is_public: z.boolean().default(true),
 });
+
 
 const articleSchema = z.object({
   id: z.number().optional(),

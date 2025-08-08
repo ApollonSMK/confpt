@@ -25,7 +25,6 @@ const eventFormSchema = z.object({
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
   municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}).optional().or(z.literal('')),
   is_public: z.boolean().default(true),
-  image: z.any().optional(), // for the file upload
 });
 
 const articleSchema = z.object({
@@ -120,10 +119,14 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 
 export async function upsertEvent(formData: FormData) {
     const supabaseService = createServiceRoleClient();
+    const confraria_id = Number(formData.get('confraria_id'));
+    const image = formData.get('image') as File | null;
 
+    await checkPermissions(confraria_id);
+    
     const values = {
         id: formData.get('id') ? Number(formData.get('id')) : undefined,
-        confraria_id: Number(formData.get('confraria_id')),
+        confraria_id: confraria_id,
         name: formData.get('name') as string,
         description: formData.get('description') as string,
         event_date: formData.get('event_date') as string,
@@ -131,7 +134,6 @@ export async function upsertEvent(formData: FormData) {
         district: formData.get('district') as any,
         municipality: formData.get('municipality') as string,
         is_public: formData.get('is_public') === 'true',
-        image: formData.get('image') as File,
     };
 
     const parsedData = eventFormSchema.safeParse(values);
@@ -141,14 +143,11 @@ export async function upsertEvent(formData: FormData) {
         return { error: "Dados do evento inválidos." };
     }
     
-    const { id, confraria_id, name, description, event_date, location, district, municipality, image, is_public } = parsedData.data;
-
-    // Check permissions before upserting
-    await checkPermissions(confraria_id);
+    const { id, name, description, event_date, location, district, municipality, is_public } = parsedData.data;
     
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
 
-    if (image instanceof File && image.size > 0) {
+    if (image && image.size > 0) {
         const fileExtension = image.name.split('.').pop();
         const fileName = `events/${nanoid()}.${fileExtension}`;
         
@@ -181,8 +180,8 @@ export async function upsertEvent(formData: FormData) {
         district,
         municipality: municipality || null,
         is_public,
-        image_url: imageUrl || 'https://placehold.co/600x400.png',
-        image_hint: 'event placeholder',
+        image_url: imageUrl || null,
+        image_hint: imageUrl ? 'event cover photo' : null,
     };
 
     let error;
@@ -583,3 +582,46 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     return { success: true, message: 'Imagem removida.' };
 }
 
+
+export async function updateConfrariaImages(formData: FormData) {
+    'use server';
+    const confrariaId = Number(formData.get('confrariaId'));
+    const imageType = formData.get('imageType') as 'seal_url' | 'cover_url';
+    const imageBlob = formData.get('image') as Blob;
+    
+    await checkPermissions(confrariaId);
+    const supabaseService = createServiceRoleClient();
+
+    const pathPrefix = imageType === 'seal_url' ? 'selo' : 'capa';
+    const fileName = `confrarias/${confrariaId}/${pathPrefix}/${pathPrefix}-${nanoid()}.webp`;
+    
+    const { data: uploadData, error: uploadError } = await supabaseService.storage
+        .from('public-images')
+        .upload(fileName, imageBlob, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: 'image/webp'
+        });
+
+    if (uploadError) {
+        console.error(`Error uploading ${imageType}:`, uploadError);
+        return { error: `Falha ao carregar nova imagem de ${pathPrefix}.` };
+    }
+
+    const { data: { publicUrl } } = supabaseService.storage.from('public-images').getPublicUrl(uploadData.path);
+    
+    const { error: dbError } = await supabaseService
+        .from('confrarias')
+        .update({ [imageType]: publicUrl })
+        .eq('id', confrariaId);
+    
+    if (dbError) {
+        await supabaseService.storage.from('public-images').remove([fileName]);
+        console.error(`Error updating confraria ${imageType} URL:`, dbError);
+        return { error: `Erro ao atualizar a URL da imagem de ${pathPrefix}.` };
+    }
+    
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
+    return { success: true };
+}

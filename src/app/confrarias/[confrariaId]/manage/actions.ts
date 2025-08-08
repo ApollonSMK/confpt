@@ -120,22 +120,21 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 export async function upsertEvent(formData: FormData) {
     const supabaseService = createServiceRoleClient();
     const confraria_id = Number(formData.get('confraria_id'));
-    const image = formData.get('image') as File | null;
-
     await checkPermissions(confraria_id);
     
+    const idValue = formData.get('id');
     const values = {
-        id: formData.get('id') ? Number(formData.get('id')) : undefined,
+        id: idValue ? Number(idValue) : undefined,
         confraria_id: confraria_id,
         name: formData.get('name') as string,
         description: formData.get('description') as string,
-        event_date: formData.get('event_date') as string,
+        event_date: formData.get('event_date') as string, // Will be coerced by Zod
         location: formData.get('location') as string,
         district: formData.get('district') as any,
         municipality: formData.get('municipality') as string,
         is_public: formData.get('is_public') === 'true',
     };
-
+    
     const parsedData = eventFormSchema.safeParse(values);
 
     if (!parsedData.success) {
@@ -146,6 +145,7 @@ export async function upsertEvent(formData: FormData) {
     const { id, name, description, event_date, location, district, municipality, is_public } = parsedData.data;
     
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
+    const image = formData.get('image') as File | null;
 
     if (image && image.size > 0) {
         const fileExtension = image.name.split('.').pop();
@@ -625,3 +625,5 @@ export async function updateConfrariaImages(formData: FormData) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true };
 }
+
+    

@@ -17,7 +17,7 @@ const detailsFormSchema = z.object({
 
 const eventFormSchema = z.object({
   id: z.number().optional(), // optional for new events
-  confraria_id: z.number(),
+  confraria_id: z.number({ required_error: "ID da Confraria em falta."}),
   name: z.string().min(3, 'O nome do evento deve ter pelo menos 3 caracteres.'),
   description: z.string().optional(),
   event_date: z.coerce.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
@@ -119,16 +119,17 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 
 export async function upsertEvent(formData: FormData) {
     const supabaseService = createServiceRoleClient();
-    const confraria_id = Number(formData.get('confraria_id'));
-    await checkPermissions(confraria_id);
+    const confrariaId = Number(formData.get('confraria_id'));
+    
+    await checkPermissions(confrariaId);
     
     const idValue = formData.get('id');
     const values = {
         id: idValue ? Number(idValue) : undefined,
-        confraria_id: confraria_id,
+        confraria_id: confrariaId,
         name: formData.get('name') as string,
         description: formData.get('description') as string,
-        event_date: formData.get('event_date') as string, // Will be coerced by Zod
+        event_date: formData.get('event_date') as string,
         location: formData.get('location') as string,
         district: formData.get('district') as any,
         municipality: formData.get('municipality') as string,
@@ -172,7 +173,7 @@ export async function upsertEvent(formData: FormData) {
 
 
     const eventData = {
-        confraria_id,
+        confraria_id: confrariaId,
         name,
         description: description || null,
         event_date: event_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
@@ -205,8 +206,8 @@ export async function upsertEvent(formData: FormData) {
         return { error: `Erro ao guardar evento: ${error.message}` };
     }
 
-    revalidatePath(`/confrarias/${confraria_id}`);
-    revalidatePath(`/confrarias/${confraria_id}/manage`);
+    revalidatePath(`/confrarias/${confrariaId}`);
+    revalidatePath(`/confrarias/${confrariaId}/manage`);
     revalidatePath('/events');
 
     return { success: true, message: id ? "Evento atualizado!" : "Evento criado!" };

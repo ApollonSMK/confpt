@@ -116,7 +116,6 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
 
         const formData = new FormData(formRef.current!);
         
-        // ** FIX: Manually append the date to FormData **
         const eventDate = form.getValues('event_date');
         if (eventDate) {
             formData.set('event_date', eventDate.toISOString());
@@ -149,7 +148,7 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
             <form ref={formRef} onSubmit={onSubmit} className="space-y-4 py-4">
                  {/* Hidden fields that need to be in the form */}
                 <input type="hidden" {...form.register("id")} />
-                <input type="hidden" {...form.register("confraria_id")} />
+                <input type="hidden" name="confraria_id" value={confrariaId} />
                 <input type="hidden" name="is_public" value={String(form.getValues('is_public'))} />
                 {event?.image_url && <input type="hidden" name="current_image_url" value={event.image_url} />}
 

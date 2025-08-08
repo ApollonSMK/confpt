@@ -147,182 +147,169 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapbo
     return (
         <div className="container mx-auto px-4 py-8 md:py-16">
              <div className="max-w-2xl mx-auto space-y-8">
-                <Form form={form} onSubmit={onSubmit}>
-                    <Card>
-                        <CardHeader className="flex flex-row justify-between items-start">
-                            <div>
-                                <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
-                                <CardDescription>
-                                Atualize os detalhes da descoberta.
-                                </CardDescription>
-                            </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isto irá apagar permanentemente a descoberta e todos os seus dados associados.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-                                        {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Sim, apagar descoberta
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <FormField control={form.control} name="title" render={({ field }) => (
-                                <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="description" render={({ field }) => (
-                                <FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormDescription>Um resumo para os cartões.</FormDescription><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="editorial" render={({ field }) => (
-                                <FormItem><FormLabel>Editorial</FormLabel><FormControl><Textarea rows={6} {...field} /></FormControl><FormDescription>O texto principal da descoberta.</FormDescription><FormMessage /></FormItem>
-                            )}/>
-                            <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="district" render={({ field }) => (
-                                <FormItem><FormLabel>Distrito</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="municipality" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Concelho</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <Card>
+                            <CardHeader className="flex flex-row justify-between items-start">
+                                <div>
+                                    <CardTitle className="font-headline text-3xl">Editar Descoberta</CardTitle>
+                                    <CardDescription>
+                                    Atualize os detalhes da descoberta.
+                                    </CardDescription>
+                                </div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação não pode ser desfeita. Isto irá apagar permanentemente a descoberta e todos os seus dados associados.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                                            {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Sim, apagar descoberta
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <FormField control={form.control} name="title" render={({ field }) => (
+                                    <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="description" render={({ field }) => (
+                                    <FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormDescription>Um resumo para os cartões.</FormDescription><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="editorial" render={({ field }) => (
+                                    <FormItem><FormLabel>Editorial</FormLabel><FormControl><Textarea rows={6} {...field} /></FormControl><FormDescription>O texto principal da descoberta.</FormDescription><FormMessage /></FormItem>
+                                )}/>
+                                <div className="grid grid-cols-2 gap-4">
+                                <FormField control={form.control} name="district" render={({ field }) => (
+                                    <FormItem><FormLabel>Distrito</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="municipality" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Concelho</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={municipalities.length === 0}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione o concelho" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                </div>
+                                <FormField control={form.control} name="type_id" render={({ field }) => (
+                                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="confraria_id" render={({ field }) => (
+                                    <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                
+                                <FormField
+                                    control={form.control}
+                                    name="address"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Morada (Opcional)</FormLabel>
                                         <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione o concelho" />
-                                            </SelectTrigger>
+                                            <AddressAutocomplete
+                                                apiKey={mapboxApiKey}
+                                                onSelect={(address) => setValue('address', address)}
+                                                initialValue={field.value}
+                                            />
                                         </FormControl>
-                                        <SelectContent>
-                                            {municipalities.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField control={form.control} name="website" render={({ field }) => (
+                                    <FormItem><FormLabel>Website (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="phone" render={({ field }) => (
+                                    <FormItem><FormLabel>Telefone (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+
+                                    <FormItem>
+                                    <FormLabel>Comodidades</FormLabel>
+                                    <FormDescription>Selecione as comodidades que esta descoberta oferece.</FormDescription>
+                                    <div className="grid grid-cols-2 gap-4 pt-2">
+                                        {amenities.map((amenity) => (
+                                            <FormField
+                                                key={amenity.id}
+                                                control={form.control}
+                                                name="amenities"
+                                                render={({ field }) => {
+                                                    return (
+                                                    <FormItem
+                                                        key={amenity.id}
+                                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                                    >
+                                                        <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.some(a => a.id === amenity.id)}
+                                                            onCheckedChange={(checked) => {
+                                                            return checked
+                                                                ? append(amenity)
+                                                                : remove(fields.findIndex(a => a.id === amenity.id))
+                                                            }}
+                                                        />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            {amenity.label}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    )
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
-                            )}/>
-                            </div>
-                            <FormField control={form.control} name="type_id" render={({ field }) => (
-                                <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl><SelectContent>{discoveryTypes.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="confraria_id" render={({ field }) => (
-                                <FormItem><FormLabel>Confraria (Opcional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Associar a uma confraria" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Nenhuma (Comunitário)</SelectItem>{confrarias.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                            )}/>
-                            
-                            <FormField
-                                control={form.control}
-                                name="address"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Morada (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <AddressAutocomplete
-                                            apiKey={mapboxApiKey}
-                                            onSelect={(address) => setValue('address', address)}
-                                            initialValue={field.value}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField control={form.control} name="website" render={({ field }) => (
-                                <FormItem><FormLabel>Website (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="phone" render={({ field }) => (
-                                <FormItem><FormLabel>Telefone (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-
-                                <FormItem>
-                                <FormLabel>Comodidades</FormLabel>
-                                <FormDescription>Selecione as comodidades que esta descoberta oferece.</FormDescription>
-                                <div className="grid grid-cols-2 gap-4 pt-2">
-                                    {amenities.map((amenity) => (
-                                        <FormField
-                                            key={amenity.id}
-                                            control={form.control}
-                                            name="amenities"
-                                            render={({ field }) => {
-                                                return (
-                                                <FormItem
-                                                    key={amenity.id}
-                                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                                >
-                                                    <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.some(a => a.id === amenity.id)}
-                                                        onCheckedChange={(checked) => {
-                                                        return checked
-                                                            ? append(amenity)
-                                                            : remove(fields.findIndex(a => a.id === amenity.id))
-                                                        }}
-                                                    />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {amenity.label}
-                                                    </FormLabel>
-                                                </FormItem>
-                                                )
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                            
-                            <Button type="submit" size="lg" disabled={loading} className="w-full">
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Guardar Alterações
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </Form>
+                                
+                                <Button type="submit" size="lg" disabled={loading} className="w-full">
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Guardar Alterações
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </form>
+                </FormProvider>
                 <ImageGalleryManager discovery={discovery} />
             </div>
         </div>
     );
 }
 
-const imageHintSchema = z.object({
-    imageHint: z.string().optional()
-})
-
 function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    
-    const form = useForm<z.infer<typeof imageHintSchema>>({
-        resolver: zodResolver(imageHintSchema),
-        defaultValues: {
-            imageHint: ""
-        }
-    })
+    const formRef = useRef<HTMLFormElement>(null);
+    const imageHintRef = useRef<HTMLInputElement>(null);
 
-    const handleAddImage = async (values: z.infer<typeof imageHintSchema>) => {
+    const handleAddImage = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setLoading(true);
 
-        const formElement = form.control._formRef.current;
-        if (!formElement) {
-            setLoading(false);
-            return;
-        }
-
-        const formData = new FormData(formElement);
-        formData.set('imageHint', values.imageHint || '');
-
+        const formData = new FormData(event.currentTarget);
+        
         const result = await addDiscoveryImage(formData);
 
         if (result.error) {
             toast({ title: "Erro", description: result.error, variant: 'destructive' });
         } else {
             toast({ title: 'Sucesso', description: result.message });
-            form.reset();
+            formRef.current?.reset();
         }
         setLoading(false);
     }
@@ -343,7 +330,7 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                 <CardDescription>Adicione e remova imagens da galeria desta descoberta.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <Form form={form} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
+                 <form ref={formRef} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold">Adicionar Nova Imagem</h3>
                     <input type="hidden" name="discoveryId" value={discovery.id} />
                     <input type="hidden" name="slug" value={discovery.slug} />
@@ -352,22 +339,16 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                             <FormLabel>Ficheiro</FormLabel>
                             <FormControl><Input type="file" name="image" required /></FormControl>
                         </FormItem>
-                        <FormField
-                            control={form.control}
-                            name="imageHint"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Dica de Imagem (IA)</FormLabel>
-                                    <FormControl><Input placeholder="Ex: prato comida" {...field} /></FormControl>
-                                </FormItem>
-                            )}
-                        />
+                        <FormItem>
+                            <FormLabel>Dica de Imagem (IA)</FormLabel>
+                            <FormControl><Input name="imageHint" placeholder="Ex: prato comida" /></FormControl>
+                        </FormItem>
                     </div>
                     <Button type="submit" disabled={loading}>
                         {loading && <Loader2 className="animate-spin mr-2" />}
                         <PlusCircle/> Adicionar
                     </Button>
-                </Form>
+                </form>
 
                 <div className="space-y-4">
                     <h3 className="font-semibold">Imagens Atuais</h3>

@@ -23,6 +23,8 @@ import { getCroppedImg } from '@/lib/crop-image';
 import { Slider } from '@/components/ui/slider';
 import { createClient } from '@/lib/supabase/client';
 import { nanoid } from 'nanoid';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 
 type ConfrariaDetails = Confraria & {
@@ -127,6 +129,40 @@ function HistoryCard({ history, confrariaName }: { history: string; confrariaNam
         </Card>
     )
 }
+
+function ArticleContentDisplay({ content }: { content: string }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [isLong, setIsLong] = useState(false);
+
+    useEffect(() => {
+        // A simple heuristic to check if content is long.
+        // A more accurate way would be to check the rendered height.
+        if (content.length > 500) {
+            setIsLong(true);
+        }
+    }, [content]);
+
+    return (
+        <div className="prose prose-sm max-w-none text-foreground/90">
+            <div
+                ref={contentRef}
+                className={`relative overflow-hidden ${isExpanded ? 'max-h-none' : 'max-h-48'}`}
+            >
+                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{content}</ReactMarkdown>
+                {!isExpanded && isLong && (
+                    <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-card to-transparent" />
+                )}
+            </div>
+            {isLong && (
+                <Button variant="link" onClick={() => setIsExpanded(!isExpanded)} className="p-0 h-auto mt-2">
+                    {isExpanded ? 'Ver Menos' : 'Ler Mais'}
+                </Button>
+            )}
+        </div>
+    );
+}
+
 
 export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProps) {
     const router = useRouter();
@@ -254,10 +290,7 @@ export function ClientConfrariaPage({ confraria, user }: ClientConfrariaPageProp
                                                             </CardDescription>
                                                         </CardHeader>
                                                         <CardContent>
-                                                            <p className="text-base text-muted-foreground line-clamp-3">{article.content}</p>
-                                                            <Button variant="link" asChild className="p-0 h-auto mt-2">
-                                                                <Link href="#">Ler Mais</Link>
-                                                            </Button>
+                                                            <ArticleContentDisplay content={article.content} />
                                                         </CardContent>
                                                     </Card>
                                                 ))}

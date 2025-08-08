@@ -115,7 +115,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                 <FormItem>
                                     <FormLabel>Conteúdo</FormLabel>
                                     <FormControl><Textarea rows={12} placeholder="Escreva aqui o seu artigo, notícia ou história..." {...field} /></FormControl>
-                                    <FormDescription>Pode usar Markdown para formatar o seu texto.</FormDescription>
+                                    <FormDescription>Pode usar <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Markdown</a> para formatar o texto (ex: **negrito**, *itálico*).</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

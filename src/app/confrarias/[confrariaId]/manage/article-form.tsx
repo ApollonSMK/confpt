@@ -216,5 +216,3 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
         </FormProvider>
     );
 }
-
-    

@@ -44,7 +44,7 @@ const formSchema = z.object({
   event_date: z.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.').optional().or(z.literal('')),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
-  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}).optional().or(z.literal('')),
   is_public: z.boolean().default(true),
 });
 

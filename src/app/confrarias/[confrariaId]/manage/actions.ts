@@ -23,7 +23,7 @@ const eventFormSchema = z.object({
   event_date: z.coerce.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().min(3, 'A localização deve ter pelo menos 3 caracteres.').optional().or(z.literal('')),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
-  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}),
+  municipality: z.string({ required_error: 'Por favor, selecione um concelho.'}).optional().or(z.literal('')),
   is_public: z.boolean().default(true),
   image: z.any().optional(), // for the file upload
 });
@@ -582,3 +582,4 @@ export async function deleteGalleryImage(id: number, confrariaId: number) {
     revalidatePath(`/confrarias/${confrariaId}`);
     return { success: true, message: 'Imagem removida.' };
 }
+

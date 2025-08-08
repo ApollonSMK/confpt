@@ -240,6 +240,9 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                 <DialogContent className="sm:max-w-xl">
                                     <DialogHeader>
                                         <DialogTitle className="font-headline text-2xl">{selectedEvent ? 'Editar Evento' : 'Adicionar Novo Evento'}</DialogTitle>
+                                        <DialogDescription>
+                                            Preencha os detalhes para agendar um novo encontro para os seus confrades e para a comunidade.
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <EventForm 
                                         confrariaId={confrariaData.id} 
@@ -308,6 +311,9 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                 <DialogContent className="sm:max-w-2xl">
                                     <DialogHeader>
                                         <DialogTitle className="font-headline text-2xl">{selectedArticle ? 'Editar Publicação' : 'Nova Publicação'}</DialogTitle>
+                                        <DialogDescription>
+                                            Partilhe novidades, histórias ou conhecimentos com a sua comunidade.
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <ArticleForm 
                                         confrariaId={confrariaData.id}
@@ -429,6 +435,9 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                                 <DialogContent className="sm:max-w-3xl">
                                     <DialogHeader>
                                         <DialogTitle className="font-headline text-2xl">{selectedRecipe ? 'Editar Receita' : 'Nova Receita'}</DialogTitle>
+                                         <DialogDescription>
+                                            Partilhe uma receita que represente o sabor da sua confraria.
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <RecipeForm 
                                         confrariaId={confrariaData.id}

@@ -6,7 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect, useRouter, useSearchParams } from 'next/navigation';
 import { ManageConfrariaForm } from './edit-form';
 import type { User } from '@supabase/supabase-js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
 import { addGalleryImage, deleteArticle, deleteEvent, deleteRecipe, deleteGalleryImage } from './actions';
@@ -512,7 +512,7 @@ function GalleryImageForm({ confrariaId }: { confrariaId: number }) {
                     description: result.error,
                     variant: "destructive",
                 });
-            } else {
+            } else if (result?.success) {
                 toast({
                     title: "Sucesso!",
                     description: "Imagem(ns) adicionada(s) à galeria.",

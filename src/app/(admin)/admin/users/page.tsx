@@ -30,25 +30,45 @@ type UserWithRank = User & {
 async function getAllUsersWithRanks(): Promise<UserWithRank[]> {
   const supabaseService = createServiceRoleClient();
   
-  // Chamar a nova função RPC para obter todos os dados necessários de forma eficiente
-  const { data: usersData, error } = await supabaseService.rpc('get_all_users_with_rank_data');
+  const { data: authUsers, error: usersError } = await supabaseService.auth.admin.listUsers();
 
-  if (error || !usersData) {
-    console.error('Error fetching users with ranks from RPC:', error);
-    return [];
+  if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return [];
   }
 
-  // O processamento agora é muito mais simples, pois a BD já fez o trabalho pesado
-  return usersData.map((user: any) => {
-      const rank = getUserRank(user.sealed_discoveries_count, user.approved_submissions_count, user.rank_override);
-      return { 
-          ...user.raw_user_meta_data, // Os dados do utilizador vêm neste campo da RPC
-          id: user.id, // O ID não está no meta, por isso adicionamo-lo
-          last_sign_in_at: user.last_sign_in_at,
-          created_at: user.created_at,
-          rank 
-        };
-  }).sort((a,b) => (new Date(a.created_at) < new Date(b.created_at)) ? 1 : -1);
+  const { data: seals, error: sealsError } = await supabaseService
+    .from('seals')
+    .select('user_id', { count: 'exact' });
+
+  const { data: submissions, error: submissionsError } = await supabaseService
+    .from('submissions')
+    .select('user_id', { count: 'exact' })
+    .eq('status', 'Aprovado');
+
+  if (sealsError) console.error('Error fetching seals count:', sealsError);
+  if (submissionsError) console.error('Error fetching submissions count:', submissionsError);
+
+  const sealsByUser = (seals || []).reduce((acc, { user_id }) => {
+      acc[user_id] = (acc[user_id] || 0) + 1;
+      return acc;
+  }, {} as Record<string, number>);
+
+  const submissionsByUser = (submissions || []).reduce((acc, { user_id }) => {
+      acc[user_id] = (acc[user_id] || 0) + 1;
+      return acc;
+  }, {} as Record<string, number>);
+  
+  return authUsers.users.map((user) => {
+      const sealed_discoveries_count = sealsByUser[user.id] || 0;
+      const approved_submissions_count = submissionsByUser[user.id] || 0;
+      const rank = getUserRank(sealed_discoveries_count, approved_submissions_count, user.user_metadata?.rank_override);
+      
+      return {
+          ...user,
+          rank
+      };
+  }).sort((a,b) => (new Date(a.created_at) < new Date(b.created_at)) ? 1 : -1) as UserWithRank[];
 }
 
 export default async function AdminUsersPage() {

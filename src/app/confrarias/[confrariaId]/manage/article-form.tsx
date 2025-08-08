@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, Save, BookText, Image as ImageIcon, Bold, Italic } from 'lucide-react';
+import { Loader2, Send, Save, BookText, Image as ImageIcon, Bold, Italic, List } from 'lucide-react';
 import { upsertArticle } from './actions';
 import { useState, useRef } from 'react';
 import type { Article } from '@/lib/data';
@@ -65,22 +65,32 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
         },
     });
 
-    const handleFormatClick = (formatType: 'bold' | 'italic') => {
+    const handleFormatClick = (formatType: 'bold' | 'italic' | 'list') => {
         const textarea = contentTextareaRef.current;
         if (!textarea) return;
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const selectedText = textarea.value.substring(start, end);
-        const formatChars = formatType === 'bold' ? '**' : '*';
-        const newText = `${textarea.value.substring(0, start)}${formatChars}${selectedText}${formatChars}${textarea.value.substring(end)}`;
+        let newText;
+
+        if (formatType === 'list') {
+            const lines = selectedText.split('\n');
+            const formattedLines = lines.map(line => `- ${line}`);
+            newText = `${textarea.value.substring(0, start)}${formattedLines.join('\n')}${textarea.value.substring(end)}`;
+        } else {
+            const formatChars = formatType === 'bold' ? '**' : '*';
+            newText = `${textarea.value.substring(0, start)}${formatChars}${selectedText}${formatChars}${textarea.value.substring(end)}`;
+        }
 
         form.setValue('content', newText, { shouldValidate: true });
         
-        // Focus and select the text again for better UX
         setTimeout(() => {
             textarea.focus();
-            textarea.setSelectionRange(start + formatChars.length, end + formatChars.length);
+            if (formatType !== 'list') {
+                 const formatCharsLength = formatType === 'bold' ? 2 : 1;
+                 textarea.setSelectionRange(start + formatCharsLength, end + formatCharsLength);
+            }
         }, 0);
     };
 
@@ -143,6 +153,9 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                             <Button type="button" variant="ghost" size="icon" onClick={() => handleFormatClick('italic')} title="Itálico">
                                                 <Italic className="h-4 w-4" />
                                             </Button>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleFormatClick('list')} title="Tópicos">
+                                                <List className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                         <FormControl>
                                             <Textarea
@@ -154,7 +167,7 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
                                                 />
                                         </FormControl>
                                     </div>
-                                    <FormDescription>Pode usar <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Markdown</a> para formatar o texto (ex: **negrito**, *itálico*).</FormDescription>
+                                    <FormDescription>Pode usar <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Markdown</a> para formatar o texto (ex: **negrito**, *itálico*, - tópico).</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -203,3 +216,5 @@ export function ArticleForm({ confrariaId, authorId, article = null, onSuccess }
         </FormProvider>
     );
 }
+
+    

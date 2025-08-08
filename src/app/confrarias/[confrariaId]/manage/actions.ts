@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -15,8 +16,8 @@ const detailsFormSchema = z.object({
 });
 
 const eventFormSchema = z.object({
-  id: z.number().optional(), // optional for new events
-  confraria_id: z.number({ required_error: "ID da Confraria em falta."}),
+  id: z.coerce.number().optional(),
+  confraria_id: z.coerce.number({ required_error: "ID da Confraria em falta."}),
   name: z.string().min(3, 'O nome do evento deve ter pelo menos 3 caracteres.'),
   description: z.string().optional(),
   event_date: z.coerce.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
@@ -118,9 +119,7 @@ export async function updateConfrariaDetails(values: z.infer<typeof detailsFormS
 
 
 export async function upsertEvent(formData: FormData) {
-    const supabaseService = createServiceRoleClient();
     const confrariaId = Number(formData.get('confraria_id'));
-    
     await checkPermissions(confrariaId);
     
     const idValue = formData.get('id');
@@ -136,10 +135,12 @@ export async function upsertEvent(formData: FormData) {
         is_public: formData.get('is_public') === 'true',
     };
     
+    console.log("📦 Dados recebidos para evento:", values);
+
     const parsedData = eventFormSchema.safeParse(values);
 
     if (!parsedData.success) {
-        console.error('Event validation error:', parsedData.error.flatten().fieldErrors);
+        console.error('❌ Erros de validação:', parsedData.error.issues);
         return { error: "Dados do evento inválidos." };
     }
     
@@ -147,6 +148,7 @@ export async function upsertEvent(formData: FormData) {
     
     let imageUrl: string | undefined | null = formData.get('current_image_url') as string;
     const image = formData.get('image') as File | null;
+    const supabaseService = createServiceRoleClient();
 
     if (image && image.size > 0) {
         const fileExtension = image.name.split('.').pop();
@@ -626,5 +628,3 @@ export async function updateConfrariaImages(formData: FormData) {
     revalidatePath(`/confrarias/${confrariaId}/manage`);
     return { success: true };
 }
-
-    

@@ -7,7 +7,6 @@ import { useForm, FormProvider, Controller, useFieldArray } from 'react-hook-for
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -148,7 +147,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapbo
         <div className="container mx-auto px-4 py-8 md:py-16">
              <div className="max-w-2xl mx-auto space-y-8">
                 <FormProvider {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <Card>
                             <CardHeader className="flex flex-row justify-between items-start">
                                 <div>
@@ -283,9 +282,10 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapbo
                                 </Button>
                             </CardContent>
                         </Card>
+
+                        <ImageGalleryManager discovery={discovery} />
                     </form>
                 </FormProvider>
-                <ImageGalleryManager discovery={discovery} />
             </div>
         </div>
     );
@@ -295,12 +295,12 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const imageHintRef = useRef<HTMLInputElement>(null);
 
     const handleAddImage = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setLoading(true);
+        if (!event.currentTarget) return;
 
+        setLoading(true);
         const formData = new FormData(event.currentTarget);
         
         const result = await addDiscoveryImage(formData);
@@ -335,14 +335,14 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                     <input type="hidden" name="discoveryId" value={discovery.id} />
                     <input type="hidden" name="slug" value={discovery.slug} />
                     <div className="grid grid-cols-2 gap-4">
-                        <FormItem>
-                            <FormLabel>Ficheiro</FormLabel>
-                            <FormControl><Input type="file" name="image" required /></FormControl>
-                        </FormItem>
-                        <FormItem>
-                            <FormLabel>Dica de Imagem (IA)</FormLabel>
-                            <FormControl><Input name="imageHint" placeholder="Ex: prato comida" /></FormControl>
-                        </FormItem>
+                        <div className="space-y-2">
+                            <label htmlFor="image-file" className="text-sm font-medium">Ficheiro</label>
+                            <Input id="image-file" type="file" name="image" required />
+                        </div>
+                        <div className="space-y-2">
+                             <label htmlFor="image-hint" className="text-sm font-medium">Dica de Imagem (IA)</label>
+                            <Input id="image-hint" name="imageHint" placeholder="Ex: prato comida" />
+                        </div>
                     </div>
                     <Button type="submit" disabled={loading}>
                         {loading && <Loader2 className="animate-spin mr-2" />}

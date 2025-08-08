@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -116,6 +115,13 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
         setLoading(true);
 
         const formData = new FormData(formRef.current!);
+        
+        // ** FIX: Manually append the date to FormData **
+        const eventDate = form.getValues('event_date');
+        if (eventDate) {
+            formData.set('event_date', eventDate.toISOString());
+        }
+
         if (imageFile) {
             formData.append('image', imageFile);
         }
@@ -144,7 +150,6 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
                  {/* Hidden fields that need to be in the form */}
                 <input type="hidden" {...form.register("id")} />
                 <input type="hidden" {...form.register("confraria_id")} />
-                <input type="hidden" name="event_date" value={form.getValues('event_date')?.toISOString() ?? ''} />
                 <input type="hidden" name="is_public" value={String(form.getValues('is_public'))} />
                 {event?.image_url && <input type="hidden" name="current_image_url" value={event.image_url} />}
 
@@ -304,3 +309,5 @@ export function EventForm({ confrariaId, confrariaRegion, event = null, onSucces
         </FormProvider>
     );
 }
+
+    

@@ -23,7 +23,7 @@ const eventFormSchema = z.object({
   event_date: z.coerce.date({ required_error: 'Por favor, selecione uma data para o evento.'}),
   location: z.string().optional(),
   district: z.enum(districts, { required_error: 'Por favor, selecione um distrito.'}),
-  municipality: z.string().optional(),
+  municipality: z.string().optional().or(z.literal('')),
   is_public: z.boolean().default(true),
 });
 

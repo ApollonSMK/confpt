@@ -455,10 +455,13 @@ export async function deleteRecipe(recipeId: number, confrariaId: number) {
 export async function addGalleryImage(formData: FormData) {
     'use server';
 
-    const confrariaId = Number(formData.get('confraria_id'));
+    const confrariaId = Number(formData.get('confrariaId'));
     const description = formData.get('description') as string;
     const images = formData.getAll('images') as File[];
     
+    if (!confrariaId) {
+        return { error: 'ID da confraria em falta.' };
+    }
     if (!images || images.length === 0 || images[0].size === 0) {
         return { error: 'Por favor, selecione pelo menos uma imagem para carregar.' };
     }

@@ -550,6 +550,7 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
         event.preventDefault();
         setLoading(true);
         const formData = new FormData(event.currentTarget);
+        formData.append('confrariaId', String(confrariaId));
         const result = await addGalleryImage(formData);
         
         setLoading(false);
@@ -564,7 +565,6 @@ const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onS
     
     return (
          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-            <input type="hidden" name="confraria_id" value={confrariaId} />
             <div className="space-y-2">
                 <label htmlFor="gallery-image">Ficheiro da Imagem</label>
                 <Input id="gallery-image" name="images" type="file" required accept="image/png, image/jpeg, image/webp" multiple />

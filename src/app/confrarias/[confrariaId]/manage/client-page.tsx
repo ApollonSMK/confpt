@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, PenSquare, LayoutDashboard, PlusCircle, Edit, MapPin, Trash2, Loader2, ArrowLeft, Newspaper, Camera, UtensilsCrossed, Shield } from 'lucide-react';
-import { addGalleryImage, deleteGalleryImage, deleteArticle, deleteEvent, deleteRecipe } from './actions';
+import { deleteArticle, deleteEvent, deleteRecipe, deleteGalleryImage } from './actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { districts } from '@/lib/data';
@@ -26,20 +26,14 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { RecipeForm } from './recipe-form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import type { Point, Area } from 'react-easy-crop';
-import { getCroppedImg } from '@/lib/crop-image';
-import { Slider } from '@/components/ui/slider';
-import { createClient } from '@/lib/supabase/client';
-import { nanoid } from 'nanoid';
-import { z } from 'zod';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 
 const ImageCropModal = dynamic(() => import('./image-upload-modals').then(mod => mod.ImageCropModal), {
+    ssr: false,
+    loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin"/></div>
+});
+
+const GalleryImageCropModal = dynamic(() => import('./image-upload-modals').then(mod => mod.GalleryImageCropModal), {
     ssr: false,
     loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin"/></div>
 });
@@ -393,14 +387,15 @@ export function ClientManagePage({ confrariaData, events, articles, recipes, gal
                         icon={Camera}
                         actions={
                             <Dialog open={isGalleryDialogOpen} onOpenChange={setGalleryDialogOpen}>
-                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagens</Button></DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle className="font-headline text-2xl">Adicionar à Galeria</DialogTitle>
-                                        <DialogDescription>Carregue uma ou mais imagens para partilhar com a comunidade.</DialogDescription>
-                                    </DialogHeader>
-                                    <GalleryImageForm confrariaId={confrariaData.id} onSuccess={handleGalleryFormSuccess} />
-                                </DialogContent>
+                                <DialogTrigger asChild><Button><PlusCircle/> Adicionar Imagem</Button></DialogTrigger>
+                                <Suspense fallback={<p>A carregar...</p>}>
+                                    <GalleryImageCropModal 
+                                        open={isGalleryDialogOpen}
+                                        onOpenChange={setGalleryDialogOpen}
+                                        confrariaId={confrariaData.id} 
+                                        onUploadSuccess={handleGalleryFormSuccess} 
+                                    />
+                                </Suspense>
                             </Dialog>
                         }
                     >
@@ -544,96 +539,6 @@ const TabContentCard = ({ title, description, children, icon: Icon, badgeText, a
         </CardContent>
     </Card>
 );
-
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-const galleryFormSchema = z.object({
-    description: z.string().optional(),
-    images: z.custom<FileList>()
-        .refine((files) => files && files.length > 0, "É necessário selecionar pelo menos uma imagem.")
-        .refine((files) => Array.from(files).every(file => file.size <= MAX_FILE_SIZE), `Cada imagem não pode ter mais de 5MB.`)
-        .refine((files) => Array.from(files).every(file => ACCEPTED_IMAGE_TYPES.includes(file.type)), "Apenas são aceites os formatos .jpg, .jpeg, .png e .webp."),
-});
-
-type GalleryFormValues = z.infer<typeof galleryFormSchema>;
-
-const GalleryImageForm = ({ confrariaId, onSuccess }: { confrariaId: number, onSuccess: () => void }) => {
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
-    
-    const form = useForm<GalleryFormValues>({
-        resolver: zodResolver(galleryFormSchema),
-        defaultValues: {
-            description: "",
-            images: undefined,
-        }
-    });
-
-    const onSubmit = (values: GalleryFormValues) => {
-        const formData = new FormData();
-        formData.append('confrariaId', String(confrariaId));
-        formData.append('description', values.description || '');
-        Array.from(values.images).forEach(file => {
-            formData.append('images', file);
-        });
-
-        startTransition(async () => {
-            const result = await addGalleryImage(formData);
-            if (result?.error) {
-                toast({ title: 'Erro', description: result.error, variant: 'destructive' });
-            } else {
-                toast({ title: 'Sucesso!', description: result.message });
-                form.reset();
-                onSuccess();
-            }
-        });
-    };
-    
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <input type="hidden" name="confrariaId" value={confrariaId} />
-                <FormField
-                    control={form.control}
-                    name="images"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Ficheiros de Imagem</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    type="file" 
-                                    multiple 
-                                    accept="image/png, image/jpeg, image/webp"
-                                    onChange={(e) => field.onChange(e.target.files)}
-                                />
-                            </FormControl>
-                            <FormDescription>Pode selecionar várias imagens. Máx 5MB por imagem.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Descrição (Opcional)</FormLabel>
-                             <FormControl>
-                                <Textarea placeholder="Esta descrição será aplicada a todas as imagens carregadas..." {...field}/>
-                            </FormControl>
-                             <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <Button type="submit" disabled={isPending} className="w-full">
-                    {isPending ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />}
-                    Adicionar
-                </Button>
-            </form>
-        </Form>
-    )
-}
 
 const ImageUploader = ({ confraria }: { confraria: ConfrariaDataType }) => {
     const router = useRouter();

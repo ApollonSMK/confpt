@@ -282,7 +282,7 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapbo
                                 </Button>
                             </CardContent>
                         </Card>
-
+                        
                         <ImageGalleryManager discovery={discovery} />
                     </form>
                 </FormProvider>
@@ -294,22 +294,32 @@ export function EditDiscoveryForm({ discovery, confrarias, discoveryTypes, mapbo
 function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const imageHintInputRef = useRef<HTMLInputElement>(null);
 
-    const handleAddImage = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (!event.currentTarget) return;
+    const handleAddImage = async () => {
+        if (!imageInputRef.current?.files?.[0]) {
+            toast({ title: "Erro", description: "Por favor, selecione uma imagem.", variant: 'destructive' });
+            return;
+        }
 
         setLoading(true);
-        const formData = new FormData(event.currentTarget);
         
+        const formData = new FormData();
+        formData.append('discoveryId', discovery.id.toString());
+        formData.append('slug', discovery.slug);
+        formData.append('image', imageInputRef.current.files[0]);
+        formData.append('imageHint', imageHintInputRef.current?.value || '');
+
         const result = await addDiscoveryImage(formData);
 
         if (result.error) {
             toast({ title: "Erro", description: result.error, variant: 'destructive' });
         } else {
             toast({ title: 'Sucesso', description: result.message });
-            formRef.current?.reset();
+            // Reset input fields
+            if(imageInputRef.current) imageInputRef.current.value = "";
+            if(imageHintInputRef.current) imageHintInputRef.current.value = "";
         }
         setLoading(false);
     }
@@ -330,25 +340,23 @@ function ImageGalleryManager({ discovery }: { discovery: Discovery }) {
                 <CardDescription>Adicione e remova imagens da galeria desta descoberta.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <form ref={formRef} onSubmit={handleAddImage} className="p-4 border rounded-lg space-y-4">
+                 <div className="p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold">Adicionar Nova Imagem</h3>
-                    <input type="hidden" name="discoveryId" value={discovery.id} />
-                    <input type="hidden" name="slug" value={discovery.slug} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label htmlFor="image-file" className="text-sm font-medium">Ficheiro</label>
-                            <Input id="image-file" type="file" name="image" required />
+                            <Input id="image-file" type="file" ref={imageInputRef} required />
                         </div>
                         <div className="space-y-2">
                              <label htmlFor="image-hint" className="text-sm font-medium">Dica de Imagem (IA)</label>
-                            <Input id="image-hint" name="imageHint" placeholder="Ex: prato comida" />
+                            <Input id="image-hint" ref={imageHintInputRef} placeholder="Ex: prato comida" />
                         </div>
                     </div>
-                    <Button type="submit" disabled={loading}>
+                    <Button type="button" onClick={handleAddImage} disabled={loading}>
                         {loading && <Loader2 className="animate-spin mr-2" />}
                         <PlusCircle/> Adicionar
                     </Button>
-                </form>
+                </div>
 
                 <div className="space-y-4">
                     <h3 className="font-semibold">Imagens Atuais</h3>
